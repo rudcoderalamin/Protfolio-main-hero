@@ -1,0 +1,314 @@
+export interface Project {
+  id: string;
+  title: string;
+  description: string;
+  tech: string[];
+  metrics?: string;
+  github?: string;
+  live?: string;
+}
+
+export interface Achievement {
+  id: string;
+  title: string;
+  organization: string;
+  year: string;
+  description: string;
+}
+
+export interface SkillCategory {
+  category: string;
+  skills: { name: string; level: string }[];
+}
+
+export interface Experience {
+  id: string;
+  role: string;
+  company: string;
+  period: string;
+  type: string;
+  highlights: string[];
+}
+
+export interface EducationItem {
+  id: string;
+  degree: string;
+  institution: string;
+  period: string;
+  details: string;
+}
+
+export interface ProfilePhoto {
+  id: string;
+  url: string;
+  caption: string;
+  tag: string;
+}
+
+export const DEFAULT_PROFILE_PHOTOS: ProfilePhoto[] = [
+  {
+    id: "official-portrait",
+    url: "/imran-hasan.jpg",
+    caption: "Al Amin Islam — Official Portfolio Portrait",
+    tag: "Official"
+  },
+  {
+    id: "saree-traditional",
+    url: "/photo-saree.jpg",
+    caption: "Traditional & Rooftop Portrait",
+    tag: "Aesthetic"
+  },
+  {
+    id: "presentation-event",
+    url: "/gallery/presentation.jpg",
+    caption: "Al Amin Islam — Onsite Presentation & Speaking",
+    tag: "Event"
+  },
+  {
+    id: "official-transparent",
+    url: "/Profile-Photo.png",
+    caption: "Al Amin Islam — High-Res Developer Profile",
+    tag: "Developer"
+  },
+  {
+    id: "champion-awards",
+    url: "/gallery/champion.jpg",
+    caption: "Institute Skill Competition Champion",
+    tag: "Awards"
+  },
+  {
+    id: "icpc-closing",
+    url: "/gallery/icpc.jpg",
+    caption: "ICPC Asia Dhaka Regional Contest",
+    tag: "ICPC"
+  }
+];
+
+export const PORTFOLIO_DATA = {
+  // Brand & Identity
+  name: "Al Amin Islam",
+  nickname: "Al Amin",
+  brandInitials: "AI",
+  greetingPrefix: "Hi, I'm",
+  greetingEmoji: "👋",
+  title: "Fullstack Web Developer",
+  titles: [
+    "Fullstack Web Developer",
+    "Competitive Programmer",
+    "Next.js & React Specialist",
+    "Problem Solver",
+    "MERN & TypeScript Engineer"
+  ],
+  bio: "Fullstack Web Developer specializing in React, Next.js, and Node.js. A dedicated competitive programmer (CodeChef 2⭐, 620+ problems) blending advanced problem-solving with modern design to build scalable, high-performance applications.",
+  experienceYears: "1+ Year Exp.",
+
+  // Contact & Socials
+  email: "alaminislam.dev@gmail.com",
+  phone: "+880 1700-000000",
+  whatsappNumber: "8801700000000",
+  location: "Dhaka, Bangladesh",
+  socials: {
+    facebook: "https://facebook.com",
+    linkedin: "https://linkedin.com",
+    github: "https://github.com/alaminislam",
+    codeforces: "https://codeforces.com",
+    codechef: "https://codechef.com",
+    leetcode: "https://leetcode.com",
+    twitter: "",
+    youtube: ""
+  },
+
+  // Hero Quick Action Buttons & Text
+  heroButtons: {
+    resumeText: "Resume",
+    contactText: "Contact Me",
+    bookCallText: "Book a Call",
+    reloadTooltip: "Auto-rotates every 5s • Click to cycle"
+  },
+
+  // Hero Quick Stats Pills
+  heroStats: {
+    stat1Value: "620+",
+    stat1Label: "Problems Solved",
+    stat2Value: "15+",
+    stat2Label: "Fullstack Projects",
+    stat3Value: "2nd Position",
+    stat3Label: "DUET IUPC"
+  },
+
+  // Navbar Labels
+  navbar: {
+    brandText: "Al Amin Islam",
+    brandSubtitle: "Fullstack Dev",
+    navHome: "Home",
+    navSkills: "Skills",
+    navProjects: "Projects",
+    navExperience: "Experience",
+    navAchievements: "Awards",
+    navEducation: "Education",
+    bookCallBtnText: "Book a Call"
+  },
+
+  // Footer Texts
+  footer: {
+    copyrightText: "© {year} Al Amin Islam. Built with Next.js & Tailwind CSS.",
+    statusBadge: "Available for Hire"
+  },
+
+  // Detailed Modal Section Headers
+  sectionTitles: {
+    experience: "Work Experience & History",
+    skills: "Technical Skills & Competencies",
+    projects: "Featured Software Projects",
+    achievements: "Competitive Programming & Awards",
+    education: "Education & Qualifications"
+  },
+
+  // Rotation Settings
+  autoRotateSeconds: 5,
+
+  // Stats Breakdown
+  stats: [
+    { label: "Algorithmic Problems Solved", value: "620+" },
+    { label: "CodeChef Rating", value: "1406 (2⭐)" },
+    { label: "Years of Experience", value: "1+ Year" },
+    { label: "Fullstack Projects Delivered", value: "15+" }
+  ],
+
+  // Experience
+  experiences: [
+    {
+      id: "exp-1",
+      role: "Full-Stack Web Developer",
+      company: "Freelance & Open Source Contributor",
+      period: "2023 - Present",
+      type: "Full-time / Contract",
+      highlights: [
+        "Architecting responsive web applications with Next.js, TypeScript, Node.js, Express, and PostgreSQL/MongoDB.",
+        "Engineered scalable REST APIs and secure authentication pipelines using JWT, OAuth, and Prisma ORM.",
+        "Optimized frontend performance, achieving 95+ Google Lighthouse scores across Core Web Vitals.",
+        "Collaborated on client deliverables delivering telemedicine platforms and smart event systems."
+      ]
+    }
+  ],
+
+  // Skills
+  skills: [
+    {
+      category: "Frontend",
+      skills: [
+        { name: "React.js", level: "Advanced" },
+        { name: "Next.js", level: "Advanced" },
+        { name: "TypeScript", level: "Advanced" },
+        { name: "Tailwind CSS", level: "Expert" },
+        { name: "Redux Toolkit", level: "Intermediate" },
+        { name: "HTML5 / CSS3", level: "Expert" }
+      ]
+    },
+    {
+      category: "Backend & Database",
+      skills: [
+        { name: "Node.js", level: "Advanced" },
+        { name: "Express.js", level: "Advanced" },
+        { name: "PostgreSQL", level: "Advanced" },
+        { name: "MongoDB", level: "Advanced" },
+        { name: "Prisma ORM", level: "Intermediate" },
+        { name: "RESTful APIs", level: "Expert" }
+      ]
+    },
+    {
+      category: "Problem Solving & Tools",
+      skills: [
+        { name: "C++ / Data Structures", level: "Advanced" },
+        { name: "Algorithms & Math", level: "Advanced" },
+        { name: "Docker", level: "Intermediate" },
+        { name: "Git / GitHub", level: "Advanced" },
+        { name: "Postman", level: "Advanced" },
+        { name: "Vercel / Cloud Run", level: "Advanced" }
+      ]
+    }
+  ],
+
+  // Projects
+  projects: [
+    {
+      id: "proj-1",
+      title: "Life Care Plus",
+      description: "A comprehensive telemedicine and healthcare management ecosystem with real-time appointment booking, doctor directory, electronic prescriptions, and live tele-consultation.",
+      tech: ["Next.js", "Express.js", "Prisma", "PostgreSQL", "Tailwind CSS"],
+      metrics: "Reduced patient waiting times by ~30% and simplified appointment workflows.",
+      github: "https://github.com/alaminislam",
+      live: "https://alamin-islam-portfolio.vercel.app"
+    },
+    {
+      id: "proj-2",
+      title: "EventSphere",
+      description: "Smart event management and booking system with multi-tier ticket reservations, interactive schedule planner, automated calendar sync, and organizer dashboard.",
+      tech: ["Next.js", "Node.js", "MongoDB", "Tailwind CSS", "JWT"],
+      metrics: "Seamless checkout flow supporting concurrent ticketing without duplicate seat claims.",
+      github: "https://github.com/alaminislam",
+      live: "https://alamin-islam-portfolio.vercel.app"
+    },
+    {
+      id: "proj-3",
+      title: "TouristBook",
+      description: "Tourism discovery and spot reservation platform featuring curated Bangladeshi tour packages, review mechanisms, and secure traveler reservations.",
+      tech: ["React.js", "Node.js", "Express", "MongoDB", "Tailwind CSS"],
+      metrics: "Interactive destination guides with multi-factor authentication.",
+      github: "https://github.com/alaminislam",
+      live: "https://alamin-islam-portfolio.vercel.app"
+    },
+    {
+      id: "proj-4",
+      title: "Job-Cast",
+      description: "Automated WhatsApp and Telegram notification bot dispatching real-time tech job openings filtered by developer stack and experience level.",
+      tech: ["Node.js", "Twilio API", "Cron Scheduling", "Express"],
+      metrics: "Delivers daily curated job feeds to active software engineers.",
+      github: "https://github.com/alaminislam",
+      live: "https://alamin-islam-portfolio.vercel.app"
+    }
+  ],
+
+  // Achievements
+  achievements: [
+    {
+      id: "ach-1",
+      title: "2nd Position - DUET IUPC 2025",
+      organization: "Dhaka University of Engineering & Technology (DUET)",
+      year: "2025",
+      description: "Secured 2nd position among polytechnic competitive programming teams in a high-intensity 5-hour national contest."
+    },
+    {
+      id: "ach-2",
+      title: "ICPC Asia Dhaka Regional Contestant",
+      organization: "International Collegiate Programming Contest",
+      year: "2024 / 2025",
+      description: "Qualified and competed in the prestigious ICPC regional contest solving complex algorithmic challenges under strict time and memory limits."
+    },
+    {
+      id: "ach-3",
+      title: "CodeChef 2-Star Competitive Programmer (1406 Max Rating)",
+      organization: "CodeChef",
+      year: "2024",
+      description: "Achieved Division 2 ranking with 620+ total algorithmic problems solved across CodeChef, Codeforces, and LeetCode."
+    },
+    {
+      id: "ach-4",
+      title: "Champion - Institute Level Skill Competition",
+      organization: "Technical Education Board",
+      year: "2024",
+      description: "Awarded 1st place in web application development and rapid prototyping."
+    }
+  ],
+
+  // Education
+  education: [
+    {
+      id: "edu-1",
+      degree: "Diploma in Computer Science & Technology",
+      institution: "Tangail Polytechnic Institute (TPI)",
+      period: "2021 - 2025",
+      details: "Focus on Algorithms, Data Structures, Database Management Systems, Software Engineering, and Object-Oriented Programming."
+    }
+  ]
+};
