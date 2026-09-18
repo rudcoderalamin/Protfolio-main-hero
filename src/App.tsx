@@ -18,7 +18,9 @@ import {
   getStoredPortfolioData,
   saveStoredPortfolioData,
   getStoredPhotos,
-  saveStoredPhotos
+  saveStoredPhotos,
+  fetchPortfolioFromServer,
+  savePortfolioToServer
 } from './utils/portfolioStorage';
 
 const getInitialRoute = (): 'portfolio' | 'admin' => {
@@ -82,6 +84,18 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // 0. Load & Sync global portfolio data & photos from server (Ensures global sync across all devices/browsers)
+  useEffect(() => {
+    fetchPortfolioFromServer().then((result) => {
+      if (result && result.data) {
+        setPortfolioData(result.data);
+        if (result.photos && result.photos.length > 0) {
+          setPhotos(result.photos);
+        }
+      }
+    });
+  }, []);
+
   // 1. Advance photo index on every web reload ("web reload dilei photo gulo change hote thakbe")
   useEffect(() => {
     try {
@@ -143,11 +157,13 @@ export default function App() {
   const handleUpdatePortfolioData = (newData: PortfolioDataType) => {
     setPortfolioData(newData);
     saveStoredPortfolioData(newData);
+    savePortfolioToServer(newData, photos);
   };
 
   const handleUpdatePhotos = (newPhotos: ProfilePhoto[]) => {
     setPhotos(newPhotos);
     saveStoredPhotos(newPhotos);
+    savePortfolioToServer(portfolioData, newPhotos);
     if (currentPhotoIndex >= newPhotos.length) {
       const safeIdx = Math.max(0, newPhotos.length - 1);
       setCurrentPhotoIndex(safeIdx);

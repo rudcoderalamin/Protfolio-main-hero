@@ -1,4 +1,5 @@
 import { PORTFOLIO_DATA, DEFAULT_PROFILE_PHOTOS, ProfilePhoto } from '../data/portfolioData';
+import { PortfolioMessage } from '../types/message';
 
 export type PortfolioDataType = typeof PORTFOLIO_DATA;
 
@@ -6,39 +7,14 @@ const DATA_STORAGE_KEY = 'alamin_portfolio_data_v2';
 const PHOTOS_STORAGE_KEY = 'alamin_portfolio_photos_v2';
 const ADMIN_PASS_KEY = 'alamin_admin_password_v2';
 const ADMIN_AUTH_KEY = 'alamin_admin_logged_in_v2';
+const MESSAGES_LOCAL_KEY = 'alamin_messages_local_cache';
 
+// Synchronous local storage getters for instant zero-flicker UI render
 export const getStoredPortfolioData = (): PortfolioDataType => {
   try {
-    // Check v2 key first
-    let raw = localStorage.getItem(DATA_STORAGE_KEY);
-    
-    // If not found, check legacy key
-    if (!raw) {
-      const legacyRaw = localStorage.getItem('imran_portfolio_data');
-      if (legacyRaw) {
-        const legacyParsed = JSON.parse(legacyRaw);
-        // Migrate legacy data to Al Amin Islam
-        if (legacyParsed.name === 'Imran Hasan') {
-          legacyParsed.name = 'Al Amin Islam';
-          legacyParsed.nickname = 'Al Amin';
-          legacyParsed.brandInitials = 'AI';
-        }
-        return {
-          ...PORTFOLIO_DATA,
-          ...legacyParsed,
-          heroButtons: { ...PORTFOLIO_DATA.heroButtons, ...(legacyParsed.heroButtons || {}) },
-          heroStats: { ...PORTFOLIO_DATA.heroStats, ...(legacyParsed.heroStats || {}) },
-          navbar: { ...PORTFOLIO_DATA.navbar, ...(legacyParsed.navbar || {}) },
-          footer: { ...PORTFOLIO_DATA.footer, ...(legacyParsed.footer || {}) },
-          sectionTitles: { ...PORTFOLIO_DATA.sectionTitles, ...(legacyParsed.sectionTitles || {}) },
-          socials: { ...PORTFOLIO_DATA.socials, ...(legacyParsed.socials || {}) }
-        };
-      }
-    }
-
+    const raw = localStorage.getItem(DATA_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      // Merge deeply with default structure
       return {
         ...PORTFOLIO_DATA,
         ...parsed,
@@ -60,7 +36,7 @@ export const saveStoredPortfolioData = (data: PortfolioDataType): void => {
   try {
     localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(data));
   } catch (err) {
-    console.error('Failed to save portfolio data to storage:', err);
+    console.error('Failed to save portfolio data to local storage:', err);
   }
 };
 
@@ -110,14 +86,229 @@ export const setAdminAuthStatus = (status: boolean): void => {
   }
 };
 
-export const resetPortfolioToDefaults = () => {
+// ---------------- SERVER SYNC APIS (GLOBAL PERSISTENCE) ----------------
+
+/**
+ * Loads the true global portfolio data and photos from the backend server disk.
+ * This ensures any updates made in the admin dashboard from any device/browser
+ * are immediately received by all visitors worldwide.
+ */
+export const fetchPortfolioFromServer = async (): Promise<{
+  data: PortfolioDataType;
+  photos: ProfilePhoto[];
+  adminPassword?: string;
+} | null> => {
+  try {
+    const res = await fetch('/api/portfolio', {
+      headers: { 'Accept': 'application/json' }
+    });
+    if (!res.ok) {
+      throw new Error(`Server returned status ${res.status}`);
+    }
+    const json = await res.json();
+    if (json.success && json.portfolioData) {
+      const mergedData: PortfolioDataType = {
+        ...PORTFOLIO_DATA,
+        ...json.portfolioData,
+        heroButtons: { ...PORTFOLIO_DATA.heroButtons, ...(json.portfolioData.heroButtons || {}) },
+        heroStats: { ...PORTFOLIO_DATA.heroStats, ...(json.portfolioData.heroStats || {}) },
+        navbar: { ...PORTFOLIO_DATA.navbar, ...(json.portfolioData.navbar || {}) },
+        footer: { ...PORTFOLIO_DATA.footer, ...(json.portfolioData.footer || {}) },
+        sectionTitles: { ...PORTFOLIO_DATA.sectionTitles, ...(json.portfolioData.sectionTitles || {}) },
+        socials: { ...PORTFOLIO_DATA.socials, ...(json.portfolioData.socials || {}) }
+      };
+
+      const loadedPhotos: ProfilePhoto[] = Array.isArray(json.photos) && json.photos.length > 0
+        ? json.photos
+        : DEFAULT_PROFILE_PHOTOS;
+
+      // Update local storage cache
+      saveStoredPortfolioData(mergedData);
+      saveStoredPhotos(loadedPhotos);
+      if (json.adminPassword) {
+        setAdminPassword(json.adminPassword);
+      }
+
+      return {
+        data: mergedData,
+        photos: loadedPhotos,
+        adminPassword: json.adminPassword
+      };
+    }
+  } catch (err) {
+    console.warn('Could not fetch portfolio from server, using local fallback:', err);
+  }
+  return null;
+};
+
+/**
+ * Saves all changes permanently to the backend server disk.
+ */
+export const savePortfolioToServer = async (
+  data: PortfolioDataType,
+  photos: ProfilePhoto[],
+  adminPassword?: string
+): Promise<boolean> => {
+  // Always update local cache first
+  saveStoredPortfolioData(data);
+  saveStoredPhotos(photos);
+  if (adminPassword) {
+    setAdminPassword(adminPassword);
+  }
+
+  try {
+    const res = await fetch('/api/portfolio', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        portfolioData: data,
+        photos: photos,
+        adminPassword: adminPassword || getAdminPassword()
+      })
+    });
+    if (res.ok) {
+      return true;
+    }
+    const errJson = await res.json().catch(() => ({}));
+    console.error('Server save error response:', errJson);
+    return false;
+  } catch (err) {
+    console.error('Network error saving to server:', err);
+    return false;
+  }
+};
+
+// ---------------- MESSAGES & INQUIRIES API ----------------
+
+export const submitContactMessage = async (msg: {
+  name: string;
+  email: string;
+  phone?: string;
+  topic?: string;
+  message: string;
+}): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const res = await fetch('/api/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(msg)
+    });
+
+    const json = await res.json();
+    if (res.ok && json.success) {
+      // Also cache in local storage so offline access still works
+      try {
+        const local = getLocalMessagesCache();
+        local.unshift(json.data);
+        localStorage.setItem(MESSAGES_LOCAL_KEY, JSON.stringify(local.slice(0, 50)));
+      } catch (e) {
+        // ignore
+      }
+      return { success: true };
+    }
+    return { success: false, error: json.error || 'Failed to submit message' };
+  } catch (err: any) {
+    console.error('Error submitting message to server:', err);
+    // Fallback: save locally
+    try {
+      const local = getLocalMessagesCache();
+      const fallbackMsg: PortfolioMessage = {
+        id: `msg-${Date.now()}`,
+        name: msg.name,
+        email: msg.email,
+        phone: msg.phone,
+        topic: msg.topic || 'General Inquiry',
+        message: msg.message,
+        createdAt: new Date().toISOString(),
+        read: false
+      };
+      local.unshift(fallbackMsg);
+      localStorage.setItem(MESSAGES_LOCAL_KEY, JSON.stringify(local));
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: 'Network failure' };
+    }
+  }
+};
+
+export const fetchMessagesFromServer = async (): Promise<PortfolioMessage[]> => {
+  try {
+    const res = await fetch('/api/messages');
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && Array.isArray(json.messages)) {
+        localStorage.setItem(MESSAGES_LOCAL_KEY, JSON.stringify(json.messages));
+        return json.messages;
+      }
+    }
+  } catch (err) {
+    console.warn('Could not fetch messages from server, using local cache:', err);
+  }
+  return getLocalMessagesCache();
+};
+
+export const updateMessageReadStatus = async (id: string, read: boolean): Promise<boolean> => {
+  // Update local cache
+  const local = getLocalMessagesCache();
+  const found = local.find(m => m.id === id);
+  if (found) {
+    found.read = read;
+    localStorage.setItem(MESSAGES_LOCAL_KEY, JSON.stringify(local));
+  }
+
+  try {
+    const res = await fetch(`/api/messages/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ read })
+    });
+    return res.ok;
+  } catch (err) {
+    return false;
+  }
+};
+
+export const deleteMessageFromServer = async (id: string): Promise<boolean> => {
+  // Update local cache
+  const local = getLocalMessagesCache().filter(m => m.id !== id);
+  localStorage.setItem(MESSAGES_LOCAL_KEY, JSON.stringify(local));
+
+  try {
+    const res = await fetch(`/api/messages/${id}`, {
+      method: 'DELETE'
+    });
+    return res.ok;
+  } catch (err) {
+    return false;
+  }
+};
+
+export const getLocalMessagesCache = (): PortfolioMessage[] => {
+  try {
+    const raw = localStorage.getItem(MESSAGES_LOCAL_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {
+    // ignore
+  }
+  return [];
+};
+
+// ---------------- BACKUP & RESET ----------------
+
+export const resetPortfolioToDefaults = async () => {
   localStorage.removeItem(DATA_STORAGE_KEY);
   localStorage.removeItem(PHOTOS_STORAGE_KEY);
-  localStorage.removeItem('imran_portfolio_data');
-  localStorage.removeItem('imran_portfolio_photos');
-  localStorage.removeItem('imran_custom_photos');
   localStorage.removeItem('alamin_active_photo_index');
-  localStorage.removeItem('imran_active_photo_index');
+
+  try {
+    await fetch('/api/portfolio/reset', { method: 'POST' });
+  } catch (err) {
+    console.warn('Could not reset on server:', err);
+  }
+
   return {
     data: PORTFOLIO_DATA,
     photos: DEFAULT_PROFILE_PHOTOS
@@ -135,7 +326,7 @@ export const exportPortfolioJson = (): string => {
   return JSON.stringify(exportPayload, null, 2);
 };
 
-export const importPortfolioJson = (jsonString: string): { data: PortfolioDataType; photos: ProfilePhoto[] } => {
+export const importPortfolioJson = async (jsonString: string): Promise<{ data: PortfolioDataType; photos: ProfilePhoto[] }> => {
   const parsed = JSON.parse(jsonString);
   if (!parsed.portfolioData) {
     throw new Error('Invalid backup file: portfolioData is missing');
@@ -154,8 +345,7 @@ export const importPortfolioJson = (jsonString: string): { data: PortfolioDataTy
     ? parsed.photos
     : DEFAULT_PROFILE_PHOTOS;
 
-  saveStoredPortfolioData(mergedData);
-  saveStoredPhotos(photosList);
+  await savePortfolioToServer(mergedData, photosList);
 
   return {
     data: mergedData,

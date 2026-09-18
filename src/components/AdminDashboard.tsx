@@ -28,7 +28,8 @@ import {
   Share2,
   Type,
   ShieldCheck,
-  Globe
+  Globe,
+  MessageSquare
 } from 'lucide-react';
 import { ProfilePhoto } from '../data/portfolioData';
 import {
@@ -39,8 +40,11 @@ import {
   setAdminAuthStatus,
   resetPortfolioToDefaults,
   exportPortfolioJson,
-  importPortfolioJson
+  importPortfolioJson,
+  savePortfolioToServer,
+  fetchMessagesFromServer
 } from '../utils/portfolioStorage';
+import { AdminMessagesTab } from './AdminMessagesTab';
 
 interface AdminDashboardProps {
   portfolioData: PortfolioDataType;
@@ -51,6 +55,7 @@ interface AdminDashboardProps {
 }
 
 type TabType =
+  | 'messages'
   | 'general'
   | 'photos'
   | 'stats'
@@ -74,15 +79,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(getAdminAuthStatus());
   const [passwordInput, setPasswordInput] = useState('');
   const [authError, setAuthError] = useState('');
-  const [activeTab, setActiveTab] = useState<TabType>('general');
+  const [activeTab, setActiveTab] = useState<TabType>('messages');
 
   // Form State (cloned from props for live editing)
   const [formData, setFormData] = useState<PortfolioDataType>(portfolioData);
   const [photosList, setPhotosList] = useState<ProfilePhoto[]>(photos);
   
-  // UI Notifications
+  // UI Notifications & Messages Count
   const [saveSuccessMessage, setSaveSuccessMessage] = useState('');
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
   const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
+
+  // Check unread messages on mount
+  React.useEffect(() => {
+    fetchMessagesFromServer().then((msgs) => {
+      if (Array.isArray(msgs)) {
+        setUnreadMessagesCount(msgs.filter((m) => !m.read).length);
+      }
+    });
+  }, []);
 
   // New Photo Form State
   const [newPhotoUrl, setNewPhotoUrl] = useState('');
@@ -120,12 +136,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setPasswordInput('');
   };
 
-  // Save all portfolio text/data changes
-  const handleSaveData = () => {
-    onUpdatePortfolioData(formData);
-    onUpdatePhotos(photosList);
-    setSaveSuccessMessage('All changes saved and live on website!');
-    setTimeout(() => setSaveSuccessMessage(''), 3000);
+  // Save all portfolio text/data changes permanently to global server
+  const handleSaveData = async () => {
+    setIsSaving(true);
+    try {
+      const ok = await savePortfolioToServer(formData, photosList);
+      onUpdatePortfolioData(formData);
+      onUpdatePhotos(photosList);
+      if (ok) {
+        setSaveSuccessMessage('All changes saved globally! Active across all devices & browsers.');
+      } else {
+        setSaveSuccessMessage('Changes saved locally.');
+      }
+    } catch (err) {
+      onUpdatePortfolioData(formData);
+      onUpdatePhotos(photosList);
+      setSaveSuccessMessage('Changes saved locally.');
+    } finally {
+      setIsSaving(false);
+      setTimeout(() => setSaveSuccessMessage(''), 3500);
+    }
   };
 
   // Add Typewriter title
@@ -267,10 +297,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const text = event.target?.result as string;
-        const result = importPortfolioJson(text);
+        const result = await importPortfolioJson(text);
         setFormData(result.data);
         setPhotosList(result.photos);
         onUpdatePortfolioData(result.data);
@@ -284,9 +314,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   // Reset to Defaults
-  const handleResetDefaults = () => {
+  const handleResetDefaults = async () => {
     if (confirm('Are you sure you want to reset all portfolio data to factory defaults? All custom changes will be overwritten.')) {
-      const resetResult = resetPortfolioToDefaults();
+      const resetResult = await resetPortfolioToDefaults();
       setFormData(resetResult.data);
       setPhotosList(resetResult.photos);
       onUpdatePortfolioData(resetResult.data);
@@ -445,6 +475,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             {[
+              {
+                id: 'messages',
+                label: unreadMessagesCount > 0 ? `Inquiries (${unreadMessagesCount})` : 'Inquiries & Messages',
+                icon: MessageSquare,
+                badge: unreadMessagesCount
+              },
               { id: 'general', label: 'Profile & Bio', icon: Type },
               { id: 'photos', label: `Photos (${photosList.length})`, icon: ImageIcon },
               { id: 'stats', label: 'Stats & Buttons', icon: Sliders },
@@ -473,7 +509,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500'}`} />
                     <span>{tab.label}</span>
                   </div>
-                  {isActive && <ChevronRight className="w-3.5 h-3.5" />}
+                  {tab.badge && tab.badge > 0 ? (
+                    <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px]">
+                      {tab.badge}
+                    </span>
+                  ) : isActive ? (
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  ) : null}
                 </button>
               );
             })}
@@ -482,6 +524,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         {/* Right Content Panel */}
         <main className="flex-1 min-w-0 bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8">
+          {/* TAB 0: VISITOR MESSAGES & INQUIRIES */}
+          {activeTab === 'messages' && (
+            <AdminMessagesTab
+              portfolioOwnerName={formData.name}
+              onUnreadCountChange={(count) => setUnreadMessagesCount(count)}
+            />
+          )}
+
           {/* TAB 1: GENERAL & PROFILE */}
           {activeTab === 'general' && (
             <div className="space-y-6">
