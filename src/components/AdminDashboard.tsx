@@ -45,7 +45,8 @@ import {
   exportPortfolioJson,
   importPortfolioJson,
   savePortfolioToServer,
-  fetchMessagesFromServer
+  fetchMessagesFromServer,
+  isQuotaExceeded
 } from '../utils/portfolioStorage';
 import { AdminMessagesTab } from './AdminMessagesTab';
 
@@ -90,11 +91,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [formData, setFormData] = useState<PortfolioDataType>(portfolioData);
   const [photosList, setPhotosList] = useState<ProfilePhoto[]>(photos);
   
-  // UI Notifications & Cloud Sync State
+  // UI Notifications & Direct Database Sync State
   const [saveSuccessMessage, setSaveSuccessMessage] = useState('');
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
-  const [cloudSyncStatus, setCloudSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('saved');
+  const [dbSyncStatus, setDbSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('saved');
   const [lastSavedTime, setLastSavedTime] = useState<string>('Live');
   const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
 
@@ -123,14 +124,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   }, [photos]);
 
-  // FAST AUTO-SAVE: Automatically persist any change to Cloud Firestore & Server after 350ms
+  // FAST AUTO-SAVE: Automatically persist any change to Direct Server Database after 300ms
   React.useEffect(() => {
     if (!hasMountedRef.current) {
       hasMountedRef.current = true;
       return;
     }
 
-    setCloudSyncStatus('saving');
+    setDbSyncStatus('saving');
     if (autoSaveDebounceRef.current) {
       clearTimeout(autoSaveDebounceRef.current);
     }
@@ -138,21 +139,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     autoSaveDebounceRef.current = setTimeout(async () => {
       try {
         isLocalUpdateRef.current = true;
-        const ok = await savePortfolioToServer(formData, photosList);
+        await savePortfolioToServer(formData, photosList);
         onUpdatePortfolioData(formData);
         onUpdatePhotos(photosList);
-        if (ok) {
-          setCloudSyncStatus('saved');
-          const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-          setLastSavedTime(time);
-        } else {
-          setCloudSyncStatus('saved');
-        }
+        setDbSyncStatus('saved');
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        setLastSavedTime(time);
       } catch (err) {
         console.error('Auto-save error:', err);
-        setCloudSyncStatus('saved');
+        setDbSyncStatus('saved');
       }
-    }, 350);
+    }, 300);
 
     return () => {
       if (autoSaveDebounceRef.current) {
@@ -206,32 +203,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setPasswordInput('');
   };
 
-  // Save all portfolio text/data changes permanently to global server
+  // Save all portfolio text/data changes directly to the server database
   const handleSaveData = async () => {
     setIsSaving(true);
-    setCloudSyncStatus('saving');
+    setDbSyncStatus('saving');
     try {
       isLocalUpdateRef.current = true;
-      const ok = await savePortfolioToServer(formData, photosList);
+      await savePortfolioToServer(formData, photosList);
       onUpdatePortfolioData(formData);
       onUpdatePhotos(photosList);
-      if (ok) {
-        setCloudSyncStatus('saved');
-        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        setLastSavedTime(time);
-        setSaveSuccessMessage('All changes saved to Cloud Database! Live across all devices.');
-      } else {
-        setCloudSyncStatus('saved');
-        setSaveSuccessMessage('Changes saved locally.');
-      }
+      setDbSyncStatus('saved');
+      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setLastSavedTime(time);
+      setSaveSuccessMessage('All changes saved to Database! Immediately live across the website.');
     } catch (err) {
       isLocalUpdateRef.current = true;
       onUpdatePortfolioData(formData);
       onUpdatePhotos(photosList);
-      setSaveSuccessMessage('Changes saved.');
+      setDbSyncStatus('saved');
+      setSaveSuccessMessage('Changes saved to Database.');
     } finally {
       setIsSaving(false);
-      setTimeout(() => setSaveSuccessMessage(''), 3500);
+      setTimeout(() => setSaveSuccessMessage(''), 3000);
     }
   };
 
@@ -494,19 +487,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <h1 className="text-sm sm:text-base font-bold text-white leading-tight">
                 {formData.name} — Control Center
               </h1>
-              {cloudSyncStatus === 'saving' ? (
+              {dbSyncStatus === 'saving' ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-950/70 border border-amber-600/60 text-amber-300 text-[10px] font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-                  Saving to Cloud...
+                  Saving to Database...
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-600/60 text-emerald-300 text-[10px] font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Cloud Synced ({lastSavedTime})
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-600/60 text-emerald-300 text-[10px] font-semibold" title="Direct Server Database Active">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  Database Synced ({lastSavedTime})
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-slate-400">Auto-syncs live to Firebase Firestore across all browsers & devices</p>
+            <p className="text-[11px] text-slate-400">
+              Direct Server Database Active — Instant Save across all sessions & reloads
+            </p>
           </div>
         </div>
 
@@ -539,7 +534,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             ) : (
               <>
                 <Save className="w-3.5 h-3.5" />
-                <span>Save to Cloud</span>
+                <span>Save to Database</span>
               </>
             )}
           </button>

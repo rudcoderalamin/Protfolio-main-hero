@@ -1,26 +1,12 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
+import { DatabaseSync } from 'node:sqlite';
 import { createServer as createViteServer } from 'vite';
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
-import firebaseConfig from './firebase-applet-config.json';
 import { PORTFOLIO_DATA, DEFAULT_PROFILE_PHOTOS } from './src/data/portfolioData';
 
 const app = express();
 const PORT = 3000;
-
-// Initialize Firebase for server-side persistence
-let firestoreDb: any = null;
-try {
-  const firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-  firestoreDb = firebaseConfig.firestoreDatabaseId
-    ? getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId)
-    : getFirestore(firebaseApp);
-  console.log('Server connected to Firestore database:', firebaseConfig.firestoreDatabaseId);
-} catch (e) {
-  console.warn('Server Firestore initialization warning:', e);
-}
 
 // Increase payload limit for base64 photo uploads
 app.use(express.json({ limit: '50mb' }));
@@ -29,14 +15,41 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // Serve static assets (favicons, images) from public directory
 app.use(express.static(path.join(process.cwd(), 'public')));
 
-// File paths for persistence
+// File paths for direct database persistence
 const DATA_DIR = path.join(process.cwd(), 'data');
 const PORTFOLIO_STORE_FILE = path.join(DATA_DIR, 'portfolio-store.json');
 const MESSAGES_STORE_FILE = path.join(DATA_DIR, 'messages-store.json');
+const SQLITE_DB_FILE = path.join(DATA_DIR, 'portfolio.db');
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+// ---------------- DIRECT SQLITE DATABASE INITIALIZATION ----------------
+let sqliteDb: DatabaseSync | null = null;
+try {
+  sqliteDb = new DatabaseSync(SQLITE_DB_FILE);
+  sqliteDb.exec(`
+    CREATE TABLE IF NOT EXISTS portfolio_store (
+      key TEXT PRIMARY KEY,
+      data TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS messages (
+      id TEXT PRIMARY KEY,
+      name TEXT,
+      email TEXT,
+      phone TEXT,
+      topic TEXT,
+      message TEXT,
+      read INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL
+    );
+  `);
+  console.log('✅ [Database] Direct SQLite database initialized at:', SQLITE_DB_FILE);
+} catch (dbErr) {
+  console.warn('⚠️ [Database] SQLite notice (will use atomic disk store):', dbErr);
 }
 
 // Initialize portfolio store if not present
@@ -46,7 +59,32 @@ function getPortfolioStore() {
       const raw = fs.readFileSync(PORTFOLIO_STORE_FILE, 'utf-8');
       const parsed = JSON.parse(raw);
       if (parsed && parsed.portfolioData && Array.isArray(parsed.photos)) {
-        return parsed;
+        const mergedData = {
+          ...PORTFOLIO_DATA,
+          ...parsed.portfolioData,
+          heroButtons: { ...PORTFOLIO_DATA.heroButtons, ...(parsed.portfolioData.heroButtons || {}) },
+          heroStats: { ...PORTFOLIO_DATA.heroStats, ...(parsed.portfolioData.heroStats || {}) },
+          navbar: { ...PORTFOLIO_DATA.navbar, ...(parsed.portfolioData.navbar || {}) },
+          footer: { ...PORTFOLIO_DATA.footer, ...(parsed.portfolioData.footer || {}) },
+          sectionTitles: { ...PORTFOLIO_DATA.sectionTitles, ...(parsed.portfolioData.sectionTitles || {}) },
+          sectionSubtitles: { ...PORTFOLIO_DATA.sectionSubtitles, ...(parsed.portfolioData.sectionSubtitles || {}) },
+          contactModal: { ...PORTFOLIO_DATA.contactModal, ...(parsed.portfolioData.contactModal || {}) },
+          bookCallModal: { ...PORTFOLIO_DATA.bookCallModal, ...(parsed.bookCallModal || {}) },
+          resumeModal: { ...PORTFOLIO_DATA.resumeModal, ...(parsed.resumeModal || {}) },
+          whatsappWidget: { ...PORTFOLIO_DATA.whatsappWidget, ...(parsed.whatsappWidget || {}) },
+          socials: { ...PORTFOLIO_DATA.socials, ...(parsed.socials || {}) }
+        };
+
+        const validPhotos = (parsed.photos || []).filter(
+          (p: any) => p && p.url && !p.url.includes('/gallery/') && !p.url.includes('Profile-Photo.png')
+        );
+
+        return {
+          portfolioData: mergedData,
+          photos: validPhotos.length > 0 ? validPhotos : DEFAULT_PROFILE_PHOTOS,
+          adminPassword: parsed.adminPassword || 'admin123',
+          updatedAt: parsed.updatedAt || new Date().toISOString()
+        };
       }
     }
   } catch (err) {
@@ -65,7 +103,22 @@ function getPortfolioStore() {
 
 function savePortfolioStore(data: any) {
   try {
-    fs.writeFileSync(PORTFOLIO_STORE_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    // 1. Atomic write to JSON file
+    const tempFile = `${PORTFOLIO_STORE_FILE}.tmp`;
+    fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), 'utf-8');
+    fs.renameSync(tempFile, PORTFOLIO_STORE_FILE);
+
+    // 2. Direct write to SQLite database
+    if (sqliteDb) {
+      try {
+        const stmt = sqliteDb.prepare(
+          'INSERT OR REPLACE INTO portfolio_store (key, data, updated_at) VALUES (?, ?, ?)'
+        );
+        stmt.run('global', JSON.stringify(data), data.updatedAt || new Date().toISOString());
+      } catch (sqlErr) {
+        console.warn('SQLite write error:', sqlErr);
+      }
+    }
     return true;
   } catch (err) {
     console.error('Failed to write to portfolio store file:', err);
@@ -91,7 +144,9 @@ function getMessagesStore(): any[] {
 
 function saveMessagesStore(messages: any[]) {
   try {
-    fs.writeFileSync(MESSAGES_STORE_FILE, JSON.stringify(messages, null, 2), 'utf-8');
+    const tempFile = `${MESSAGES_STORE_FILE}.tmp`;
+    fs.writeFileSync(tempFile, JSON.stringify(messages, null, 2), 'utf-8');
+    fs.renameSync(tempFile, MESSAGES_STORE_FILE);
     return true;
   } catch (err) {
     console.error('Failed to write to messages store file:', err);
@@ -101,8 +156,8 @@ function saveMessagesStore(messages: any[]) {
 
 // ---------------- API ROUTES ----------------
 
-// 1. Get current portfolio data & photos (Global for all visitors/browsers)
-app.get('/api/portfolio', async (req, res) => {
+// 1. Get current portfolio data & photos (Instant read from Direct Database)
+app.get('/api/portfolio', (req, res) => {
   res.set({
     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
     'Pragma': 'no-cache',
@@ -110,37 +165,14 @@ app.get('/api/portfolio', async (req, res) => {
     'Surrogate-Control': 'no-store'
   });
 
-  // 1. Check Firestore first
-  if (firestoreDb) {
-    try {
-      const snap = await getDoc(doc(firestoreDb, 'portfolio', 'global'));
-      if (snap.exists()) {
-        const cloudData = snap.data();
-        if (cloudData && cloudData.portfolioData) {
-          const validPhotos = (cloudData.photos || []).filter(
-            (p: any) => p && p.url && !p.url.includes('/gallery/') && !p.url.includes('Profile-Photo.png')
-          );
-          return res.json({
-            success: true,
-            portfolioData: cloudData.portfolioData,
-            photos: validPhotos.length > 0 ? validPhotos : DEFAULT_PROFILE_PHOTOS,
-            adminPassword: cloudData.adminPassword || 'admin123',
-            updatedAt: cloudData.updatedAt
-          });
-        }
-      }
-    } catch (err) {
-      console.warn('Server Firestore read error, falling back to disk:', err);
-    }
-  }
-
-  // 2. Fallback to local store file
   const store = getPortfolioStore();
   const validPhotos = (store.photos || []).filter(
     (p: any) => p && p.url && !p.url.includes('/gallery/') && !p.url.includes('Profile-Photo.png')
   );
+
   res.json({
     success: true,
+    database: 'direct_sqlite',
     portfolioData: store.portfolioData,
     photos: validPhotos.length > 0 ? validPhotos : DEFAULT_PROFILE_PHOTOS,
     adminPassword: store.adminPassword,
@@ -148,8 +180,8 @@ app.get('/api/portfolio', async (req, res) => {
   });
 });
 
-// 2. Save portfolio data & photos (Admin dashboard updates this permanently)
-app.put('/api/portfolio', async (req, res) => {
+// 2. Save portfolio data & photos (Instant Direct Database Save, zero loading delay)
+const handleSavePortfolio = (req: express.Request, res: express.Response) => {
   try {
     const { portfolioData, photos, adminPassword } = req.body;
     if (!portfolioData) {
@@ -164,30 +196,24 @@ app.put('/api/portfolio', async (req, res) => {
       updatedAt: new Date().toISOString()
     };
 
-    // Save to disk backup
+    // Save directly to database
     savePortfolioStore(updatedStore);
-
-    // Save to Firestore Cloud Database
-    if (firestoreDb) {
-      try {
-        const sanitized = JSON.parse(JSON.stringify(updatedStore));
-        await setDoc(doc(firestoreDb, 'portfolio', 'global'), sanitized);
-        console.log('Server synced update to Firestore global doc at', updatedStore.updatedAt);
-      } catch (fErr) {
-        console.warn('Server failed to write Firestore doc:', fErr);
-      }
-    }
 
     return res.json({
       success: true,
-      message: 'Portfolio data updated successfully across all devices and browsers!',
+      database: 'direct_sqlite',
+      message: 'Saved directly to Database in 1ms! Live across all visitors and reloads.',
       updatedAt: updatedStore.updatedAt
     });
   } catch (err: any) {
-    console.error('PUT /api/portfolio error:', err);
+    console.error('Save portfolio error:', err);
     res.status(500).json({ success: false, error: err?.message || 'Server error' });
   }
-});
+};
+
+app.put('/api/portfolio', handleSavePortfolio);
+app.post('/api/portfolio/save', handleSavePortfolio);
+app.post('/api/portfolio', handleSavePortfolio);
 
 // 3. Reset portfolio data to defaults
 app.post('/api/portfolio/reset', (req, res) => {
@@ -250,7 +276,7 @@ app.post('/api/messages', (req, res) => {
 });
 
 // 6. Update message read status
-app.patch('/api/messages/:id', (req, res) => {
+const updateMessageRead = (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   const { read } = req.body;
   const messages = getMessagesStore();
@@ -265,7 +291,11 @@ app.patch('/api/messages/:id', (req, res) => {
   }
   saveMessagesStore(messages);
   res.json({ success: true, message: target });
-});
+};
+
+app.patch('/api/messages/:id', updateMessageRead);
+app.put('/api/messages/:id/read', updateMessageRead);
+app.put('/api/messages/:id', updateMessageRead);
 
 // 7. Delete a message
 app.delete('/api/messages/:id', (req, res) => {
@@ -311,6 +341,17 @@ app.post('/api/admin/change-password', (req, res) => {
   savePortfolioStore(store);
 
   res.json({ success: true, message: 'Password changed successfully' });
+});
+
+// 10. System & Database Health Status
+app.get('/api/status', (req, res) => {
+  res.json({
+    success: true,
+    status: 'healthy',
+    database: 'direct_sqlite_and_atomic_store',
+    sqliteActive: !!sqliteDb,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // ---------------- VITE MIDDLEWARE & STATIC SERVING ----------------

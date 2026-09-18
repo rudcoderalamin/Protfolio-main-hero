@@ -109,8 +109,8 @@ export default function App() {
 
     syncData();
 
-    // Re-check periodically every 4 seconds as redundant backup
-    const pollInterval = setInterval(syncData, 4000);
+    // Gentle background check every 60 seconds as a safety net (avoids consuming Firestore quota)
+    const pollInterval = setInterval(syncData, 60000);
 
     // Re-check when window is focused or becomes visible (e.g. user switches tabs from admin to main site)
     const onFocus = () => syncData();
