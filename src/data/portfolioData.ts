@@ -49,38 +49,14 @@ export const DEFAULT_PROFILE_PHOTOS: ProfilePhoto[] = [
   {
     id: "official-portrait",
     url: "/imran-hasan.jpg",
-    caption: "Al Amin Islam — Official Portfolio Portrait",
+    caption: "Al Amin Islam — Official Profile Portrait",
     tag: "Official"
   },
   {
     id: "saree-traditional",
     url: "/photo-saree.jpg",
-    caption: "Traditional & Rooftop Portrait",
+    caption: "Aesthetic Rooftop Portrait",
     tag: "Aesthetic"
-  },
-  {
-    id: "presentation-event",
-    url: "/gallery/presentation.jpg",
-    caption: "Al Amin Islam — Onsite Presentation & Speaking",
-    tag: "Event"
-  },
-  {
-    id: "official-transparent",
-    url: "/Profile-Photo.png",
-    caption: "Al Amin Islam — High-Res Developer Profile",
-    tag: "Developer"
-  },
-  {
-    id: "champion-awards",
-    url: "/gallery/champion.jpg",
-    caption: "Institute Skill Competition Champion",
-    tag: "Awards"
-  },
-  {
-    id: "icpc-closing",
-    url: "/gallery/icpc.jpg",
-    caption: "ICPC Asia Dhaka Regional Contest",
-    tag: "ICPC"
   }
 ];
 

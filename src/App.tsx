@@ -20,7 +20,8 @@ import {
   getStoredPhotos,
   saveStoredPhotos,
   fetchPortfolioFromServer,
-  savePortfolioToServer
+  savePortfolioToServer,
+  subscribeToGlobalPortfolio
 } from './utils/portfolioStorage';
 
 const getInitialRoute = (): 'portfolio' | 'admin' => {
@@ -84,24 +85,52 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // 0. Load & Sync global portfolio data & photos from server (Ensures global sync across all devices/browsers)
+  // 0. Load & Sync global portfolio data & photos via Firestore Real-Time + Server fallback
+  // This guarantees ANY change made in admin appears instantly on every device & browser worldwide!
   useEffect(() => {
-    fetchPortfolioFromServer().then((result) => {
+    // 1. Listen in real-time to Firestore Cloud Database
+    const unsubscribeFirestore = subscribeToGlobalPortfolio((updatedData, updatedPhotos) => {
+      setPortfolioData(updatedData);
+      if (updatedPhotos && updatedPhotos.length > 0) {
+        setPhotos(updatedPhotos);
+      }
+    });
+
+    // 2. Immediate fetch as backup
+    const syncData = async () => {
+      const result = await fetchPortfolioFromServer();
       if (result && result.data) {
         setPortfolioData(result.data);
         if (result.photos && result.photos.length > 0) {
           setPhotos(result.photos);
         }
       }
-    });
+    };
+
+    syncData();
+
+    // Re-check when window is focused or becomes visible (e.g. user switches tabs from admin to main site)
+    const onFocus = () => syncData();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        syncData();
+      }
+    };
+
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      unsubscribeFirestore();
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
   }, []);
 
   // 1. Advance photo index on every web reload ("web reload dilei photo gulo change hote thakbe")
   useEffect(() => {
     try {
       const storedPhotos = getStoredPhotos();
-      setPhotos(storedPhotos);
-
       const savedIndexStr = localStorage.getItem('alamin_active_photo_index');
       let nextIndex = 0;
       if (savedIndexStr !== null && storedPhotos.length > 0) {

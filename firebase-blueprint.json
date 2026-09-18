@@ -1,0 +1,48 @@
+{
+  "entities": {
+    "PortfolioSettings": {
+      "title": "Portfolio Settings",
+      "description": "Global portfolio profile configuration, text, bio, stats, and profile photos",
+      "type": "object",
+      "properties": {
+        "portfolioData": {
+          "type": "object",
+          "description": "All editable portfolio textual data, sections, skills, projects, and contact info"
+        },
+        "photos": {
+          "type": "array",
+          "description": "Selected profile photos for rotation and carousel",
+          "items": {
+            "type": "object"
+          }
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp of last update"
+        }
+      }
+    },
+    "ContactMessage": {
+      "title": "Contact Message",
+      "description": "Inquiries sent via the portfolio contact form",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "subject": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/portfolio/global": {
+      "schema": "PortfolioSettings",
+      "description": "Global portfolio configuration accessible by all visitors and editable from admin dashboard"
+    },
+    "/messages/{messageId}": {
+      "schema": "ContactMessage",
+      "description": "Contact form submissions"
+    }
+  }
+}

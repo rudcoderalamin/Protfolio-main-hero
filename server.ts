@@ -88,11 +88,20 @@ function saveMessagesStore(messages: any[]) {
 
 // 1. Get current portfolio data & photos (Global for all visitors/browsers)
 app.get('/api/portfolio', (req, res) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+    'Surrogate-Control': 'no-store'
+  });
   const store = getPortfolioStore();
+  const validPhotos = (store.photos || []).filter(
+    (p: any) => p && p.url && !p.url.includes('/gallery/') && !p.url.includes('Profile-Photo.png')
+  );
   res.json({
     success: true,
     portfolioData: store.portfolioData,
-    photos: store.photos,
+    photos: validPhotos.length > 0 ? validPhotos : DEFAULT_PROFILE_PHOTOS,
     adminPassword: store.adminPassword,
     updatedAt: store.updatedAt
   });
