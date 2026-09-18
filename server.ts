@@ -11,6 +11,9 @@ const PORT = 3000;
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Serve static assets (favicons, images) from public directory
+app.use(express.static(path.join(process.cwd(), 'public')));
+
 // File paths for persistence
 const DATA_DIR = path.join(process.cwd(), 'data');
 const PORTFOLIO_STORE_FILE = path.join(DATA_DIR, 'portfolio-store.json');

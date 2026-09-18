@@ -33,23 +33,39 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="w-full sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-slate-100 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-        {/* Left: Brand Monogram / Name */}
+        {/* Left: Brand Monogram / Name with Live Rotating Neon Light Effects */}
         <button
           onClick={() => onSelectSection('home')}
-          className="flex items-center gap-3 group focus:outline-none cursor-pointer"
+          className="flex items-center gap-3 group focus:outline-none cursor-pointer select-none"
           id="nav-brand-logo-btn"
           aria-label={`${brandName} Home`}
         >
-          <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-sky-600 text-white font-black text-sm tracking-wider shadow-sm group-hover:bg-sky-700 transition-all duration-150 group-hover:scale-105">
-            {brandInitials}
+          {/* Rotating Multi-Color Neon Border Logo Badge */}
+          <div className="w-10 h-10 sm:w-11 sm:h-11 neon-rotating-logo-box group-hover:scale-105 transition-transform duration-300 shrink-0">
+            <div className="neon-logo-inner">
+              <span className="neon-logo-letters text-sm sm:text-base font-black tracking-wider">
+                {brandInitials}
+              </span>
+            </div>
           </div>
-          <div className="text-left hidden min-[400px]:block">
-            <span className="block text-sm font-bold text-slate-900 group-hover:text-sky-600 transition-colors leading-tight">
-              {brandName}
-            </span>
-            <span className="block text-[11px] text-slate-500 font-medium leading-tight">
-              {portfolioData?.title || 'Fullstack Developer'}
-            </span>
+
+          {/* Glowing Multi-Color Live Neon Name & Title */}
+          <div className="text-left block min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="neon-live-text text-sm sm:text-base font-extrabold tracking-tight leading-tight truncate">
+                {brandName}
+              </span>
+              <span
+                className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping shrink-0"
+                title="Active & Available"
+              />
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-500 font-medium leading-tight mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 animate-pulse shadow-xs shadow-emerald-400" />
+              <span className="truncate text-slate-600 font-medium">
+                {portfolioData?.title || 'Fullstack Developer'}
+              </span>
+            </div>
           </div>
         </button>
 
