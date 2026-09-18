@@ -11,8 +11,13 @@ interface WhatsAppWidgetProps {
 
 export const WhatsAppWidget: React.FC<WhatsAppWidgetProps> = ({ portfolioData }) => {
   const data = portfolioData || PORTFOLIO_DATA;
+  const ww = data.whatsappWidget || PORTFOLIO_DATA.whatsappWidget;
   const [isOpen, setIsOpen] = useState(false);
-  const [message, setMessage] = useState(`Hi ${data.name.split(' ')[0] || 'Imran'}, I came across your portfolio and would like to discuss a project!`);
+  const [message, setMessage] = useState(
+    ww?.defaultMessage
+      ? ww.defaultMessage.replace('{name}', data.name || '')
+      : `Hi ${data.name || ''}, I came across your portfolio and would like to discuss a project!`
+  );
 
   const handleSend = () => {
     const encoded = encodeURIComponent(message);
@@ -39,7 +44,7 @@ export const WhatsAppWidget: React.FC<WhatsAppWidgetProps> = ({ portfolioData })
                 <div className="w-8 h-8 rounded-full overflow-hidden bg-white/20 p-0.5 border border-white/40">
                   <img
                     src="/imran-hasan.jpg"
-                    alt="Imran Hasan"
+                    alt={data.name || 'Profile'}
                     className="w-full h-full object-cover rounded-full"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = "https://github.com/DeveloperImran1.png";
@@ -47,13 +52,13 @@ export const WhatsAppWidget: React.FC<WhatsAppWidgetProps> = ({ portfolioData })
                   />
                 </div>
                 <div>
-                  <div className="font-semibold text-sm">Imran Hasan</div>
-                  <div className="text-[11px] text-emerald-200">Online • Typically replies fast</div>
+                  <div className="font-semibold text-sm">{data.name || 'Al Amin Islam'}</div>
+                  <div className="text-[11px] text-emerald-200">{ww?.statusText || 'Online • Typically replies fast'}</div>
                 </div>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1 rounded text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                className="p-1 rounded text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                 id="whatsapp-close-btn"
               >
                 <X className="w-4 h-4" />
@@ -63,8 +68,8 @@ export const WhatsAppWidget: React.FC<WhatsAppWidgetProps> = ({ portfolioData })
             {/* Chat Body */}
             <div className="p-3 bg-[#E5DDD5]/40 space-y-2">
               <div className="bg-white p-2.5 rounded-xl rounded-tl-none shadow-xs text-xs text-slate-700 max-w-[90%]">
-                Hi there! 👋 How can I help you today? Feel free to send a message directly to my WhatsApp.
-                <div className="text-[10px] text-slate-400 text-right mt-1">Just now</div>
+                {ww?.greetingText || ww?.greetingMessage || 'Hi there! 👋 How can I help you today? Feel free to send a message directly to my WhatsApp.'}
+                <div className="text-[10px] text-slate-400 text-right mt-1">{ww?.timeText || ww?.timeLabel || 'Just now'}</div>
               </div>
             </div>
 
@@ -75,7 +80,7 @@ export const WhatsAppWidget: React.FC<WhatsAppWidgetProps> = ({ portfolioData })
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 className="w-full text-xs p-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 text-slate-800 resize-none"
-                placeholder="Type your message..."
+                placeholder={ww?.placeholder || ww?.inputPlaceholder || 'Type your message...'}
                 id="whatsapp-text-input"
               />
               <button
@@ -84,7 +89,7 @@ export const WhatsAppWidget: React.FC<WhatsAppWidgetProps> = ({ portfolioData })
                 id="whatsapp-send-action-btn"
               >
                 <Send className="w-3.5 h-3.5" />
-                <span>Start WhatsApp Chat</span>
+                <span>{ww?.buttonText || ww?.sendBtnText || 'Start WhatsApp Chat'}</span>
               </button>
             </div>
           </motion.div>

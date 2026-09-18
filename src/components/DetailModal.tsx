@@ -18,28 +18,28 @@ export const DetailModal: React.FC<DetailModalProps> = ({ section, onClose, onOp
 
   const sectionConfig = {
     experience: {
-      title: 'Work Experience',
-      subtitle: 'Professional background & technical deliverables',
+      title: data.sectionTitles?.experience || 'Work Experience',
+      subtitle: data.sectionSubtitles?.experience || 'Professional background & technical deliverables',
       icon: Briefcase,
     },
     skills: {
-      title: 'Technical Skills & Stack',
-      subtitle: 'Languages, frameworks, databases & developer tooling',
+      title: data.sectionTitles?.skills || 'Technical Skills & Stack',
+      subtitle: data.sectionSubtitles?.skills || 'Languages, frameworks, databases & developer tooling',
       icon: Code2,
     },
     projects: {
-      title: 'Featured Fullstack Projects',
-      subtitle: 'High-performance web applications built from scratch',
+      title: data.sectionTitles?.projects || 'Featured Fullstack Projects',
+      subtitle: data.sectionSubtitles?.projects || 'High-performance web applications built from scratch',
       icon: FolderGit2,
     },
     achievements: {
-      title: 'Achievements & Competitive Programming',
-      subtitle: 'Contest honors, ratings, and problem-solving track record',
+      title: data.sectionTitles?.achievements || 'Achievements & Competitive Programming',
+      subtitle: data.sectionSubtitles?.achievements || 'Contest honors, ratings, and problem-solving track record',
       icon: Trophy,
     },
     education: {
-      title: 'Education & Academic Training',
-      subtitle: 'Formal coursework and foundational computer science',
+      title: data.sectionTitles?.education || 'Education & Academic Training',
+      subtitle: data.sectionSubtitles?.education || 'Formal coursework and foundational computer science',
       icon: GraduationCap,
     },
   }[section];

@@ -10,10 +10,11 @@ interface BookCallModalProps {
 }
 
 export const BookCallModal: React.FC<BookCallModalProps> = ({ isOpen, onClose, portfolioData }) => {
+  const bm = portfolioData?.bookCallModal;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [topic, setTopic] = useState('Fullstack Project Consultation');
+  const [topic, setTopic] = useState(bm?.topicDefault || 'Fullstack Project Consultation');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSent, setIsSent] = useState(false);
@@ -80,13 +81,15 @@ export const BookCallModal: React.FC<BookCallModalProps> = ({ isOpen, onClose, p
               <MessageSquare className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Direct Contact & Discussion</h2>
-              <p className="text-xs text-slate-500">Send your message directly to {developerName}</p>
+              <h2 className="text-lg font-bold text-slate-900">{bm?.title || 'Direct Contact & Discussion'}</h2>
+              <p className="text-xs text-slate-500">
+                {bm?.subtitle ? bm.subtitle.replace('{name}', developerName) : `Send your message directly to ${developerName}`}
+              </p>
             </div>
           </div>
           <button
             onClick={handleResetAndClose}
-            className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
             id="book-call-close-btn"
           >
             <X className="w-5 h-5" />
@@ -100,9 +103,9 @@ export const BookCallModal: React.FC<BookCallModalProps> = ({ isOpen, onClose, p
               <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4 animate-bounce">
                 <CheckCircle2 className="w-9 h-9" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">Message Sent Successfully!</h3>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">{bm?.successTitle || 'Message Sent Successfully!'}</h3>
               <p className="text-sm text-slate-600 max-w-sm mx-auto mb-5">
-                Thank you <span className="font-semibold text-slate-800">{name}</span>! Your inquiry has been received directly. {developerName} will review your message and contact you at <span className="font-semibold text-slate-800">{email}</span>{phone ? ` or ${phone}` : ''} shortly.
+                {bm?.successDescription || `Thank you ${name}! Your inquiry has been received directly. ${developerName} will review your message and reach out shortly.`}
               </p>
               
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-left text-xs space-y-1.5 mb-6 max-w-md mx-auto">
@@ -124,10 +127,10 @@ export const BookCallModal: React.FC<BookCallModalProps> = ({ isOpen, onClose, p
 
               <button
                 onClick={handleResetAndClose}
-                className="px-6 py-2.5 rounded-xl bg-sky-600 text-white text-sm font-semibold hover:bg-sky-700 transition-colors shadow-xs"
+                className="px-6 py-2.5 rounded-xl bg-sky-600 text-white text-sm font-semibold hover:bg-sky-700 transition-colors shadow-xs cursor-pointer"
                 id="modal-done-booking-btn"
               >
-                Back to Portfolio
+                {bm?.successCloseBtn || 'Back to Portfolio'}
               </button>
             </div>
           ) : (
@@ -142,7 +145,7 @@ export const BookCallModal: React.FC<BookCallModalProps> = ({ isOpen, onClose, p
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Your Name <span className="text-red-500">*</span>
+                    {bm?.nameLabel || 'Your Name'} <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <User className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
@@ -151,7 +154,7 @@ export const BookCallModal: React.FC<BookCallModalProps> = ({ isOpen, onClose, p
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Alex Johnson"
+                      placeholder={bm?.namePlaceholder || 'e.g. Alex Johnson'}
                       className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent text-slate-800"
                       id="book-name-input"
                     />
@@ -159,7 +162,7 @@ export const BookCallModal: React.FC<BookCallModalProps> = ({ isOpen, onClose, p
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Your Email <span className="text-red-500">*</span>
+                    {bm?.emailLabel || 'Your Email'} <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
@@ -168,7 +171,7 @@ export const BookCallModal: React.FC<BookCallModalProps> = ({ isOpen, onClose, p
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="alex@example.com"
+                      placeholder={bm?.emailPlaceholder || 'alex@example.com'}
                       className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent text-slate-800"
                       id="book-email-input"
                     />
@@ -179,7 +182,7 @@ export const BookCallModal: React.FC<BookCallModalProps> = ({ isOpen, onClose, p
               {/* Phone / WhatsApp */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Phone / WhatsApp Number (Optional)
+                  {bm?.phoneLabel || 'Phone / WhatsApp Number (Optional)'}
                 </label>
                 <div className="relative">
                   <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
@@ -187,7 +190,7 @@ export const BookCallModal: React.FC<BookCallModalProps> = ({ isOpen, onClose, p
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+880 1700-000000 or WhatsApp"
+                    placeholder={bm?.phonePlaceholder || '+880 1700-000000 or WhatsApp'}
                     className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent text-slate-800"
                     id="book-phone-input"
                   />
@@ -197,7 +200,7 @@ export const BookCallModal: React.FC<BookCallModalProps> = ({ isOpen, onClose, p
               {/* Purpose / Topic */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Inquiry Type / Purpose
+                  {bm?.topicLabel || 'Inquiry Type / Purpose'}
                 </label>
                 <select
                   value={topic}
@@ -216,14 +219,14 @@ export const BookCallModal: React.FC<BookCallModalProps> = ({ isOpen, onClose, p
               {/* Message Details */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Your Message & Details <span className="text-red-500">*</span>
+                  {bm?.messageLabel || 'Your Message & Details'} <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   required
                   rows={4}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Tell me about your project, timeline, questions, or opportunity..."
+                  placeholder={bm?.messagePlaceholder || 'Tell me about your project, timeline, questions, or opportunity...'}
                   className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent text-slate-800 resize-none"
                   id="book-message-textarea"
                 />
@@ -234,18 +237,18 @@ export const BookCallModal: React.FC<BookCallModalProps> = ({ isOpen, onClose, p
                 <button
                   type="button"
                   onClick={handleResetAndClose}
-                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white text-sm font-semibold shadow-xs transition-all disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white text-sm font-semibold shadow-xs transition-all disabled:opacity-50 cursor-pointer"
                   id="book-confirm-submit-btn"
                 >
                   <Send className="w-4 h-4" />
-                  {isSubmitting ? 'Sending...' : 'Send Message'}
+                  {isSubmitting ? (bm?.submittingText || 'Sending...') : (bm?.submitBtnText || 'Send Message')}
                 </button>
               </div>
             </form>

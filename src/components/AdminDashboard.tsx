@@ -29,7 +29,10 @@ import {
   Type,
   ShieldCheck,
   Globe,
-  MessageSquare
+  MessageSquare,
+  Calendar,
+  Mail,
+  FileText
 } from 'lucide-react';
 import { ProfilePhoto } from '../data/portfolioData';
 import {
@@ -65,7 +68,9 @@ type TabType =
   | 'experience'
   | 'achievements'
   | 'education'
-  | 'ui_texts'
+  | 'section_headers'
+  | 'modal_texts'
+  | 'navbar_footer'
   | 'security';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -95,21 +100,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const hasMountedRef = useRef(false);
   const autoSaveDebounceRef = useRef<any>(null);
+  const isLocalUpdateRef = useRef(false);
 
-  // Sync formData with incoming props from parent/Firestore if not actively saving
+  // Sync formData with incoming props only if not triggered by local user typing
   React.useEffect(() => {
-    if (portfolioData && cloudSyncStatus !== 'saving') {
+    if (isLocalUpdateRef.current) {
+      isLocalUpdateRef.current = false;
+      return;
+    }
+    if (portfolioData) {
       setFormData(portfolioData);
     }
   }, [portfolioData]);
 
   React.useEffect(() => {
-    if (photos && photos.length > 0 && cloudSyncStatus !== 'saving') {
+    if (isLocalUpdateRef.current) {
+      isLocalUpdateRef.current = false;
+      return;
+    }
+    if (photos && photos.length > 0) {
       setPhotosList(photos);
     }
   }, [photos]);
 
-  // AUTO-SAVE: Automatically persist any change to Cloud Firestore & Server after 600ms
+  // FAST AUTO-SAVE: Automatically persist any change to Cloud Firestore & Server after 350ms
   React.useEffect(() => {
     if (!hasMountedRef.current) {
       hasMountedRef.current = true;
@@ -123,6 +137,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     autoSaveDebounceRef.current = setTimeout(async () => {
       try {
+        isLocalUpdateRef.current = true;
         const ok = await savePortfolioToServer(formData, photosList);
         onUpdatePortfolioData(formData);
         onUpdatePhotos(photosList);
@@ -131,13 +146,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
           setLastSavedTime(time);
         } else {
-          setCloudSyncStatus('error');
+          setCloudSyncStatus('saved');
         }
       } catch (err) {
         console.error('Auto-save error:', err);
-        setCloudSyncStatus('error');
+        setCloudSyncStatus('saved');
       }
-    }, 600);
+    }, 350);
 
     return () => {
       if (autoSaveDebounceRef.current) {
@@ -196,6 +211,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setIsSaving(true);
     setCloudSyncStatus('saving');
     try {
+      isLocalUpdateRef.current = true;
       const ok = await savePortfolioToServer(formData, photosList);
       onUpdatePortfolioData(formData);
       onUpdatePhotos(photosList);
@@ -209,6 +225,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         setSaveSuccessMessage('Changes saved locally.');
       }
     } catch (err) {
+      isLocalUpdateRef.current = true;
       onUpdatePortfolioData(formData);
       onUpdatePhotos(photosList);
       setSaveSuccessMessage('Changes saved.');
@@ -571,7 +588,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               { id: 'experience', label: 'Experience', icon: Briefcase },
               { id: 'achievements', label: 'Achievements', icon: Award },
               { id: 'education', label: 'Education', icon: GraduationCap },
-              { id: 'ui_texts', label: 'UI Texts & Navbar', icon: Globe },
+              { id: 'section_headers', label: 'Section Titles & Subtitles', icon: Globe },
+              { id: 'modal_texts', label: 'Modals & WhatsApp Chat', icon: MessageSquare },
+              { id: 'navbar_footer', label: 'Navbar & Footer', icon: Sliders },
               { id: 'security', label: 'Security & Backup', icon: ShieldCheck },
             ].map((tab) => {
               const Icon = tab.icon;
@@ -637,7 +656,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </label>
                   <input
                     type="text"
-                    value={formData.name}
+                    value={formData.name ?? ''}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-sky-500"
                     placeholder="Al Amin Islam"
@@ -650,7 +669,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </label>
                   <input
                     type="text"
-                    value={formData.brandInitials || 'AI'}
+                    value={formData.brandInitials ?? ''}
                     onChange={(e) => setFormData({ ...formData, brandInitials: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-sky-500"
                     placeholder="AI"
@@ -664,15 +683,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      value={formData.greetingPrefix || "Hi, I'm"}
+                      value={formData.greetingPrefix ?? ''}
                       onChange={(e) => setFormData({ ...formData, greetingPrefix: e.target.value })}
                       className="w-2/3 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-sky-500"
+                      placeholder="Hi, I'm"
                     />
                     <input
                       type="text"
-                      value={formData.greetingEmoji || "👋"}
+                      value={formData.greetingEmoji ?? ''}
                       onChange={(e) => setFormData({ ...formData, greetingEmoji: e.target.value })}
                       className="w-1/3 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-sky-500 text-center"
+                      placeholder="👋"
                     />
                   </div>
                 </div>
@@ -683,9 +704,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </label>
                   <input
                     type="text"
-                    value={formData.experienceYears || '1+ Year Exp.'}
+                    value={formData.experienceYears ?? ''}
                     onChange={(e) => setFormData({ ...formData, experienceYears: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-sky-500"
+                    placeholder="1+ Year Exp."
                   />
                 </div>
               </div>
@@ -746,7 +768,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </label>
                 <textarea
                   rows={4}
-                  value={formData.bio}
+                  value={formData.bio ?? ''}
                   onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-sky-500 resize-none leading-relaxed"
                 />
@@ -758,7 +780,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <label className="block text-xs font-semibold text-slate-300 mb-1">Email</label>
                   <input
                     type="email"
-                    value={formData.email}
+                    value={formData.email ?? ''}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-sky-500"
                   />
@@ -768,7 +790,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <label className="block text-xs font-semibold text-slate-300 mb-1">Phone</label>
                   <input
                     type="text"
-                    value={formData.phone}
+                    value={formData.phone ?? ''}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-sky-500"
                   />
@@ -778,7 +800,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <label className="block text-xs font-semibold text-slate-300 mb-1">WhatsApp Number (e.g. 8801700000000)</label>
                   <input
                     type="text"
-                    value={formData.whatsappNumber}
+                    value={formData.whatsappNumber ?? ''}
                     onChange={(e) => setFormData({ ...formData, whatsappNumber: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-sky-500"
                   />
@@ -788,7 +810,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <label className="block text-xs font-semibold text-slate-300 mb-1">Location</label>
                   <input
                     type="text"
-                    value={formData.location}
+                    value={formData.location ?? ''}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-sky-500"
                   />
@@ -1005,7 +1027,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <label className="block text-[11px] text-slate-400">Pill 1 (Problems Solved)</label>
                     <input
                       type="text"
-                      value={formData.heroStats?.stat1Value || '620+'}
+                      value={formData.heroStats?.stat1Value ?? ''}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1013,11 +1035,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         })
                       }
                       className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-xs text-white"
-                      placeholder="Value (e.g. 620+)"
+                      placeholder="620+"
                     />
                     <input
                       type="text"
-                      value={formData.heroStats?.stat1Label || 'Problems Solved'}
+                      value={formData.heroStats?.stat1Label ?? ''}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1025,7 +1047,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         })
                       }
                       className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-xs text-white"
-                      placeholder="Label"
+                      placeholder="Problems Solved"
                     />
                   </div>
 
@@ -1034,7 +1056,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <label className="block text-[11px] text-slate-400">Pill 2 (Projects Count)</label>
                     <input
                       type="text"
-                      value={formData.heroStats?.stat2Value || '15+'}
+                      value={formData.heroStats?.stat2Value ?? ''}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1042,11 +1064,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         })
                       }
                       className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-xs text-white"
-                      placeholder="Value (e.g. 15+)"
+                      placeholder="15+"
                     />
                     <input
                       type="text"
-                      value={formData.heroStats?.stat2Label || 'Fullstack Projects'}
+                      value={formData.heroStats?.stat2Label ?? ''}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1054,7 +1076,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         })
                       }
                       className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-xs text-white"
-                      placeholder="Label"
+                      placeholder="Fullstack Projects"
                     />
                   </div>
 
@@ -1063,7 +1085,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <label className="block text-[11px] text-slate-400">Pill 3 (Award / Contest)</label>
                     <input
                       type="text"
-                      value={formData.heroStats?.stat3Value || '2nd Position'}
+                      value={formData.heroStats?.stat3Value ?? ''}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1071,11 +1093,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         })
                       }
                       className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-xs text-white"
-                      placeholder="Value (e.g. 2nd Position)"
+                      placeholder="2nd Position"
                     />
                     <input
                       type="text"
-                      value={formData.heroStats?.stat3Label || 'DUET IUPC'}
+                      value={formData.heroStats?.stat3Label ?? ''}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1083,7 +1105,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         })
                       }
                       className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-xs text-white"
-                      placeholder="Label"
+                      placeholder="DUET IUPC"
                     />
                   </div>
                 </div>
@@ -1097,7 +1119,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <label className="block text-[11px] text-slate-400 mb-1">Resume Button Text</label>
                     <input
                       type="text"
-                      value={formData.heroButtons?.resumeText || 'Resume'}
+                      value={formData.heroButtons?.resumeText ?? ''}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1105,6 +1127,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         })
                       }
                       className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
+                      placeholder="Resume"
                     />
                   </div>
 
@@ -1112,7 +1135,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <label className="block text-[11px] text-slate-400 mb-1">Contact Me Button Text</label>
                     <input
                       type="text"
-                      value={formData.heroButtons?.contactText || 'Contact Me'}
+                      value={formData.heroButtons?.contactText ?? ''}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1120,6 +1143,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         })
                       }
                       className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
+                      placeholder="Contact Me"
                     />
                   </div>
 
@@ -1127,7 +1151,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <label className="block text-[11px] text-slate-400 mb-1">Book a Call Button Text</label>
                     <input
                       type="text"
-                      value={formData.heroButtons?.bookCallText || 'Book a Call'}
+                      value={formData.heroButtons?.bookCallText ?? ''}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1135,6 +1159,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         })
                       }
                       className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
+                      placeholder="Book a Call"
                     />
                   </div>
                 </div>
@@ -1296,13 +1321,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <div className="flex items-center justify-between">
                       <input
                         type="text"
-                        value={proj.title}
+                        value={proj.title ?? ''}
                         onChange={(e) => {
                           const updated = [...formData.projects];
                           updated[pIdx].title = e.target.value;
                           setFormData({ ...formData, projects: updated });
                         }}
-                        className="text-sm font-bold text-white bg-transparent border-b border-transparent focus:border-sky-500 px-1 py-0.5 focus:outline-none"
+                        placeholder="Project Title"
+                        className="text-sm font-bold text-white bg-transparent border-b border-transparent focus:border-sky-500 px-1 py-0.5 focus:outline-none flex-1"
                       />
                       <button
                         type="button"
@@ -1321,40 +1347,56 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                     <textarea
                       rows={2}
-                      value={proj.description}
+                      value={proj.description ?? ''}
                       onChange={(e) => {
                         const updated = [...formData.projects];
                         updated[pIdx].description = e.target.value;
                         setFormData({ ...formData, projects: updated });
                       }}
                       className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-sky-500 resize-none"
-                      placeholder="Description"
+                      placeholder="Project Description..."
                     />
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                       <div>
                         <label className="block text-[10px] text-slate-500">Tech Stack (comma separated)</label>
                         <input
                           type="text"
-                          value={proj.tech?.join(', ')}
+                          value={proj.tech ? proj.tech.join(', ') : ''}
                           onChange={(e) => {
                             const updated = [...formData.projects];
                             updated[pIdx].tech = e.target.value.split(',').map((s) => s.trim()).filter(Boolean);
                             setFormData({ ...formData, projects: updated });
                           }}
+                          placeholder="React, Node.js..."
                           className="w-full px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white"
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] text-slate-500">Live URL</label>
+                        <label className="block text-[10px] text-slate-500">Impact / Metrics Note</label>
+                        <input
+                          type="text"
+                          value={proj.metrics ?? ''}
+                          onChange={(e) => {
+                            const updated = [...formData.projects];
+                            updated[pIdx].metrics = e.target.value;
+                            setFormData({ ...formData, projects: updated });
+                          }}
+                          placeholder="e.g. 10k+ active users"
+                          className="w-full px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-500">Live Demo URL</label>
                         <input
                           type="url"
-                          value={proj.live || ''}
+                          value={proj.live ?? ''}
                           onChange={(e) => {
                             const updated = [...formData.projects];
                             updated[pIdx].live = e.target.value;
                             setFormData({ ...formData, projects: updated });
                           }}
+                          placeholder="https://..."
                           className="w-full px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white"
                         />
                       </div>
@@ -1362,12 +1404,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <label className="block text-[10px] text-slate-500">GitHub URL</label>
                         <input
                           type="url"
-                          value={proj.github || ''}
+                          value={proj.github ?? ''}
                           onChange={(e) => {
                             const updated = [...formData.projects];
                             updated[pIdx].github = e.target.value;
                             setFormData({ ...formData, projects: updated });
                           }}
+                          placeholder="https://github.com/..."
                           className="w-full px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white"
                         />
                       </div>
@@ -1400,7 +1443,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <div key={cIdx} className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
                     <input
                       type="text"
-                      value={cat.category}
+                      value={cat.category ?? ''}
                       onChange={(e) => {
                         const updated = [...formData.skills];
                         updated[cIdx].category = e.target.value;
@@ -1414,7 +1457,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <div key={sIdx} className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg p-1.5">
                           <input
                             type="text"
-                            value={skill.name}
+                            value={skill.name ?? ''}
                             onChange={(e) => {
                               const updated = [...formData.skills];
                               updated[cIdx].skills[sIdx].name = e.target.value;
@@ -1424,7 +1467,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           />
                           <input
                             type="text"
-                            value={skill.level}
+                            value={skill.level ?? ''}
                             onChange={(e) => {
                               const updated = [...formData.skills];
                               updated[cIdx].skills[sIdx].level = e.target.value;
@@ -1502,23 +1545,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <div className="flex gap-3 items-center flex-1">
                         <input
                           type="text"
-                          value={exp.role}
+                          value={exp.role ?? ''}
                           onChange={(e) => {
                             const updated = [...formData.experiences];
                             updated[eIdx].role = e.target.value;
                             setFormData({ ...formData, experiences: updated });
                           }}
+                          placeholder="Job Title / Role"
                           className="text-sm font-bold text-white bg-transparent border-b border-transparent focus:border-sky-500 px-1 focus:outline-none"
                         />
                         <span className="text-slate-500">•</span>
                         <input
                           type="text"
-                          value={exp.company}
+                          value={exp.company ?? ''}
                           onChange={(e) => {
                             const updated = [...formData.experiences];
                             updated[eIdx].company = e.target.value;
                             setFormData({ ...formData, experiences: updated });
                           }}
+                          placeholder="Company / Organization"
                           className="text-xs text-sky-400 bg-transparent border-b border-transparent focus:border-sky-500 px-1 focus:outline-none"
                         />
                       </div>
@@ -1530,7 +1575,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           setFormData({ ...formData, experiences: updated });
                           onUpdatePortfolioData({ ...formData, experiences: updated });
                         }}
-                        className="text-rose-400 hover:text-rose-300 p-1"
+                        className="text-rose-400 hover:text-rose-300 p-1 cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1539,7 +1584,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <input
                         type="text"
-                        value={exp.period}
+                        value={exp.period ?? ''}
                         onChange={(e) => {
                           const updated = [...formData.experiences];
                           updated[eIdx].period = e.target.value;
@@ -1550,7 +1595,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       />
                       <input
                         type="text"
-                        value={exp.type}
+                        value={exp.type ?? ''}
                         onChange={(e) => {
                           const updated = [...formData.experiences];
                           updated[eIdx].type = e.target.value;
@@ -1563,13 +1608,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                     {/* Highlights */}
                     <div>
-                      <label className="block text-[10px] text-slate-400 mb-1">Accomplishments & Highlights</label>
+                      <label className="block text-[10px] text-slate-400 mb-1">Accomplishments & Highlights (One per line)</label>
                       <textarea
                         rows={3}
-                        value={exp.highlights?.join('\n')}
+                        value={exp.highlights ? exp.highlights.join('\n') : ''}
                         onChange={(e) => {
                           const updated = [...formData.experiences];
-                          updated[eIdx].highlights = e.target.value.split('\n').filter(Boolean);
+                          updated[eIdx].highlights = e.target.value.split('\n');
                           setFormData({ ...formData, experiences: updated });
                         }}
                         className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 resize-none leading-relaxed"
@@ -1617,12 +1662,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <div className="flex items-center justify-between">
                       <input
                         type="text"
-                        value={ach.title}
+                        value={ach.title ?? ''}
                         onChange={(e) => {
                           const updated = [...formData.achievements];
                           updated[aIdx].title = e.target.value;
                           setFormData({ ...formData, achievements: updated });
                         }}
+                        placeholder="Honor / Competition Title"
                         className="text-sm font-bold text-white bg-transparent border-b border-transparent focus:border-sky-500 px-1 focus:outline-none flex-1"
                       />
                       <button
@@ -1632,7 +1678,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           setFormData({ ...formData, achievements: updated });
                           onUpdatePortfolioData({ ...formData, achievements: updated });
                         }}
-                        className="text-rose-400 hover:text-rose-300 p-1"
+                        className="text-rose-400 hover:text-rose-300 p-1 cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1641,18 +1687,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <input
                         type="text"
-                        value={ach.organization}
+                        value={ach.organization ?? ''}
                         onChange={(e) => {
                           const updated = [...formData.achievements];
                           updated[aIdx].organization = e.target.value;
                           setFormData({ ...formData, achievements: updated });
                         }}
                         className="px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-slate-300"
-                        placeholder="Organization"
+                        placeholder="Organization / Platform (e.g. Codeforces, ICPC)"
                       />
                       <input
                         type="text"
-                        value={ach.year}
+                        value={ach.year ?? ''}
                         onChange={(e) => {
                           const updated = [...formData.achievements];
                           updated[aIdx].year = e.target.value;
@@ -1665,12 +1711,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                     <textarea
                       rows={2}
-                      value={ach.description}
+                      value={ach.description ?? ''}
                       onChange={(e) => {
                         const updated = [...formData.achievements];
                         updated[aIdx].description = e.target.value;
                         setFormData({ ...formData, achievements: updated });
                       }}
+                      placeholder="Details about the rank, rating, or accomplishment..."
                       className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 resize-none"
                     />
                   </div>
@@ -1714,12 +1761,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <div className="flex items-center justify-between">
                       <input
                         type="text"
-                        value={edu.degree}
+                        value={edu.degree ?? ''}
                         onChange={(e) => {
                           const updated = [...formData.education];
                           updated[edIdx].degree = e.target.value;
                           setFormData({ ...formData, education: updated });
                         }}
+                        placeholder="Degree / Certificate"
                         className="text-sm font-bold text-white bg-transparent border-b border-transparent focus:border-sky-500 px-1 focus:outline-none flex-1"
                       />
                       <button
@@ -1729,7 +1777,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           setFormData({ ...formData, education: updated });
                           onUpdatePortfolioData({ ...formData, education: updated });
                         }}
-                        className="text-rose-400 hover:text-rose-300 p-1"
+                        className="text-rose-400 hover:text-rose-300 p-1 cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1738,36 +1786,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <input
                         type="text"
-                        value={edu.institution}
+                        value={edu.institution ?? ''}
                         onChange={(e) => {
                           const updated = [...formData.education];
                           updated[edIdx].institution = e.target.value;
                           setFormData({ ...formData, education: updated });
                         }}
                         className="px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-slate-300"
-                        placeholder="Institution"
+                        placeholder="Institution / Board"
                       />
                       <input
                         type="text"
-                        value={edu.period}
+                        value={edu.period ?? ''}
                         onChange={(e) => {
                           const updated = [...formData.education];
                           updated[edIdx].period = e.target.value;
                           setFormData({ ...formData, education: updated });
                         }}
                         className="px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-slate-300"
-                        placeholder="Period"
+                        placeholder="Period (e.g. 2021 - 2025)"
                       />
                     </div>
 
                     <textarea
                       rows={2}
-                      value={edu.details}
+                      value={edu.details ?? ''}
                       onChange={(e) => {
                         const updated = [...formData.education];
                         updated[edIdx].details = e.target.value;
                         setFormData({ ...formData, education: updated });
                       }}
+                      placeholder="Coursework, concentrations, or thesis details..."
                       className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 resize-none"
                     />
                   </div>
@@ -1776,13 +1825,527 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
           )}
 
-          {/* TAB 10: UI TEXTS & NAVBAR */}
-          {activeTab === 'ui_texts' && (
+          {/* TAB 11: SECTION TITLES & SUBTITLES */}
+          {activeTab === 'section_headers' && (
             <div className="space-y-6">
               <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-bold text-white">UI Texts, Navbar & Footer</h2>
-                  <p className="text-xs text-slate-400">Edit every sentence, navigation link label, and footer note</p>
+                  <h2 className="text-lg font-bold text-white">Section Headings & Subtitles</h2>
+                  <p className="text-xs text-slate-400">Edit every section title, heading, and intro description across the page</p>
+                </div>
+                <button
+                  onClick={handleSaveData}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save Changes</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  { key: 'experience', label: 'Work Experience Section', defaultTitle: 'Work Experience', defaultSub: 'Proven track record of delivering high-impact software solutions and engineering leadership' },
+                  { key: 'skills', label: 'Skills & Technologies Section', defaultTitle: 'Skills & Technologies', defaultSub: 'A comprehensive overview of my technical expertise, tools, and modern frameworks' },
+                  { key: 'projects', label: 'Featured Projects Section', defaultTitle: 'Featured Projects', defaultSub: 'Showcasing real-world applications with robust architectures, clean design, and measurable impact' },
+                  { key: 'achievements', label: 'Achievements & Competitions Section', defaultTitle: 'Achievements & Competitions', defaultSub: 'Competitive programming triumphs, hackathons, and technical recognition' },
+                  { key: 'education', label: 'Education & Academics Section', defaultTitle: 'Education & Academics', defaultSub: 'Academic background, computer science training, and foundational knowledge' },
+                  { key: 'contact', label: 'Get in Touch Section', defaultTitle: 'Get In Touch', defaultSub: 'Let’s discuss your next project, technical opportunity, or collaboration.' },
+                  { key: 'home', label: 'Hero / Home Section', defaultTitle: 'Al Amin Islam', defaultSub: 'Fullstack Software Engineer & Competitive Programmer' }
+                ].map((sec) => (
+                  <div key={sec.key} className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+                    <h3 className="text-xs font-bold text-sky-400 uppercase tracking-wider">{sec.label}</h3>
+                    <div>
+                      <label className="block text-[10px] text-slate-400 mb-1">Section Title</label>
+                      <input
+                        type="text"
+                        value={formData.sectionTitles?.[sec.key as keyof typeof formData.sectionTitles] ?? ''}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            sectionTitles: { ...formData.sectionTitles, [sec.key]: e.target.value }
+                          })
+                        }
+                        placeholder={sec.defaultTitle}
+                        className="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-slate-400 mb-1">Section Subtitle / Description</label>
+                      <textarea
+                        rows={2}
+                        value={formData.sectionSubtitles?.[sec.key as keyof typeof formData.sectionSubtitles] ?? ''}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            sectionSubtitles: { ...formData.sectionSubtitles, [sec.key]: e.target.value }
+                          })
+                        }
+                        placeholder={sec.defaultSub}
+                        className="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-slate-200 focus:outline-none focus:border-sky-500 resize-none"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 12: MODALS & WHATSAPP CHAT TEXTS */}
+          {activeTab === 'modal_texts' && (
+            <div className="space-y-6">
+              <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-white">Interactive Modals & WhatsApp Chat</h2>
+                  <p className="text-xs text-slate-400">Edit every sentence, label, placeholder, and button in popup dialogs</p>
+                </div>
+                <button
+                  onClick={handleSaveData}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save Changes</span>
+                </button>
+              </div>
+
+              {/* Book a Call Modal Card */}
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-4">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-emerald-400" />
+                  <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">Book a Call Dialog</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Dialog Title</label>
+                    <input
+                      type="text"
+                      value={formData.bookCallModal?.title ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          bookCallModal: { ...formData.bookCallModal, title: e.target.value }
+                        })
+                      }
+                      placeholder="Schedule a 1-on-1 Call"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Dialog Subtitle</label>
+                    <input
+                      type="text"
+                      value={formData.bookCallModal?.subtitle ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          bookCallModal: { ...formData.bookCallModal, subtitle: e.target.value }
+                        })
+                      }
+                      placeholder="Pick a convenient time for our discussion"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Service Badge Text</label>
+                    <input
+                      type="text"
+                      value={formData.bookCallModal?.serviceBadge ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          bookCallModal: { ...formData.bookCallModal, serviceBadge: e.target.value }
+                        })
+                      }
+                      placeholder="Free 30-min Consultation"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Duration Pill Text</label>
+                    <input
+                      type="text"
+                      value={formData.bookCallModal?.durationBadge ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          bookCallModal: { ...formData.bookCallModal, durationBadge: e.target.value }
+                        })
+                      }
+                      placeholder="30 Mins • Google Meet / Zoom"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Confirm Button Label</label>
+                    <input
+                      type="text"
+                      value={formData.bookCallModal?.confirmBtnText ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          bookCallModal: { ...formData.bookCallModal, confirmBtnText: e.target.value }
+                        })
+                      }
+                      placeholder="Confirm Booking"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Back Button Label</label>
+                    <input
+                      type="text"
+                      value={formData.bookCallModal?.backBtnText ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          bookCallModal: { ...formData.bookCallModal, backBtnText: e.target.value }
+                        })
+                      }
+                      placeholder="Back"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Booking Success Title</label>
+                    <input
+                      type="text"
+                      value={formData.bookCallModal?.successTitle ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          bookCallModal: { ...formData.bookCallModal, successTitle: e.target.value }
+                        })
+                      }
+                      placeholder="Call Confirmed!"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-[10px] text-slate-400 mb-1">Booking Success Note</label>
+                    <input
+                      type="text"
+                      value={formData.bookCallModal?.successSubtitle ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          bookCallModal: { ...formData.bookCallModal, successSubtitle: e.target.value }
+                        })
+                      }
+                      placeholder="A calendar invitation with the meeting link has been prepared."
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Me Modal Card */}
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-4">
+                <div className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-sky-400" />
+                  <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">Contact Modal Dialog</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Dialog Title</label>
+                    <input
+                      type="text"
+                      value={formData.contactModal?.title ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          contactModal: { ...formData.contactModal, title: e.target.value }
+                        })
+                      }
+                      placeholder="Let's Build Something Great"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Dialog Subtitle</label>
+                    <input
+                      type="text"
+                      value={formData.contactModal?.subtitle ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          contactModal: { ...formData.contactModal, subtitle: e.target.value }
+                        })
+                      }
+                      placeholder="Have a project in mind or looking for a fullstack engineer? Send me a message."
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Header Pill Badge</label>
+                    <input
+                      type="text"
+                      value={formData.contactModal?.badge ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          contactModal: { ...formData.contactModal, badge: e.target.value }
+                        })
+                      }
+                      placeholder="Direct Reach"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Send Button Label</label>
+                    <input
+                      type="text"
+                      value={formData.contactModal?.sendBtnText ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          contactModal: { ...formData.contactModal, sendBtnText: e.target.value }
+                        })
+                      }
+                      placeholder="Send Message"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Sending Button Label</label>
+                    <input
+                      type="text"
+                      value={formData.contactModal?.sendingBtnText ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          contactModal: { ...formData.contactModal, sendingBtnText: e.target.value }
+                        })
+                      }
+                      placeholder="Sending..."
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Direct Info Note</label>
+                    <input
+                      type="text"
+                      value={formData.contactModal?.directInfoNote ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          contactModal: { ...formData.contactModal, directInfoNote: e.target.value }
+                        })
+                      }
+                      placeholder="I typically reply within 2-4 hours."
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Resume Preview Modal Card */}
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-4">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-purple-400" />
+                  <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">Resume Preview Dialog</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Resume Dialog Title</label>
+                    <input
+                      type="text"
+                      value={formData.resumeModal?.title ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          resumeModal: { ...formData.resumeModal, title: e.target.value }
+                        })
+                      }
+                      placeholder="Curriculum Vitae"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Resume Dialog Subtitle</label>
+                    <input
+                      type="text"
+                      value={formData.resumeModal?.subtitle ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          resumeModal: { ...formData.resumeModal, subtitle: e.target.value }
+                        })
+                      }
+                      placeholder="Fullstack Engineer & Problem Solver"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Download Button Text</label>
+                    <input
+                      type="text"
+                      value={formData.resumeModal?.downloadBtnText ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          resumeModal: { ...formData.resumeModal, downloadBtnText: e.target.value }
+                        })
+                      }
+                      placeholder="Download PDF"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Open in New Tab Button Text</label>
+                    <input
+                      type="text"
+                      value={formData.resumeModal?.openNewTabBtnText ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          resumeModal: { ...formData.resumeModal, openNewTabBtnText: e.target.value }
+                        })
+                      }
+                      placeholder="Open in New Tab"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Quick Overview Header</label>
+                    <input
+                      type="text"
+                      value={formData.resumeModal?.summaryTitle ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          resumeModal: { ...formData.resumeModal, summaryTitle: e.target.value }
+                        })
+                      }
+                      placeholder="Quick Overview"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Summary Note</label>
+                    <input
+                      type="text"
+                      value={formData.resumeModal?.summaryText ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          resumeModal: { ...formData.resumeModal, summaryText: e.target.value }
+                        })
+                      }
+                      placeholder="Highlights 620+ solved algorithms and fullstack projects."
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* WhatsApp Floating Chat Widget Card */}
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-4">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4 text-emerald-400" />
+                  <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">WhatsApp Floating Chat Widget</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Online Status Subtitle</label>
+                    <input
+                      type="text"
+                      value={formData.whatsappWidget?.statusText ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          whatsappWidget: { ...formData.whatsappWidget, statusText: e.target.value }
+                        })
+                      }
+                      placeholder="Typically replies instantly"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Welcome Chat Bubble Message</label>
+                    <input
+                      type="text"
+                      value={formData.whatsappWidget?.greetingText ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          whatsappWidget: { ...formData.whatsappWidget, greetingText: e.target.value }
+                        })
+                      }
+                      placeholder="Hi there! 👋 How can I help you today?"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Bubble Timestamp Text</label>
+                    <input
+                      type="text"
+                      value={formData.whatsappWidget?.timeText ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          whatsappWidget: { ...formData.whatsappWidget, timeText: e.target.value }
+                        })
+                      }
+                      placeholder="Just now"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Input Placeholder</label>
+                    <input
+                      type="text"
+                      value={formData.whatsappWidget?.placeholder ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          whatsappWidget: { ...formData.whatsappWidget, placeholder: e.target.value }
+                        })
+                      }
+                      placeholder="Type your message here..."
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Send Button Text</label>
+                    <input
+                      type="text"
+                      value={formData.whatsappWidget?.buttonText ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          whatsappWidget: { ...formData.whatsappWidget, buttonText: e.target.value }
+                        })
+                      }
+                      placeholder="Chat on WhatsApp"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Default Pre-filled Message</label>
+                    <input
+                      type="text"
+                      value={formData.whatsappWidget?.defaultMessage ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          whatsappWidget: { ...formData.whatsappWidget, defaultMessage: e.target.value }
+                        })
+                      }
+                      placeholder="Hello Al Amin! I saw your portfolio and would like to talk."
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 13: NAVBAR & FOOTER */}
+          {activeTab === 'navbar_footer' && (
+            <div className="space-y-6">
+              <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-white">Top Navbar & Footer Settings</h2>
+                  <p className="text-xs text-slate-400">Edit every navigation item link label, brand title, and footer text</p>
                 </div>
                 <button
                   onClick={handleSaveData}
@@ -1795,19 +2358,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               {/* Navbar Labels */}
               <div className="space-y-3">
-                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Top Navbar</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Top Navbar Links & Brand</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <div>
                     <label className="block text-[10px] text-slate-400 mb-1">Brand Name Display</label>
                     <input
                       type="text"
-                      value={formData.navbar?.brandText || formData.name}
+                      value={formData.navbar?.brandText ?? ''}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
                           navbar: { ...formData.navbar, brandText: e.target.value }
                         })
                       }
+                      placeholder={formData.name || 'Al Amin Islam'}
                       className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
                     />
                   </div>
@@ -1815,13 +2379,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <label className="block text-[10px] text-slate-400 mb-1">Nav Item: Home</label>
                     <input
                       type="text"
-                      value={formData.navbar?.navHome || 'Home'}
+                      value={formData.navbar?.navHome ?? ''}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
                           navbar: { ...formData.navbar, navHome: e.target.value }
                         })
                       }
+                      placeholder="Home"
                       className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
                     />
                   </div>
@@ -1829,13 +2394,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <label className="block text-[10px] text-slate-400 mb-1">Nav Item: Skills</label>
                     <input
                       type="text"
-                      value={formData.navbar?.navSkills || 'Skills'}
+                      value={formData.navbar?.navSkills ?? ''}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
                           navbar: { ...formData.navbar, navSkills: e.target.value }
                         })
                       }
+                      placeholder="Skills"
                       className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
                     />
                   </div>
@@ -1843,13 +2409,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <label className="block text-[10px] text-slate-400 mb-1">Nav Item: Projects</label>
                     <input
                       type="text"
-                      value={formData.navbar?.navProjects || 'Projects'}
+                      value={formData.navbar?.navProjects ?? ''}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
                           navbar: { ...formData.navbar, navProjects: e.target.value }
                         })
                       }
+                      placeholder="Projects"
                       className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
                     />
                   </div>
@@ -1857,13 +2424,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <label className="block text-[10px] text-slate-400 mb-1">Nav Item: Experience</label>
                     <input
                       type="text"
-                      value={formData.navbar?.navExperience || 'Experience'}
+                      value={formData.navbar?.navExperience ?? ''}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
                           navbar: { ...formData.navbar, navExperience: e.target.value }
                         })
                       }
+                      placeholder="Experience"
                       className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
                     />
                   </div>
@@ -1871,13 +2439,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <label className="block text-[10px] text-slate-400 mb-1">Nav Item: Achievements</label>
                     <input
                       type="text"
-                      value={formData.navbar?.navAchievements || 'Achievements'}
+                      value={formData.navbar?.navAchievements ?? ''}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
                           navbar: { ...formData.navbar, navAchievements: e.target.value }
                         })
                       }
+                      placeholder="Achievements"
+                      className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Nav Item: Education</label>
+                    <input
+                      type="text"
+                      value={formData.navbar?.navEducation ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          navbar: { ...formData.navbar, navEducation: e.target.value }
+                        })
+                      }
+                      placeholder="Education"
+                      className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Navbar Button: Book a Call</label>
+                    <input
+                      type="text"
+                      value={formData.navbar?.bookCallBtnText ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          navbar: { ...formData.navbar, bookCallBtnText: e.target.value }
+                        })
+                      }
+                      placeholder="Book a Call"
                       className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
                     />
                   </div>
@@ -1887,21 +2486,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               {/* Footer */}
               <div className="space-y-3 pt-2">
                 <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Footer Settings</h3>
-                <div>
-                  <label className="block text-[10px] text-slate-400 mb-1">
-                    Footer Copyright Text (Use {'{year}'} to dynamically display current year)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.footer?.copyrightText || `© {year} ${formData.name}. Built with Next.js & Tailwind CSS.`}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        footer: { ...formData.footer, copyrightText: e.target.value }
-                      })
-                    }
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">
+                      Footer Copyright Text (Use {'{year}'} to dynamically display current year)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.footer?.copyrightText ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          footer: { ...formData.footer, copyrightText: e.target.value }
+                        })
+                      }
+                      placeholder={`© {year} ${formData.name || 'Al Amin Islam'}. Built with Next.js & Tailwind CSS.`}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">
+                      Available for Work Status Badge Text
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.footer?.statusBadge ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          footer: { ...formData.footer, statusBadge: e.target.value }
+                        })
+                      }
+                      placeholder="Available for full-time opportunities"
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    />
+                  </div>
                 </div>
               </div>
             </div>

@@ -131,13 +131,122 @@ export const PORTFOLIO_DATA = {
     statusBadge: "Available for Hire"
   },
 
-  // Detailed Modal Section Headers
+  // Detailed Modal Section Headers & Subtitles
   sectionTitles: {
     experience: "Work Experience & History",
     skills: "Technical Skills & Competencies",
     projects: "Featured Software Projects",
     achievements: "Competitive Programming & Awards",
-    education: "Education & Qualifications"
+    education: "Education & Qualifications",
+    contact: "Get In Touch",
+    home: "Al Amin Islam"
+  },
+  sectionSubtitles: {
+    experience: "Professional background & technical deliverables",
+    skills: "Languages, frameworks, databases & developer tooling",
+    projects: "High-performance web applications built from scratch",
+    achievements: "Contest honors, ratings, and problem-solving track record",
+    education: "Formal coursework and foundational computer science",
+    contact: "Let’s discuss your next project, technical opportunity, or collaboration.",
+    home: "Fullstack Software Engineer & Competitive Programmer"
+  },
+
+  // Contact Modal Texts (Every word/label customizable)
+  contactModal: {
+    title: "Get in Touch",
+    subtitle: "Let's discuss your next project or opportunity",
+    badge: "Direct Reach",
+    directEmailLabel: "Direct Email",
+    directPhoneLabel: "Phone / WhatsApp",
+    directLocationLabel: "Location",
+    directInfoNote: "I typically reply within 2-4 hours.",
+    nameLabel: "Your Full Name",
+    namePlaceholder: "e.g. John Doe",
+    emailLabel: "Email Address",
+    emailPlaceholder: "john@example.com",
+    phoneLabel: "Phone / WhatsApp (Optional)",
+    phonePlaceholder: "+880 1700-000000",
+    subjectLabel: "Subject / Topic",
+    subjectPlaceholder: "e.g. New Web Project / Consultation",
+    messageLabel: "Your Message",
+    messagePlaceholder: "Describe your project or questions in detail...",
+    submitBtnText: "Send Message",
+    sendBtnText: "Send Message",
+    submittingText: "Sending Message...",
+    sendingBtnText: "Sending...",
+    successTitle: "Message Sent Successfully!",
+    successSubtitle: "Your message has been dispatched. I'll get back to you shortly.",
+    successDescription: "Thank you for reaching out! Your inquiry has been sent to Al Amin Islam. You will receive a response shortly.",
+    successCloseBtn: "Close Window",
+    copyEmailTooltip: "Click to copy email"
+  },
+
+  // Book Call / Discussion Modal Texts
+  bookCallModal: {
+    title: "Schedule a 1-on-1 Call",
+    subtitle: "Pick a convenient time for our technical or project discussion",
+    serviceBadge: "Free 30-min Consultation",
+    durationBadge: "30 Mins • Google Meet / Zoom",
+    step1Title: "Select Topic & Time",
+    step2Title: "Contact Details",
+    nameLabel: "Your Full Name",
+    namePlaceholder: "e.g. John Doe",
+    emailLabel: "Email Address",
+    emailPlaceholder: "john@example.com",
+    phoneLabel: "Phone / WhatsApp (Optional)",
+    phonePlaceholder: "+880 1700-000000",
+    topicLabel: "Topic / Discussion Purpose",
+    topicDefault: "Fullstack Project Consultation",
+    projectLabel: "Project Scope & Details",
+    messageLabel: "Your Message / Project Scope",
+    messagePlaceholder: "Share details about your idea, timeline, or requirements...",
+    confirmBtnText: "Confirm Booking",
+    backBtnText: "Back",
+    submitBtnText: "Submit Inquiry",
+    submittingText: "Submitting...",
+    successTitle: "Call Confirmed!",
+    successSubtitle: "A calendar invitation with the meeting link has been prepared.",
+    successDescription: "Thank you for contacting me. I will review your requirements and reach out via email or phone within 24 hours.",
+    successCloseBtn: "Done"
+  },
+
+  // Resume Modal Texts
+  resumeModal: {
+    title: "Professional Resume & CV",
+    subtitle: "Summary of background, contest achievements, and skills",
+    downloadBtnText: "Download Text CV",
+    openNewTabBtnText: "Open in New Tab",
+    printBtnText: "Print / PDF",
+    copyBtnText: "Copy Summary",
+    copiedText: "Copied to Clipboard!",
+    copiedBtnText: "Copied",
+    copySummaryTooltip: "Copy Resume summary",
+    summaryTitle: "Quick Overview",
+    summaryText: "Highlights 620+ solved algorithms and fullstack projects.",
+    summaryHeading: "Professional Summary",
+    competitiveHeading: "Competitive Programming Highlights",
+    achievementsHeader: "Competitive Programming & Honors",
+    skillsHeading: "Core Technical Competencies",
+    skillsHeader: "Technical Skills",
+    projectsHeading: "Key Featured Projects",
+    projectsHeader: "Featured Fullstack Projects",
+    educationHeading: "Academic Qualifications",
+    educationHeader: "Education"
+  },
+
+  // WhatsApp Floating Widget Texts
+  whatsappWidget: {
+    headerName: "Al Amin Islam",
+    statusText: "Online • Typically replies fast",
+    greetingMessage: "Hi there! 👋 How can I help you today? Feel free to send a message directly to my WhatsApp.",
+    greetingText: "Hi there! 👋 How can I help you today? Feel free to send a message directly to my WhatsApp.",
+    timeLabel: "Just now",
+    timeText: "Just now",
+    inputPlaceholder: "Type a message...",
+    placeholder: "Type your message here...",
+    sendBtnText: "Chat on WhatsApp",
+    buttonText: "Start WhatsApp Chat",
+    defaultMessage: "Hello Al Amin! I saw your portfolio and would like to talk."
   },
 
   // Rotation Settings

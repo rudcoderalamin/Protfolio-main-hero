@@ -37,6 +37,11 @@ export const getStoredPortfolioData = (): PortfolioDataType => {
         navbar: { ...PORTFOLIO_DATA.navbar, ...(parsed.navbar || {}) },
         footer: { ...PORTFOLIO_DATA.footer, ...(parsed.footer || {}) },
         sectionTitles: { ...PORTFOLIO_DATA.sectionTitles, ...(parsed.sectionTitles || {}) },
+        sectionSubtitles: { ...PORTFOLIO_DATA.sectionSubtitles, ...(parsed.sectionSubtitles || {}) },
+        contactModal: { ...PORTFOLIO_DATA.contactModal, ...(parsed.contactModal || {}) },
+        bookCallModal: { ...PORTFOLIO_DATA.bookCallModal, ...(parsed.bookCallModal || {}) },
+        resumeModal: { ...PORTFOLIO_DATA.resumeModal, ...(parsed.resumeModal || {}) },
+        whatsappWidget: { ...PORTFOLIO_DATA.whatsappWidget, ...(parsed.whatsappWidget || {}) },
         socials: { ...PORTFOLIO_DATA.socials, ...(parsed.socials || {}) }
       };
     }
@@ -140,6 +145,11 @@ export const subscribeToGlobalPortfolio = (
               navbar: { ...PORTFOLIO_DATA.navbar, ...(cloudData.portfolioData.navbar || {}) },
               footer: { ...PORTFOLIO_DATA.footer, ...(cloudData.portfolioData.footer || {}) },
               sectionTitles: { ...PORTFOLIO_DATA.sectionTitles, ...(cloudData.portfolioData.sectionTitles || {}) },
+              sectionSubtitles: { ...PORTFOLIO_DATA.sectionSubtitles, ...(cloudData.portfolioData.sectionSubtitles || {}) },
+              contactModal: { ...PORTFOLIO_DATA.contactModal, ...(cloudData.portfolioData.contactModal || {}) },
+              bookCallModal: { ...PORTFOLIO_DATA.bookCallModal, ...(cloudData.portfolioData.bookCallModal || {}) },
+              resumeModal: { ...PORTFOLIO_DATA.resumeModal, ...(cloudData.portfolioData.resumeModal || {}) },
+              whatsappWidget: { ...PORTFOLIO_DATA.whatsappWidget, ...(cloudData.portfolioData.whatsappWidget || {}) },
               socials: { ...PORTFOLIO_DATA.socials, ...(cloudData.portfolioData.socials || {}) }
             };
 
@@ -226,6 +236,11 @@ export const fetchPortfolioFromServer = async (): Promise<{
           navbar: { ...PORTFOLIO_DATA.navbar, ...(cloudData.portfolioData.navbar || {}) },
           footer: { ...PORTFOLIO_DATA.footer, ...(cloudData.portfolioData.footer || {}) },
           sectionTitles: { ...PORTFOLIO_DATA.sectionTitles, ...(cloudData.portfolioData.sectionTitles || {}) },
+          sectionSubtitles: { ...PORTFOLIO_DATA.sectionSubtitles, ...(cloudData.portfolioData.sectionSubtitles || {}) },
+          contactModal: { ...PORTFOLIO_DATA.contactModal, ...(cloudData.portfolioData.contactModal || {}) },
+          bookCallModal: { ...PORTFOLIO_DATA.bookCallModal, ...(cloudData.portfolioData.bookCallModal || {}) },
+          resumeModal: { ...PORTFOLIO_DATA.resumeModal, ...(cloudData.portfolioData.resumeModal || {}) },
+          whatsappWidget: { ...PORTFOLIO_DATA.whatsappWidget, ...(cloudData.portfolioData.whatsappWidget || {}) },
           socials: { ...PORTFOLIO_DATA.socials, ...(cloudData.portfolioData.socials || {}) }
         };
 
@@ -281,6 +296,11 @@ export const fetchPortfolioFromServer = async (): Promise<{
         navbar: { ...PORTFOLIO_DATA.navbar, ...(json.portfolioData.navbar || {}) },
         footer: { ...PORTFOLIO_DATA.footer, ...(json.portfolioData.footer || {}) },
         sectionTitles: { ...PORTFOLIO_DATA.sectionTitles, ...(json.portfolioData.sectionTitles || {}) },
+        sectionSubtitles: { ...PORTFOLIO_DATA.sectionSubtitles, ...(json.portfolioData.sectionSubtitles || {}) },
+        contactModal: { ...PORTFOLIO_DATA.contactModal, ...(json.portfolioData.contactModal || {}) },
+        bookCallModal: { ...PORTFOLIO_DATA.bookCallModal, ...(json.portfolioData.bookCallModal || {}) },
+        resumeModal: { ...PORTFOLIO_DATA.resumeModal, ...(json.portfolioData.resumeModal || {}) },
+        whatsappWidget: { ...PORTFOLIO_DATA.whatsappWidget, ...(json.portfolioData.whatsappWidget || {}) },
         socials: { ...PORTFOLIO_DATA.socials, ...(json.portfolioData.socials || {}) }
       };
 
@@ -341,31 +361,37 @@ export const savePortfolioToServer = async (
   const payload = JSON.parse(JSON.stringify(rawPayload));
 
   let firestoreSuccess = false;
-  // 1. Write directly to Firestore Cloud Database
-  try {
-    const portfolioDocRef = doc(db, 'portfolio', 'global');
-    await setDoc(portfolioDocRef, payload);
-    firestoreSuccess = true;
-    console.log('✅ [FIRESTORE] Saved to Cloud Firestore:', payload.updatedAt);
-  } catch (err) {
-    console.error('❌ [FIRESTORE] Firestore save error:', err);
-  }
-
-  // 2. Also write to backend express server disk as backup
   let serverSuccess = false;
-  try {
-    const res = await fetch('/api/portfolio', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (res.ok) {
-      serverSuccess = true;
-      console.log('✅ [SERVER] Saved to Express server API');
+
+  // Run Firestore Cloud Database and Express server write concurrently for maximum save speed
+  const firestorePromise = (async () => {
+    try {
+      const portfolioDocRef = doc(db, 'portfolio', 'global');
+      await setDoc(portfolioDocRef, payload);
+      firestoreSuccess = true;
+      console.log('✅ [FIRESTORE] Saved to Cloud Firestore:', payload.updatedAt);
+    } catch (err) {
+      console.error('❌ [FIRESTORE] Firestore save error:', err);
     }
-  } catch (err) {
-    console.error('❌ [SERVER] Server save error:', err);
-  }
+  })();
+
+  const serverPromise = (async () => {
+    try {
+      const res = await fetch('/api/portfolio', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        serverSuccess = true;
+        console.log('✅ [SERVER] Saved to Express server API');
+      }
+    } catch (err) {
+      console.error('❌ [SERVER] Server save error:', err);
+    }
+  })();
+
+  await Promise.allSettled([firestorePromise, serverPromise]);
 
   try {
     window.dispatchEvent(new CustomEvent('portfolio_updated', { detail: payload }));

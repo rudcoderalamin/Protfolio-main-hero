@@ -12,6 +12,7 @@ interface ContactModalProps {
 
 export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, portfolioData }) => {
   const data = portfolioData || PORTFOLIO_DATA;
+  const cm = data.contactModal || PORTFOLIO_DATA.contactModal;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -88,13 +89,13 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, por
               <Mail className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Get in Touch</h2>
-              <p className="text-xs text-slate-500">Let's discuss your next project or opportunity</p>
+              <h2 className="text-lg font-bold text-slate-900">{cm?.title || 'Get in Touch'}</h2>
+              <p className="text-xs text-slate-500">{cm?.subtitle || "Let's discuss your next project or opportunity"}</p>
             </div>
           </div>
           <button
             onClick={handleResetAndClose}
-            className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
             id="contact-modal-close-btn"
           >
             <X className="w-5 h-5" />
@@ -108,16 +109,16 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, por
               <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4 animate-bounce">
                 <Check className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">Message Sent!</h3>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">{cm?.successTitle || 'Message Sent!'}</h3>
               <p className="text-sm text-slate-600 max-w-sm mx-auto mb-6">
-                Thank you, <span className="font-semibold text-slate-800">{name}</span>. {data.name || 'Al Amin Islam'} has received your inquiry and will respond to <span className="font-semibold text-slate-800">{email}</span> within 24 hours.
+                {cm?.successDescription || `Thank you, ${name}. ${data.name || 'Al Amin Islam'} has received your inquiry and will respond shortly.`}
               </p>
               <button
                 onClick={handleResetAndClose}
-                className="px-6 py-2.5 rounded-xl bg-sky-600 text-white text-sm font-semibold hover:bg-sky-700 transition-colors shadow-xs"
+                className="px-6 py-2.5 rounded-xl bg-sky-600 text-white text-sm font-semibold hover:bg-sky-700 transition-colors shadow-xs cursor-pointer"
                 id="contact-submitted-close-btn"
               >
-                Back to Portfolio
+                {cm?.successCloseBtn || 'Back to Portfolio'}
               </button>
             </div>
           ) : (
@@ -127,7 +128,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, por
                 <div
                   onClick={copyEmail}
                   className="p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-sky-300 hover:bg-sky-50/40 cursor-pointer transition-all flex items-center justify-between"
-                  title="Click to copy email"
+                  title={cm?.copyEmailTooltip || 'Click to copy email'}
                 >
                   <div className="flex items-center gap-2 truncate">
                     <Mail className="w-4 h-4 text-sky-600 shrink-0" />
@@ -155,28 +156,28 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, por
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Your Name <span className="text-red-500">*</span>
+                      {cm?.nameLabel || 'Your Name'} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Sarah Connor"
+                      placeholder={cm?.namePlaceholder || 'e.g. Sarah Connor'}
                       className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-800"
                       id="contact-name-input"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Your Email <span className="text-red-500">*</span>
+                      {cm?.emailLabel || 'Your Email'} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="sarah@example.com"
+                      placeholder={cm?.emailPlaceholder || 'sarah@example.com'}
                       className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-800"
                       id="contact-email-input"
                     />
@@ -186,26 +187,26 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, por
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Phone Number (Optional)
+                      {cm?.phoneLabel || 'Phone Number (Optional)'}
                     </label>
                     <input
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+880 1700-000000"
+                      placeholder={cm?.phonePlaceholder || '+880 1700-000000'}
                       className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-800"
                       id="contact-phone-input"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Subject
+                      {cm?.subjectLabel || 'Subject'}
                     </label>
                     <input
                       type="text"
                       value={subject}
                       onChange={(e) => setSubject(e.target.value)}
-                      placeholder="Project Inquiry / Job Offer"
+                      placeholder={cm?.subjectPlaceholder || 'Project Inquiry / Job Offer'}
                       className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-800"
                       id="contact-subject-input"
                     />
@@ -214,14 +215,14 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, por
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Your Message <span className="text-red-500">*</span>
+                    {cm?.messageLabel || 'Your Message'} <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     rows={4}
                     required
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder={`Hi ${data.name || 'Al Amin'}, I saw your portfolio and would like to discuss a project...`}
+                    placeholder={cm?.messagePlaceholder || `Hi ${data.name || 'Al Amin'}, I saw your portfolio and would like to discuss a project...`}
                     className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-800 resize-none"
                     id="contact-message-input"
                   />
@@ -231,18 +232,18 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, por
                   <button
                     type="button"
                     onClick={handleResetAndClose}
-                    className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                    className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white text-sm font-semibold shadow-xs transition-all disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white text-sm font-semibold shadow-xs transition-all disabled:opacity-50 cursor-pointer"
                     id="contact-send-btn"
                   >
                     <Send className="w-4 h-4" />
-                    <span>{isSubmitting ? 'Sending...' : 'Send Message'}</span>
+                    <span>{isSubmitting ? (cm?.submittingText || 'Sending...') : (cm?.submitBtnText || 'Send Message')}</span>
                   </button>
                 </div>
               </form>
