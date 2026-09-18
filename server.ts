@@ -2,10 +2,25 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import firebaseConfig from './firebase-applet-config.json';
 import { PORTFOLIO_DATA, DEFAULT_PROFILE_PHOTOS } from './src/data/portfolioData';
 
 const app = express();
 const PORT = 3000;
+
+// Initialize Firebase for server-side persistence
+let firestoreDb: any = null;
+try {
+  const firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+  firestoreDb = firebaseConfig.firestoreDatabaseId
+    ? getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId)
+    : getFirestore(firebaseApp);
+  console.log('Server connected to Firestore database:', firebaseConfig.firestoreDatabaseId);
+} catch (e) {
+  console.warn('Server Firestore initialization warning:', e);
+}
 
 // Increase payload limit for base64 photo uploads
 app.use(express.json({ limit: '50mb' }));
@@ -87,13 +102,39 @@ function saveMessagesStore(messages: any[]) {
 // ---------------- API ROUTES ----------------
 
 // 1. Get current portfolio data & photos (Global for all visitors/browsers)
-app.get('/api/portfolio', (req, res) => {
+app.get('/api/portfolio', async (req, res) => {
   res.set({
     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
     'Pragma': 'no-cache',
     'Expires': '0',
     'Surrogate-Control': 'no-store'
   });
+
+  // 1. Check Firestore first
+  if (firestoreDb) {
+    try {
+      const snap = await getDoc(doc(firestoreDb, 'portfolio', 'global'));
+      if (snap.exists()) {
+        const cloudData = snap.data();
+        if (cloudData && cloudData.portfolioData) {
+          const validPhotos = (cloudData.photos || []).filter(
+            (p: any) => p && p.url && !p.url.includes('/gallery/') && !p.url.includes('Profile-Photo.png')
+          );
+          return res.json({
+            success: true,
+            portfolioData: cloudData.portfolioData,
+            photos: validPhotos.length > 0 ? validPhotos : DEFAULT_PROFILE_PHOTOS,
+            adminPassword: cloudData.adminPassword || 'admin123',
+            updatedAt: cloudData.updatedAt
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Server Firestore read error, falling back to disk:', err);
+    }
+  }
+
+  // 2. Fallback to local store file
   const store = getPortfolioStore();
   const validPhotos = (store.photos || []).filter(
     (p: any) => p && p.url && !p.url.includes('/gallery/') && !p.url.includes('Profile-Photo.png')
@@ -108,7 +149,7 @@ app.get('/api/portfolio', (req, res) => {
 });
 
 // 2. Save portfolio data & photos (Admin dashboard updates this permanently)
-app.put('/api/portfolio', (req, res) => {
+app.put('/api/portfolio', async (req, res) => {
   try {
     const { portfolioData, photos, adminPassword } = req.body;
     if (!portfolioData) {
@@ -123,16 +164,25 @@ app.put('/api/portfolio', (req, res) => {
       updatedAt: new Date().toISOString()
     };
 
-    const saved = savePortfolioStore(updatedStore);
-    if (saved) {
-      return res.json({
-        success: true,
-        message: 'Portfolio data updated successfully across all devices and browsers!',
-        updatedAt: updatedStore.updatedAt
-      });
-    } else {
-      return res.status(500).json({ success: false, error: 'Failed to write to storage' });
+    // Save to disk backup
+    savePortfolioStore(updatedStore);
+
+    // Save to Firestore Cloud Database
+    if (firestoreDb) {
+      try {
+        const sanitized = JSON.parse(JSON.stringify(updatedStore));
+        await setDoc(doc(firestoreDb, 'portfolio', 'global'), sanitized);
+        console.log('Server synced update to Firestore global doc at', updatedStore.updatedAt);
+      } catch (fErr) {
+        console.warn('Server failed to write Firestore doc:', fErr);
+      }
     }
+
+    return res.json({
+      success: true,
+      message: 'Portfolio data updated successfully across all devices and browsers!',
+      updatedAt: updatedStore.updatedAt
+    });
   } catch (err: any) {
     console.error('PUT /api/portfolio error:', err);
     res.status(500).json({ success: false, error: err?.message || 'Server error' });

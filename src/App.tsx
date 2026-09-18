@@ -109,6 +109,9 @@ export default function App() {
 
     syncData();
 
+    // Re-check periodically every 4 seconds as redundant backup
+    const pollInterval = setInterval(syncData, 4000);
+
     // Re-check when window is focused or becomes visible (e.g. user switches tabs from admin to main site)
     const onFocus = () => syncData();
     const onVisibilityChange = () => {
@@ -117,13 +120,27 @@ export default function App() {
       }
     };
 
+    // Listen to local cross-tab events on same browser
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'alamin_portfolio_data' || e.key === 'alamin_portfolio_photos') {
+        syncData();
+      }
+    };
+
+    const onCustomUpdate = () => syncData();
+
     window.addEventListener('focus', onFocus);
     document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('portfolio_updated', onCustomUpdate);
 
     return () => {
       unsubscribeFirestore();
+      clearInterval(pollInterval);
       window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('portfolio_updated', onCustomUpdate);
     };
   }, []);
 

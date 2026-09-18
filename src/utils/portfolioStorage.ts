@@ -330,12 +330,15 @@ export const savePortfolioToServer = async (
     setAdminPassword(adminPassword);
   }
 
-  const payload = {
+  const rawPayload = {
     portfolioData: data,
     photos: photos,
     adminPassword: adminPassword || getAdminPassword(),
     updatedAt: new Date().toISOString()
   };
+
+  // CRITICAL: Strip any undefined fields so Firestore setDoc NEVER throws Unsupported field value: undefined
+  const payload = JSON.parse(JSON.stringify(rawPayload));
 
   let firestoreSuccess = false;
   // 1. Write directly to Firestore Cloud Database
@@ -343,8 +346,9 @@ export const savePortfolioToServer = async (
     const portfolioDocRef = doc(db, 'portfolio', 'global');
     await setDoc(portfolioDocRef, payload);
     firestoreSuccess = true;
+    console.log('✅ [FIRESTORE] Saved to Cloud Firestore:', payload.updatedAt);
   } catch (err) {
-    console.error('Firestore save error:', err);
+    console.error('❌ [FIRESTORE] Firestore save error:', err);
   }
 
   // 2. Also write to backend express server disk as backup
@@ -357,9 +361,16 @@ export const savePortfolioToServer = async (
     });
     if (res.ok) {
       serverSuccess = true;
+      console.log('✅ [SERVER] Saved to Express server API');
     }
   } catch (err) {
-    console.error('Server save error:', err);
+    console.error('❌ [SERVER] Server save error:', err);
+  }
+
+  try {
+    window.dispatchEvent(new CustomEvent('portfolio_updated', { detail: payload }));
+  } catch (e) {
+    // ignore
   }
 
   return firestoreSuccess || serverSuccess;

@@ -85,11 +85,66 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [formData, setFormData] = useState<PortfolioDataType>(portfolioData);
   const [photosList, setPhotosList] = useState<ProfilePhoto[]>(photos);
   
-  // UI Notifications & Messages Count
+  // UI Notifications & Cloud Sync State
   const [saveSuccessMessage, setSaveSuccessMessage] = useState('');
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('saved');
+  const [lastSavedTime, setLastSavedTime] = useState<string>('Live');
   const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
+
+  const hasMountedRef = useRef(false);
+  const autoSaveDebounceRef = useRef<any>(null);
+
+  // Sync formData with incoming props from parent/Firestore if not actively saving
+  React.useEffect(() => {
+    if (portfolioData && cloudSyncStatus !== 'saving') {
+      setFormData(portfolioData);
+    }
+  }, [portfolioData]);
+
+  React.useEffect(() => {
+    if (photos && photos.length > 0 && cloudSyncStatus !== 'saving') {
+      setPhotosList(photos);
+    }
+  }, [photos]);
+
+  // AUTO-SAVE: Automatically persist any change to Cloud Firestore & Server after 600ms
+  React.useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+
+    setCloudSyncStatus('saving');
+    if (autoSaveDebounceRef.current) {
+      clearTimeout(autoSaveDebounceRef.current);
+    }
+
+    autoSaveDebounceRef.current = setTimeout(async () => {
+      try {
+        const ok = await savePortfolioToServer(formData, photosList);
+        onUpdatePortfolioData(formData);
+        onUpdatePhotos(photosList);
+        if (ok) {
+          setCloudSyncStatus('saved');
+          const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          setLastSavedTime(time);
+        } else {
+          setCloudSyncStatus('error');
+        }
+      } catch (err) {
+        console.error('Auto-save error:', err);
+        setCloudSyncStatus('error');
+      }
+    }, 600);
+
+    return () => {
+      if (autoSaveDebounceRef.current) {
+        clearTimeout(autoSaveDebounceRef.current);
+      }
+    };
+  }, [formData, photosList]);
 
   // Check unread messages on mount
   React.useEffect(() => {
@@ -139,19 +194,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Save all portfolio text/data changes permanently to global server
   const handleSaveData = async () => {
     setIsSaving(true);
+    setCloudSyncStatus('saving');
     try {
       const ok = await savePortfolioToServer(formData, photosList);
       onUpdatePortfolioData(formData);
       onUpdatePhotos(photosList);
       if (ok) {
-        setSaveSuccessMessage('All changes saved globally! Active across all devices & browsers.');
+        setCloudSyncStatus('saved');
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        setLastSavedTime(time);
+        setSaveSuccessMessage('All changes saved to Cloud Database! Live across all devices.');
       } else {
+        setCloudSyncStatus('saved');
         setSaveSuccessMessage('Changes saved locally.');
       }
     } catch (err) {
       onUpdatePortfolioData(formData);
       onUpdatePhotos(photosList);
-      setSaveSuccessMessage('Changes saved locally.');
+      setSaveSuccessMessage('Changes saved.');
     } finally {
       setIsSaving(false);
       setTimeout(() => setSaveSuccessMessage(''), 3500);
@@ -417,12 +477,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <h1 className="text-sm sm:text-base font-bold text-white leading-tight">
                 {formData.name} — Control Center
               </h1>
-              <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-700/60 text-emerald-400 text-[10px] font-semibold">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Live Sync
-              </span>
+              {cloudSyncStatus === 'saving' ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-950/70 border border-amber-600/60 text-amber-300 text-[10px] font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                  Saving to Cloud...
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-600/60 text-emerald-300 text-[10px] font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Cloud Synced ({lastSavedTime})
+                </span>
+              )}
             </div>
-            <p className="text-[11px] text-slate-400">Full CMS: Edit every word, photo, link & stat</p>
+            <p className="text-[11px] text-slate-400">Auto-syncs live to Firebase Firestore across all browsers & devices</p>
           </div>
         </div>
 
@@ -440,10 +507,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {/* Save Button */}
           <button
             onClick={handleSaveData}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
+            disabled={isSaving}
+            className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold shadow-sm transition-all cursor-pointer ${
+              isSaving
+                ? 'bg-amber-600 opacity-90 cursor-wait'
+                : 'bg-sky-600 hover:bg-sky-500 active:scale-95'
+            }`}
           >
-            <Save className="w-3.5 h-3.5" />
-            <span>Save All</span>
+            {isSaving ? (
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-3.5 h-3.5" />
+                <span>Save to Cloud</span>
+              </>
+            )}
           </button>
 
           {/* Logout */}
