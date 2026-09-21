@@ -203,13 +203,11 @@ export default function App() {
   const handleUpdatePortfolioData = (newData: PortfolioDataType) => {
     setPortfolioData(newData);
     saveStoredPortfolioData(newData);
-    savePortfolioToServer(newData, photos);
   };
 
   const handleUpdatePhotos = (newPhotos: ProfilePhoto[]) => {
     setPhotos(newPhotos);
     saveStoredPhotos(newPhotos);
-    savePortfolioToServer(portfolioData, newPhotos);
     if (currentPhotoIndex >= newPhotos.length) {
       const safeIdx = Math.max(0, newPhotos.length - 1);
       setCurrentPhotoIndex(safeIdx);

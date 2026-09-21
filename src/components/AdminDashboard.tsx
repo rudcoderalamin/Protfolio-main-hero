@@ -102,14 +102,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
   const [copiedSql, setCopiedSql] = useState(false);
 
-  const hasMountedRef = useRef(false);
-  const autoSaveDebounceRef = useRef<any>(null);
   const isLocalUpdateRef = useRef(false);
 
-  // Sync formData with incoming props only if not triggered by local user typing
+  // Sync formData with incoming props only on initial load or if not editing locally
   React.useEffect(() => {
     if (isLocalUpdateRef.current) {
-      isLocalUpdateRef.current = false;
       return;
     }
     if (portfolioData) {
@@ -119,47 +116,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   React.useEffect(() => {
     if (isLocalUpdateRef.current) {
-      isLocalUpdateRef.current = false;
       return;
     }
     if (photos && photos.length > 0) {
       setPhotosList(photos);
     }
   }, [photos]);
-
-  // FAST AUTO-SAVE: Automatically persist any change to Direct Server Database after 300ms
-  React.useEffect(() => {
-    if (!hasMountedRef.current) {
-      hasMountedRef.current = true;
-      return;
-    }
-
-    setDbSyncStatus('saving');
-    if (autoSaveDebounceRef.current) {
-      clearTimeout(autoSaveDebounceRef.current);
-    }
-
-    autoSaveDebounceRef.current = setTimeout(async () => {
-      try {
-        isLocalUpdateRef.current = true;
-        await savePortfolioToServer(formData, photosList);
-        onUpdatePortfolioData(formData);
-        onUpdatePhotos(photosList);
-        setDbSyncStatus('saved');
-        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        setLastSavedTime(time);
-      } catch (err) {
-        console.error('Auto-save error:', err);
-        setDbSyncStatus('saved');
-      }
-    }, 300);
-
-    return () => {
-      if (autoSaveDebounceRef.current) {
-        clearTimeout(autoSaveDebounceRef.current);
-      }
-    };
-  }, [formData, photosList]);
 
   // Check unread messages on mount
   React.useEffect(() => {
