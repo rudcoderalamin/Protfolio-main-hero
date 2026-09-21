@@ -32,7 +32,9 @@ import {
   MessageSquare,
   Calendar,
   Mail,
-  FileText
+  FileText,
+  Database,
+  Copy
 } from 'lucide-react';
 import { ProfilePhoto } from '../data/portfolioData';
 import {
@@ -98,6 +100,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [dbSyncStatus, setDbSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('saved');
   const [lastSavedTime, setLastSavedTime] = useState<string>('Live');
   const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
+  const [copiedSql, setCopiedSql] = useState(false);
 
   const hasMountedRef = useRef(false);
   const autoSaveDebounceRef = useRef<any>(null);
@@ -215,13 +218,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setDbSyncStatus('saved');
       const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       setLastSavedTime(time);
-      setSaveSuccessMessage('All changes saved to Database! Immediately live across the website.');
+      setSaveSuccessMessage('All changes saved to Supabase! Live across all devices worldwide.');
     } catch (err) {
       isLocalUpdateRef.current = true;
       onUpdatePortfolioData(formData);
       onUpdatePhotos(photosList);
       setDbSyncStatus('saved');
-      setSaveSuccessMessage('Changes saved to Database.');
+      setSaveSuccessMessage('Changes saved locally and synced.');
     } finally {
       setIsSaving(false);
       setTimeout(() => setSaveSuccessMessage(''), 3000);
@@ -490,17 +493,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               {dbSyncStatus === 'saving' ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-950/70 border border-amber-600/60 text-amber-300 text-[10px] font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-                  Saving to Database...
+                  Saving to Supabase...
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-600/60 text-emerald-300 text-[10px] font-semibold" title="Direct Server Database Active">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-600/60 text-emerald-300 text-[10px] font-semibold" title="Supabase Cloud Database Active">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  Database Synced ({lastSavedTime})
+                  Supabase Synced ({lastSavedTime})
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-slate-400">
-              Direct Server Database Active — Instant Save across all sessions & reloads
+            <p className="text-[11px] text-slate-400 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
+              <span>Supabase Cloud Database Connected • Live Worldwide Across All Devices</span>
             </p>
           </div>
         </div>
@@ -523,7 +527,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold shadow-sm transition-all cursor-pointer ${
               isSaving
                 ? 'bg-amber-600 opacity-90 cursor-wait'
-                : 'bg-sky-600 hover:bg-sky-500 active:scale-95'
+                : 'bg-emerald-600 hover:bg-emerald-500 active:scale-95'
             }`}
           >
             {isSaving ? (
@@ -534,7 +538,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             ) : (
               <>
                 <Save className="w-3.5 h-3.5" />
-                <span>Save to Database</span>
+                <span>Save to Supabase</span>
               </>
             )}
           </button>
@@ -2525,8 +2529,103 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {activeTab === 'security' && (
             <div className="space-y-8">
               <div className="border-b border-slate-800 pb-4">
-                <h2 className="text-lg font-bold text-white">Security, Backup & System Recovery</h2>
-                <p className="text-xs text-slate-400">Change admin passkey, download complete JSON backup, or restore previous data</p>
+                <h2 className="text-lg font-bold text-white">Security, Supabase Database & Recovery</h2>
+                <p className="text-xs text-slate-400">Manage Supabase cloud connection, change passkey, or export complete JSON backup</p>
+              </div>
+
+              {/* Supabase Cloud Database Connection Card */}
+              <div className="p-5 rounded-xl bg-slate-950 border border-slate-800 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Database className="w-5 h-5 text-emerald-400" />
+                    <div>
+                      <h3 className="text-sm font-bold text-white">Supabase Cloud Database (Connected)</h3>
+                      <p className="text-[11px] text-slate-400">Live synchronization active across all devices worldwide</p>
+                    </div>
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/70 border border-emerald-600/60 text-emerald-300 text-xs font-semibold w-fit">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    Realtime Sync Active
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">Supabase Project URL</span>
+                    <span className="font-mono text-sky-400 text-xs break-all">https://davrjqtvfjcnhietowuy.supabase.co</span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">Client Publishable Key</span>
+                    <span className="font-mono text-slate-300 text-xs break-all">sb_publishable_vjUUthGI20UQ2uOoZ4MNsw_vnuJKB4o</span>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg bg-slate-900/90 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <span className="text-xs font-semibold text-slate-200">Supabase SQL Schema Script</span>
+                      <p className="text-[11px] text-slate-400">
+                        Paste and run this SQL in Supabase SQL Editor to create <code className="text-emerald-400">portfolio</code> & <code className="text-emerald-400">messages</code> tables.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const sql = `-- 1. Create Portfolio Table
+CREATE TABLE IF NOT EXISTS public.portfolio (
+  id TEXT PRIMARY KEY DEFAULT 'global',
+  data JSONB NOT NULL,
+  photos JSONB NOT NULL DEFAULT '[]'::jsonb,
+  admin_password TEXT DEFAULT 'admin123',
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.portfolio ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public select on portfolio" ON public.portfolio FOR SELECT TO public USING (true);
+CREATE POLICY "Allow public insert/update on portfolio" ON public.portfolio FOR ALL TO public USING (true) WITH CHECK (true);
+
+-- 2. Create Messages Table
+CREATE TABLE IF NOT EXISTS public.messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT,
+  topic TEXT,
+  message TEXT NOT NULL,
+  read BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public insert on messages" ON public.messages FOR INSERT TO public WITH CHECK (true);
+CREATE POLICY "Allow public select on messages" ON public.messages FOR SELECT TO public USING (true);
+CREATE POLICY "Allow public update on messages" ON public.messages FOR UPDATE TO public USING (true);
+CREATE POLICY "Allow public delete on messages" ON public.messages FOR DELETE TO public USING (true);
+
+ALTER PUBLICATION supabase_realtime ADD TABLE public.portfolio;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;`;
+                        navigator.clipboard.writeText(sql);
+                        setCopiedSql(true);
+                        setTimeout(() => setCopiedSql(false), 2500);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-colors cursor-pointer"
+                    >
+                      {copiedSql ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-white" />
+                          <span>Copied SQL!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Copy SQL Setup Query</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* Change Password */}

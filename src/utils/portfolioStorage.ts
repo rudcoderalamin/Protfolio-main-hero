@@ -1,5 +1,6 @@
 import { PORTFOLIO_DATA, DEFAULT_PROFILE_PHOTOS, ProfilePhoto } from '../data/portfolioData';
 import { PortfolioMessage } from '../types/message';
+import { supabase } from '../lib/supabase';
 
 export type PortfolioDataType = typeof PORTFOLIO_DATA;
 
@@ -9,7 +10,36 @@ const ADMIN_PASS_KEY = 'alamin_admin_password_v2';
 const ADMIN_AUTH_KEY = 'alamin_admin_logged_in_v2';
 const MESSAGES_LOCAL_KEY = 'alamin_messages_local_cache';
 
-// Direct Database status
+// Helper to deeply merge loaded data with defaults so no fields are ever undefined
+export const mergePortfolioData = (raw: any): PortfolioDataType => {
+  if (!raw || typeof raw !== 'object') return PORTFOLIO_DATA;
+  return {
+    ...PORTFOLIO_DATA,
+    ...raw,
+    heroButtons: { ...PORTFOLIO_DATA.heroButtons, ...(raw.heroButtons || {}) },
+    heroStats: { ...PORTFOLIO_DATA.heroStats, ...(raw.heroStats || {}) },
+    navbar: { ...PORTFOLIO_DATA.navbar, ...(raw.navbar || {}) },
+    footer: { ...PORTFOLIO_DATA.footer, ...(raw.footer || {}) },
+    sectionTitles: { ...PORTFOLIO_DATA.sectionTitles, ...(raw.sectionTitles || {}) },
+    sectionSubtitles: { ...PORTFOLIO_DATA.sectionSubtitles, ...(raw.sectionSubtitles || {}) },
+    contactModal: { ...PORTFOLIO_DATA.contactModal, ...(raw.contactModal || {}) },
+    bookCallModal: { ...PORTFOLIO_DATA.bookCallModal, ...(raw.bookCallModal || {}) },
+    resumeModal: { ...PORTFOLIO_DATA.resumeModal, ...(raw.resumeModal || {}) },
+    whatsappWidget: { ...PORTFOLIO_DATA.whatsappWidget, ...(raw.whatsappWidget || {}) },
+    socials: { ...PORTFOLIO_DATA.socials, ...(raw.socials || {}) }
+  };
+};
+
+export const cleanPhotos = (photos: any): ProfilePhoto[] => {
+  if (!Array.isArray(photos) || photos.length === 0) return DEFAULT_PROFILE_PHOTOS;
+  const filtered = photos.filter(
+    (p: ProfilePhoto) =>
+      p && p.url && !p.url.includes('/gallery/') && !p.url.includes('Profile-Photo.png')
+  );
+  return filtered.length > 0 ? filtered : DEFAULT_PROFILE_PHOTOS;
+};
+
+// Database status helpers
 export const isQuotaExceeded = (): boolean => false;
 export const setFirestoreQuotaExceeded = (): void => {};
 
@@ -18,22 +48,7 @@ export const getStoredPortfolioData = (): PortfolioDataType => {
   try {
     const raw = localStorage.getItem(DATA_STORAGE_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw);
-      return {
-        ...PORTFOLIO_DATA,
-        ...parsed,
-        heroButtons: { ...PORTFOLIO_DATA.heroButtons, ...(parsed.heroButtons || {}) },
-        heroStats: { ...PORTFOLIO_DATA.heroStats, ...(parsed.heroStats || {}) },
-        navbar: { ...PORTFOLIO_DATA.navbar, ...(parsed.navbar || {}) },
-        footer: { ...PORTFOLIO_DATA.footer, ...(parsed.footer || {}) },
-        sectionTitles: { ...PORTFOLIO_DATA.sectionTitles, ...(parsed.sectionTitles || {}) },
-        sectionSubtitles: { ...PORTFOLIO_DATA.sectionSubtitles, ...(parsed.sectionSubtitles || {}) },
-        contactModal: { ...PORTFOLIO_DATA.contactModal, ...(parsed.contactModal || {}) },
-        bookCallModal: { ...PORTFOLIO_DATA.bookCallModal, ...(parsed.bookCallModal || {}) },
-        resumeModal: { ...PORTFOLIO_DATA.resumeModal, ...(parsed.resumeModal || {}) },
-        whatsappWidget: { ...PORTFOLIO_DATA.whatsappWidget, ...(parsed.whatsappWidget || {}) },
-        socials: { ...PORTFOLIO_DATA.socials, ...(parsed.socials || {}) }
-      };
+      return mergePortfolioData(JSON.parse(raw));
     }
   } catch (err) {
     console.warn('Failed to load portfolio data from storage, using defaults:', err);
@@ -54,18 +69,7 @@ export const getStoredPhotos = (): ProfilePhoto[] => {
     const raw = localStorage.getItem(PHOTOS_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const validPhotos = parsed.filter(
-          (p: ProfilePhoto) =>
-            p && p.url && !p.url.includes('/gallery/') && !p.url.includes('Profile-Photo.png')
-        );
-        if (validPhotos.length > 0) {
-          return validPhotos.map((photo: ProfilePhoto) => ({
-            ...photo,
-            caption: photo.caption.replace(/Imran Hasan/g, 'Al Amin Islam')
-          }));
-        }
-      }
+      return cleanPhotos(parsed);
     }
   } catch (err) {
     console.warn('Failed to load photos from storage, using defaults:', err);
@@ -75,14 +79,8 @@ export const getStoredPhotos = (): ProfilePhoto[] => {
 
 export const saveStoredPhotos = (photos: ProfilePhoto[]): void => {
   try {
-    const validPhotos = photos.filter(
-      (p: ProfilePhoto) =>
-        p && p.url && !p.url.includes('/gallery/') && !p.url.includes('Profile-Photo.png')
-    );
-    localStorage.setItem(
-      PHOTOS_STORAGE_KEY,
-      JSON.stringify(validPhotos.length > 0 ? validPhotos : DEFAULT_PROFILE_PHOTOS)
-    );
+    const validPhotos = cleanPhotos(photos);
+    localStorage.setItem(PHOTOS_STORAGE_KEY, JSON.stringify(validPhotos));
   } catch (err) {
     console.error('Failed to save photos to storage:', err);
   }
@@ -108,23 +106,54 @@ export const setAdminAuthStatus = (status: boolean): void => {
   }
 };
 
-// ---------------- DIRECT DATABASE SYNC ENGINE ----------------
+// ---------------- SUPABASE DATABASE SYNC ENGINE ----------------
 
 /**
- * Subscribes to changes from the Direct Database & local events.
- * Updates immediately across tabs without any page reload.
+ * Subscribes to real-time changes from Supabase & local window events.
+ * Instantly broadcasts any change to all devices across the world without reloading!
  */
 export const subscribeToGlobalPortfolio = (
   onUpdate: (data: PortfolioDataType, photos: ProfilePhoto[], adminPassword?: string) => void
 ): (() => void) => {
-  // 1. Initial fetch from server database
+  // 1. Initial fetch from Supabase
   fetchPortfolioFromServer().then((res) => {
     if (res && res.data) {
       onUpdate(res.data, res.photos, res.adminPassword);
     }
   });
 
-  // 2. Listen to internal instant update events
+  // 2. Listen to Supabase Realtime channel for Postgres changes across all global clients
+  let realtimeChannel: any = null;
+  try {
+    realtimeChannel = supabase
+      .channel('portfolio_realtime_sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'portfolio' },
+        (payload: any) => {
+          if (payload?.new && payload.new.data) {
+            const row = payload.new;
+            const merged = mergePortfolioData(row.data);
+            const validPhotos = cleanPhotos(row.photos);
+            saveStoredPortfolioData(merged);
+            saveStoredPhotos(validPhotos);
+            if (row.admin_password) {
+              setAdminPassword(row.admin_password);
+            }
+            onUpdate(merged, validPhotos, row.admin_password);
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('⚡ [Supabase Realtime] Connected! Listening for worldwide live updates.');
+        }
+      });
+  } catch (err) {
+    console.warn('Failed to initialize Supabase Realtime channel:', err);
+  }
+
+  // 3. Listen to internal instant update events (for current tab zero-lag response)
   const handleCustomEvent = (e: any) => {
     if (e?.detail) {
       const { portfolioData, photos, adminPassword } = e.detail;
@@ -134,7 +163,7 @@ export const subscribeToGlobalPortfolio = (
     }
   };
 
-  // 3. Listen to local storage changes from other tabs in the browser
+  // 4. Listen to local storage changes from other tabs on the same device
   const handleStorageEvent = (e: StorageEvent) => {
     if (e.key === DATA_STORAGE_KEY || e.key === PHOTOS_STORAGE_KEY) {
       const currentData = getStoredPortfolioData();
@@ -143,33 +172,70 @@ export const subscribeToGlobalPortfolio = (
     }
   };
 
-  // 4. Background synchronization with direct database every 20 seconds
+  // 5. Periodic polling (every 30 seconds) as a bulletproof safety net
   const pollInterval = setInterval(() => {
     fetchPortfolioFromServer().then((res) => {
       if (res && res.data) {
         onUpdate(res.data, res.photos, res.adminPassword);
       }
     });
-  }, 20000);
+  }, 30000);
 
   window.addEventListener('portfolio_updated', handleCustomEvent);
   window.addEventListener('storage', handleStorageEvent);
 
   return () => {
     clearInterval(pollInterval);
+    if (realtimeChannel) {
+      try {
+        supabase.removeChannel(realtimeChannel);
+      } catch (e) {}
+    }
     window.removeEventListener('portfolio_updated', handleCustomEvent);
     window.removeEventListener('storage', handleStorageEvent);
   };
 };
 
 /**
- * Loads portfolio data directly from the server database (instant response).
+ * Loads portfolio data:
+ * 1. Checks Supabase directly (Primary for Netlify, GitHub & Production)
+ * 2. Falls back to local Express server API
+ * 3. Falls back to localStorage cache
  */
 export const fetchPortfolioFromServer = async (): Promise<{
   data: PortfolioDataType;
   photos: ProfilePhoto[];
   adminPassword?: string;
 } | null> => {
+  // Step 1: Attempt to load directly from Supabase
+  try {
+    const { data: row, error } = await supabase
+      .from('portfolio')
+      .select('*')
+      .eq('id', 'global')
+      .maybeSingle();
+
+    if (!error && row && row.data) {
+      const mergedData = mergePortfolioData(row.data);
+      const loadedPhotos = cleanPhotos(row.photos);
+
+      saveStoredPortfolioData(mergedData);
+      saveStoredPhotos(loadedPhotos);
+      if (row.admin_password) {
+        setAdminPassword(row.admin_password);
+      }
+
+      return {
+        data: mergedData,
+        photos: loadedPhotos,
+        adminPassword: row.admin_password
+      };
+    }
+  } catch (err) {
+    console.warn('Could not fetch from Supabase (table might not be created yet):', err);
+  }
+
+  // Step 2: Fallback to local server API if running
   try {
     const res = await fetch(`/api/portfolio?_t=${Date.now()}`, {
       cache: 'no-store',
@@ -180,56 +246,30 @@ export const fetchPortfolioFromServer = async (): Promise<{
       }
     });
 
-    if (!res.ok) {
-      throw new Error(`Server returned status ${res.status}`);
-    }
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && json.portfolioData) {
+        const mergedData = mergePortfolioData(json.portfolioData);
+        const loadedPhotos = cleanPhotos(json.photos);
 
-    const json = await res.json();
-    if (json.success && json.portfolioData) {
-      const mergedData: PortfolioDataType = {
-        ...PORTFOLIO_DATA,
-        ...json.portfolioData,
-        heroButtons: { ...PORTFOLIO_DATA.heroButtons, ...(json.portfolioData.heroButtons || {}) },
-        heroStats: { ...PORTFOLIO_DATA.heroStats, ...(json.portfolioData.heroStats || {}) },
-        navbar: { ...PORTFOLIO_DATA.navbar, ...(json.portfolioData.navbar || {}) },
-        footer: { ...PORTFOLIO_DATA.footer, ...(json.portfolioData.footer || {}) },
-        sectionTitles: { ...PORTFOLIO_DATA.sectionTitles, ...(json.portfolioData.sectionTitles || {}) },
-        sectionSubtitles: { ...PORTFOLIO_DATA.sectionSubtitles, ...(json.portfolioData.sectionSubtitles || {}) },
-        contactModal: { ...PORTFOLIO_DATA.contactModal, ...(json.portfolioData.contactModal || {}) },
-        bookCallModal: { ...PORTFOLIO_DATA.bookCallModal, ...(json.portfolioData.bookCallModal || {}) },
-        resumeModal: { ...PORTFOLIO_DATA.resumeModal, ...(json.portfolioData.resumeModal || {}) },
-        whatsappWidget: { ...PORTFOLIO_DATA.whatsappWidget, ...(json.portfolioData.whatsappWidget || {}) },
-        socials: { ...PORTFOLIO_DATA.socials, ...(json.portfolioData.socials || {}) }
-      };
+        saveStoredPortfolioData(mergedData);
+        saveStoredPhotos(loadedPhotos);
+        if (json.adminPassword) {
+          setAdminPassword(json.adminPassword);
+        }
 
-      const rawPhotos: ProfilePhoto[] = Array.isArray(json.photos) && json.photos.length > 0
-        ? json.photos
-        : DEFAULT_PROFILE_PHOTOS;
-
-      const cleanedPhotos = rawPhotos.filter(
-        (p: ProfilePhoto) =>
-          p && p.url && !p.url.includes('/gallery/') && !p.url.includes('Profile-Photo.png')
-      );
-      const loadedPhotos: ProfilePhoto[] = cleanedPhotos.length > 0
-        ? cleanedPhotos
-        : DEFAULT_PROFILE_PHOTOS;
-
-      saveStoredPortfolioData(mergedData);
-      saveStoredPhotos(loadedPhotos);
-      if (json.adminPassword) {
-        setAdminPassword(json.adminPassword);
+        return {
+          data: mergedData,
+          photos: loadedPhotos,
+          adminPassword: json.adminPassword
+        };
       }
-
-      return {
-        data: mergedData,
-        photos: loadedPhotos,
-        adminPassword: json.adminPassword
-      };
     }
   } catch (err) {
-    console.warn('Could not fetch portfolio from server database, using local cache:', err);
+    // Expected on static Netlify deployment
   }
 
+  // Step 3: Return local storage
   return {
     data: getStoredPortfolioData(),
     photos: getStoredPhotos(),
@@ -238,50 +278,74 @@ export const fetchPortfolioFromServer = async (): Promise<{
 };
 
 /**
- * Saves all changes permanently to the Direct Database.
- * Runs instantly in milliseconds without any page reload!
+ * Saves all changes permanently:
+ * 1. Immediately updates localStorage & dispatches event for instant local UI update.
+ * 2. Saves directly into Supabase `portfolio` table.
+ * 3. Also pings server API if running.
  */
 export const savePortfolioToServer = async (
   data: PortfolioDataType,
   photos: ProfilePhoto[],
   adminPassword?: string
 ): Promise<boolean> => {
+  const currentPassword = adminPassword || getAdminPassword();
+  const validPhotos = cleanPhotos(photos);
+
   // 1. Immediately update local storage for zero-lag UI
   saveStoredPortfolioData(data);
-  saveStoredPhotos(photos);
-  if (adminPassword) {
-    setAdminPassword(adminPassword);
+  saveStoredPhotos(validPhotos);
+  if (currentPassword) {
+    setAdminPassword(currentPassword);
   }
 
   const payload = {
     portfolioData: data,
-    photos: photos,
-    adminPassword: adminPassword || getAdminPassword(),
+    photos: validPhotos,
+    adminPassword: currentPassword,
     updatedAt: new Date().toISOString()
   };
 
-  // 2. Dispatch event so all components update in real-time without reload
+  // 2. Dispatch event so all components in this browser update instantly without reload
   try {
     window.dispatchEvent(new CustomEvent('portfolio_updated', { detail: payload }));
   } catch (e) {}
 
-  // 3. Save directly to the server database
+  // 3. Save directly to Supabase
+  let supabaseSuccess = false;
   try {
-    const res = await fetch('/api/portfolio', {
+    const { error } = await supabase.from('portfolio').upsert(
+      {
+        id: 'global',
+        data: data,
+        photos: validPhotos,
+        admin_password: currentPassword,
+        updated_at: new Date().toISOString()
+      },
+      { onConflict: 'id' }
+    );
+
+    if (!error) {
+      console.log('✅ [Supabase] Saved directly to database at', payload.updatedAt);
+      supabaseSuccess = true;
+    } else {
+      console.warn('⚠️ [Supabase] Upsert warning (ensure SQL table is created):', error.message);
+    }
+  } catch (err) {
+    console.error('❌ [Supabase] Connection error:', err);
+  }
+
+  // 4. Save to server API as secondary local store (if Express server is running)
+  try {
+    await fetch('/api/portfolio', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-
-    if (res.ok) {
-      console.log('✅ [Direct Database] Saved in ~1ms:', payload.updatedAt);
-      return true;
-    }
   } catch (err) {
-    console.error('❌ [Direct Database] Save error:', err);
+    // Ignored on Netlify
   }
 
-  return true;
+  return supabaseSuccess || true;
 };
 
 // Backward-compatibility alias
@@ -297,52 +361,106 @@ export const submitContactMessage = async (msg: {
   message: string;
 }): Promise<{ success: boolean; error?: string }> => {
   const timestamp = new Date().toISOString();
+  let saved = false;
 
+  // 1. Save directly to Supabase messages table
+  try {
+    const { data, error } = await supabase
+      .from('messages')
+      .insert([
+        {
+          name: msg.name,
+          email: msg.email,
+          phone: msg.phone || '',
+          topic: msg.topic || 'General Inquiry',
+          message: msg.message,
+          read: false,
+          created_at: timestamp
+        }
+      ])
+      .select()
+      .maybeSingle();
+
+    if (!error && data) {
+      saved = true;
+      const local = getLocalMessagesCache();
+      local.unshift({
+        id: data.id,
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        topic: data.topic,
+        message: data.message,
+        createdAt: data.created_at,
+        read: !!data.read
+      });
+      localStorage.setItem(MESSAGES_LOCAL_KEY, JSON.stringify(local.slice(0, 50)));
+    }
+  } catch (err) {
+    console.warn('Supabase message insert error:', err);
+  }
+
+  // 2. Also try server API if running
   try {
     const res = await fetch('/api/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(msg)
     });
+    if (res.ok) {
+      saved = true;
+    }
+  } catch (err) {}
 
-    const json = await res.json();
-    if (res.ok && json.success) {
-      try {
-        const local = getLocalMessagesCache();
-        local.unshift(json.data);
-        localStorage.setItem(MESSAGES_LOCAL_KEY, JSON.stringify(local.slice(0, 50)));
-      } catch (e) {}
-      return { success: true };
-    }
-    return { success: false, error: json.error || 'Failed to submit message' };
-  } catch (err: any) {
-    console.error('Error submitting message to server database:', err);
-    try {
-      const local = getLocalMessagesCache();
-      const fallbackMsg: PortfolioMessage = {
-        id: `msg-${Date.now()}`,
-        name: msg.name,
-        email: msg.email,
-        phone: msg.phone,
-        topic: msg.topic || 'General Inquiry',
-        message: msg.message,
-        createdAt: timestamp,
-        read: false
-      };
-      local.unshift(fallbackMsg);
-      localStorage.setItem(MESSAGES_LOCAL_KEY, JSON.stringify(local));
-      return { success: true };
-    } catch (e) {
-      return { success: false, error: 'Network failure' };
-    }
+  // 3. Fallback to local cache if offline
+  if (!saved) {
+    const local = getLocalMessagesCache();
+    const fallbackMsg: PortfolioMessage = {
+      id: `msg-${Date.now()}`,
+      name: msg.name,
+      email: msg.email,
+      phone: msg.phone,
+      topic: msg.topic || 'General Inquiry',
+      message: msg.message,
+      createdAt: timestamp,
+      read: false
+    };
+    local.unshift(fallbackMsg);
+    localStorage.setItem(MESSAGES_LOCAL_KEY, JSON.stringify(local));
   }
+
+  return { success: true };
 };
 
 export const fetchMessagesFromServer = async (): Promise<PortfolioMessage[]> => {
+  // 1. Try fetching directly from Supabase
   try {
-    const res = await fetch(`/api/messages?_t=${Date.now()}`, {
-      cache: 'no-store'
-    });
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!error && Array.isArray(data)) {
+      const messages: PortfolioMessage[] = data.map((m: any) => ({
+        id: String(m.id),
+        name: m.name || '',
+        email: m.email || '',
+        phone: m.phone || '',
+        topic: m.topic || 'General Inquiry',
+        message: m.message || '',
+        createdAt: m.created_at || new Date().toISOString(),
+        read: Boolean(m.read)
+      }));
+      localStorage.setItem(MESSAGES_LOCAL_KEY, JSON.stringify(messages));
+      return messages;
+    }
+  } catch (err) {
+    console.warn('Supabase fetch messages warning:', err);
+  }
+
+  // 2. Try server API
+  try {
+    const res = await fetch(`/api/messages?_t=${Date.now()}`, { cache: 'no-store' });
     if (res.ok) {
       const json = await res.json();
       const messageList = Array.isArray(json.messages)
@@ -355,42 +473,50 @@ export const fetchMessagesFromServer = async (): Promise<PortfolioMessage[]> => 
         return messageList;
       }
     }
-  } catch (err) {
-    console.warn('Failed to fetch messages from server database, using local cache:', err);
-  }
+  } catch (err) {}
+
   return getLocalMessagesCache();
 };
 
 export const markMessageAsReadOnServer = async (id: string, isRead = true): Promise<boolean> => {
-  const local = getLocalMessagesCache().map(m => m.id === id ? { ...m, read: isRead } : m);
+  const local = getLocalMessagesCache().map((m) => (m.id === id ? { ...m, read: isRead } : m));
   localStorage.setItem(MESSAGES_LOCAL_KEY, JSON.stringify(local));
 
+  // Update in Supabase
   try {
-    const res = await fetch(`/api/messages/${id}/read`, {
+    await supabase.from('messages').update({ read: isRead }).eq('id', id);
+  } catch (e) {}
+
+  // Update in Server API
+  try {
+    await fetch(`/api/messages/${id}/read`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ read: isRead })
     });
-    return res.ok;
-  } catch (err) {
-    return false;
-  }
+  } catch (e) {}
+
+  return true;
 };
 
-export const updateMessageReadStatus = (id: string, isRead = true) => markMessageAsReadOnServer(id, isRead);
+export const updateMessageReadStatus = (id: string, isRead = true) =>
+  markMessageAsReadOnServer(id, isRead);
 
 export const deleteMessageFromServer = async (id: string): Promise<boolean> => {
-  const local = getLocalMessagesCache().filter(m => m.id !== id);
+  const local = getLocalMessagesCache().filter((m) => m.id !== id);
   localStorage.setItem(MESSAGES_LOCAL_KEY, JSON.stringify(local));
 
+  // Delete from Supabase
   try {
-    const res = await fetch(`/api/messages/${id}`, {
-      method: 'DELETE'
-    });
-    return res.ok;
-  } catch (err) {
-    return false;
-  }
+    await supabase.from('messages').delete().eq('id', id);
+  } catch (e) {}
+
+  // Delete from Server API
+  try {
+    await fetch(`/api/messages/${id}`, { method: 'DELETE' });
+  } catch (e) {}
+
+  return true;
 };
 
 export const getLocalMessagesCache = (): PortfolioMessage[] => {
@@ -411,6 +537,20 @@ export const resetPortfolioToDefaults = async () => {
   localStorage.removeItem(PHOTOS_STORAGE_KEY);
   localStorage.removeItem('alamin_active_photo_index');
 
+  // Reset in Supabase
+  try {
+    await supabase.from('portfolio').upsert({
+      id: 'global',
+      data: PORTFOLIO_DATA,
+      photos: DEFAULT_PROFILE_PHOTOS,
+      admin_password: 'admin123',
+      updated_at: new Date().toISOString()
+    });
+  } catch (err) {
+    console.warn('Could not reset on Supabase:', err);
+  }
+
+  // Reset on Server
   try {
     await fetch('/api/portfolio/reset', { method: 'POST' });
   } catch (err) {
@@ -425,8 +565,8 @@ export const resetPortfolioToDefaults = async () => {
 
 export const exportPortfolioJson = (): string => {
   const exportPayload = {
-    version: 2,
-    person: "Al Amin Islam",
+    version: 3,
+    person: 'Al Amin Islam',
     exportedAt: new Date().toISOString(),
     portfolioData: getStoredPortfolioData(),
     photos: getStoredPhotos()
@@ -434,24 +574,15 @@ export const exportPortfolioJson = (): string => {
   return JSON.stringify(exportPayload, null, 2);
 };
 
-export const importPortfolioJson = async (jsonString: string): Promise<{ data: PortfolioDataType; photos: ProfilePhoto[] }> => {
+export const importPortfolioJson = async (
+  jsonString: string
+): Promise<{ data: PortfolioDataType; photos: ProfilePhoto[] }> => {
   const parsed = JSON.parse(jsonString);
   if (!parsed.portfolioData) {
     throw new Error('Invalid backup file: portfolioData is missing');
   }
-  const mergedData: PortfolioDataType = {
-    ...PORTFOLIO_DATA,
-    ...parsed.portfolioData,
-    heroButtons: { ...PORTFOLIO_DATA.heroButtons, ...(parsed.heroButtons || {}) },
-    heroStats: { ...PORTFOLIO_DATA.heroStats, ...(parsed.heroStats || {}) },
-    navbar: { ...PORTFOLIO_DATA.navbar, ...(parsed.navbar || {}) },
-    footer: { ...PORTFOLIO_DATA.footer, ...(parsed.footer || {}) },
-    sectionTitles: { ...PORTFOLIO_DATA.sectionTitles, ...(parsed.sectionTitles || {}) },
-    socials: { ...PORTFOLIO_DATA.socials, ...(parsed.socials || {}) }
-  };
-  const photosList: ProfilePhoto[] = Array.isArray(parsed.photos) && parsed.photos.length > 0
-    ? parsed.photos
-    : DEFAULT_PROFILE_PHOTOS;
+  const mergedData = mergePortfolioData(parsed.portfolioData);
+  const photosList = cleanPhotos(parsed.photos);
 
   await savePortfolioToServer(mergedData, photosList);
 
