@@ -122,7 +122,12 @@ export default function App() {
 
     // Listen to local cross-tab events on same browser
     const onStorage = (e: StorageEvent) => {
-      if (e.key === 'alamin_portfolio_data' || e.key === 'alamin_portfolio_photos') {
+      if (
+        e.key === 'alamin_portfolio_data' ||
+        e.key === 'alamin_portfolio_photos' ||
+        e.key === 'alamin_portfolio_data_v2' ||
+        e.key === 'alamin_portfolio_photos_v2'
+      ) {
         syncData();
       }
     };
