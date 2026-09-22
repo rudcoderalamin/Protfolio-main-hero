@@ -27,9 +27,31 @@ const MESSAGES_LOCAL_KEY = 'alamin_messages_local_cache';
 // Helper to deeply merge loaded data with defaults so no fields are ever undefined
 export const mergePortfolioData = (raw: any): PortfolioDataType => {
   if (!raw || typeof raw !== 'object') return PORTFOLIO_DATA;
+  
+  // Sanitize any legacy contact info that may contain Imran
+  const sanitizedName = (raw.name && typeof raw.name === 'string' && raw.name.toLowerCase().includes('imran'))
+    ? PORTFOLIO_DATA.name
+    : (raw.name || PORTFOLIO_DATA.name);
+
+  const sanitizedEmail = (raw.email && typeof raw.email === 'string' && raw.email.toLowerCase().includes('imran'))
+    ? PORTFOLIO_DATA.email
+    : (raw.email || PORTFOLIO_DATA.email);
+
+  const rawSocials = raw.socials || {};
+  const sanitizedSocials = {
+    ...PORTFOLIO_DATA.socials,
+    ...rawSocials,
+    github: (rawSocials.github && rawSocials.github.toLowerCase().includes('imran'))
+      ? PORTFOLIO_DATA.socials.github
+      : (rawSocials.github || PORTFOLIO_DATA.socials.github)
+  };
+
   return {
     ...PORTFOLIO_DATA,
     ...raw,
+    name: sanitizedName,
+    email: sanitizedEmail,
+    socials: sanitizedSocials,
     heroButtons: { ...PORTFOLIO_DATA.heroButtons, ...(raw.heroButtons || {}) },
     heroStats: { ...PORTFOLIO_DATA.heroStats, ...(raw.heroStats || {}) },
     navbar: { ...PORTFOLIO_DATA.navbar, ...(raw.navbar || {}) },
@@ -44,17 +66,20 @@ export const mergePortfolioData = (raw: any): PortfolioDataType => {
     contactModal: { ...PORTFOLIO_DATA.contactModal, ...(raw.contactModal || {}) },
     bookCallModal: { ...PORTFOLIO_DATA.bookCallModal, ...(raw.bookCallModal || {}) },
     resumeModal: { ...PORTFOLIO_DATA.resumeModal, ...(raw.resumeModal || {}) },
-    whatsappWidget: { ...PORTFOLIO_DATA.whatsappWidget, ...(raw.whatsappWidget || {}) },
-    socials: { ...PORTFOLIO_DATA.socials, ...(raw.socials || {}) }
+    whatsappWidget: { ...PORTFOLIO_DATA.whatsappWidget, ...(raw.whatsappWidget || {}) }
   };
 };
 
 export const cleanPhotos = (photos: any): ProfilePhoto[] => {
   if (!Array.isArray(photos) || photos.length === 0) return DEFAULT_PROFILE_PHOTOS;
-  const filtered = photos.filter(
-    (p: ProfilePhoto) =>
-      p && p.url && !p.url.includes('/gallery/') && !p.url.includes('Profile-Photo.png')
-  );
+  const filtered = photos
+    .filter((p: ProfilePhoto) => p && p.url && !p.url.includes('/gallery/'))
+    .map((p: ProfilePhoto) => {
+      if (p.url.includes('imran-hasan.jpg')) {
+        return { ...p, url: '/Profile-Photo.png', caption: p.caption?.replace(/imran/gi, 'Al Amin') || 'Al Amin Islam' };
+      }
+      return p;
+    });
   return filtered.length > 0 ? filtered : DEFAULT_PROFILE_PHOTOS;
 };
 

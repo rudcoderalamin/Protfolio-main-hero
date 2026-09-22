@@ -223,7 +223,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({ section, onClose, onOp
             }}
             className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-xs transition-colors"
           >
-            Discuss a Project with Imran
+            Discuss a Project with {data.nickname || data.name || 'Al Amin'}
           </button>
         </div>
       </motion.div>

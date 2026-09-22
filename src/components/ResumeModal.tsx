@@ -54,15 +54,15 @@ ${data.bio || ''}
 
 SKILLS
 --------------------------------------------------
-${(data.skills || []).map(cat => `${cat.category}: ${cat.skills.map(s => s.name).join(', ')}`).join('\n')}
+${(data.skills || []).map(cat => `${cat.category || 'Skills'}: ${(cat.skills || []).map(s => s.name).filter(Boolean).join(', ')}`).join('\n')}
 
 PROJECTS
 --------------------------------------------------
-${(data.projects || []).map((p, i) => `${i + 1}. ${p.title}\n   Tech: ${p.tech.join(', ')}\n   Description: ${p.description}\n`).join('\n')}
+${(data.projects || []).map((p, i) => `${i + 1}. ${p.title || 'Untitled'}\n   Tech: ${(p.tech || []).join(', ')}\n   Description: ${p.description || ''}\n`).join('\n')}
 
 EDUCATION
 --------------------------------------------------
-${(data.education || []).map(e => `${e.degree} - ${e.institution} (${e.period})`).join('\n')}
+${(data.education || []).map(e => `${e.degree || ''} - ${e.institution || ''} (${e.period || ''})`).join('\n')}
 `], { type: 'text/plain;charset=utf-8' });
     element.href = URL.createObjectURL(file);
     element.download = `${(data.name || 'Resume').replace(/\s+/g, '_')}_Resume.txt`;
@@ -172,9 +172,9 @@ ${(data.education || []).map(e => `${e.degree} - ${e.institution} (${e.period})`
                   <div key={cat.category} className="p-3 rounded-xl bg-slate-50 border border-slate-200">
                     <div className="font-semibold text-xs text-slate-800 mb-2 uppercase tracking-wider">{cat.category}</div>
                     <div className="flex flex-wrap gap-1.5">
-                      {cat.skills.map((s) => (
-                        <span key={s.name} className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 text-xs font-medium">
-                          {s.name}
+                      {(cat.skills || []).map((s, sIdx) => (
+                        <span key={s.name || sIdx} className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 text-xs font-medium">
+                          {s.name || 'Untitled Skill'}
                         </span>
                       ))}
                     </div>
@@ -192,13 +192,13 @@ ${(data.education || []).map(e => `${e.degree} - ${e.institution} (${e.period})`
                 <span>{rm?.projectsHeader || 'Featured Fullstack Projects'}</span>
               </div>
               <div className="space-y-3">
-                {data.projects.map((proj) => (
-                  <div key={proj.id} className="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-sky-300 transition-colors">
+                {data.projects.map((proj, pIdx) => (
+                  <div key={proj.id || pIdx} className="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-sky-300 transition-colors">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-slate-900 text-sm">{proj.title}</h4>
+                      <h4 className="font-bold text-slate-900 text-sm">{proj.title || 'Untitled Project'}</h4>
                       <div className="flex gap-1.5 flex-wrap">
-                        {proj.tech.map((t) => (
-                          <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 font-medium border border-sky-200/60">
+                        {(proj.tech || []).map((t, tIdx) => (
+                          <span key={t || tIdx} className="text-[10px] px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 font-medium border border-sky-200/60">
                             {t}
                           </span>
                         ))}

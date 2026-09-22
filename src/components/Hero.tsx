@@ -109,7 +109,7 @@ export const Hero: React.FC<HeroProps> = ({
                 className="w-full h-full object-cover object-top select-none"
                 referrerPolicy="no-referrer"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/imran-hasan.jpg";
+                  (e.target as HTMLImageElement).src = "/Profile-Photo.png";
                 }}
               />
             </AnimatePresence>

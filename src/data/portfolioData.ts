@@ -66,7 +66,7 @@ export interface ThemeConfig {
 export const DEFAULT_PROFILE_PHOTOS: ProfilePhoto[] = [
   {
     id: "official-portrait",
-    url: "/imran-hasan.jpg",
+    url: "/Profile-Photo.png",
     caption: "Al Amin Islam — Official Profile Portrait",
     tag: "Official"
   },

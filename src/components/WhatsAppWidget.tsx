@@ -43,11 +43,11 @@ export const WhatsAppWidget: React.FC<WhatsAppWidgetProps> = ({ portfolioData })
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-full overflow-hidden bg-white/20 p-0.5 border border-white/40">
                   <img
-                    src="/imran-hasan.jpg"
-                    alt={data.name || 'Profile'}
+                    src="/Profile-Photo.png"
+                    alt={data.name || 'Al Amin Islam'}
                     className="w-full h-full object-cover rounded-full"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = "https://github.com/DeveloperImran1.png";
+                      (e.target as HTMLImageElement).src = "/Profile-Photo.png";
                     }}
                   />
                 </div>

@@ -35,7 +35,9 @@ import {
   FileText,
   Database,
   Copy,
-  Palette
+  Palette,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { ProfilePhoto } from '../data/portfolioData';
 import {
@@ -104,9 +106,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
   const [copiedSql, setCopiedSql] = useState(false);
 
-  const isLocalUpdateRef = useRef(false);
+  // Default to true so background Firestore listeners or polling intervals NEVER overwrite active form edits!
+  const isLocalUpdateRef = useRef(true);
 
-  // Sync formData with incoming props only on initial load or if not editing locally
+  // Sync formData with incoming props only if explicitly reset or initial load
   React.useEffect(() => {
     if (isLocalUpdateRef.current) {
       return;
@@ -615,9 +618,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Full Name
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-300">
+                      Full Name
+                    </label>
+                    {formData.name && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, name: '' })}
+                        className="text-[10px] text-slate-400 hover:text-white"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={formData.name ?? ''}
@@ -628,9 +642,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Brand Monogram Initials
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-300">
+                      Brand Monogram Initials
+                    </label>
+                    {formData.brandInitials && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, brandInitials: '' })}
+                        className="text-[10px] text-slate-400 hover:text-white"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={formData.brandInitials ?? ''}
@@ -641,9 +666,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Greeting Prefix & Emoji
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-300">
+                      Greeting Prefix & Emoji
+                    </label>
+                    {(formData.greetingPrefix || formData.greetingEmoji) && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, greetingPrefix: '', greetingEmoji: '' })}
+                        className="text-[10px] text-slate-400 hover:text-white"
+                      >
+                        Clear Both
+                      </button>
+                    )}
+                  </div>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -663,9 +699,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Experience Badge Text
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-300">
+                      Experience Badge Text
+                    </label>
+                    {formData.experienceYears && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, experienceYears: '' })}
+                        className="text-[10px] text-slate-400 hover:text-white"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={formData.experienceYears ?? ''}
@@ -678,15 +725,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               {/* Typewriter Titles */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Typewriter Cycling Titles (Shows in hero with typing effect)
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-300">
+                    Typewriter Cycling Titles (Shows in hero with typing effect)
+                  </label>
+                  {(formData.titles && formData.titles.length > 0) && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, titles: [] })}
+                      className="text-[10px] text-rose-400 hover:text-rose-300"
+                    >
+                      Clear All Titles
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-2 mb-3">
                   {formData.titles?.map((title, idx) => (
                     <div key={idx} className="flex items-center gap-2">
                       <input
                         type="text"
-                        value={title}
+                        value={title ?? ''}
                         onChange={(e) => {
                           const updated = [...formData.titles];
                           updated[idx] = e.target.value;
@@ -694,6 +752,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         }}
                         className="flex-1 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-sky-500"
                       />
+                      {title && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = [...formData.titles];
+                            updated[idx] = '';
+                            setFormData({ ...formData, titles: updated });
+                          }}
+                          className="px-2 py-1 text-[10px] bg-slate-900 border border-slate-800 rounded text-slate-400 hover:text-white"
+                          title="Clear title"
+                        >
+                          Clear
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => handleRemoveTitle(idx)}
@@ -727,9 +799,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               {/* Bio */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Full Bio Sentence (Appears right under the typewriter title)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-300">
+                    Full Bio Sentence (Appears right under the typewriter title)
+                  </label>
+                  {formData.bio && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, bio: '' })}
+                      className="text-[10px] text-slate-400 hover:text-white"
+                    >
+                      Clear Bio
+                    </button>
+                  )}
+                </div>
                 <textarea
                   rows={4}
                   value={formData.bio ?? ''}
@@ -741,7 +824,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               {/* Contact Info */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Email</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-300">Email</label>
+                    {formData.email && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, email: '' })}
+                        className="text-[10px] text-slate-400 hover:text-white"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="email"
                     value={formData.email ?? ''}
@@ -751,7 +845,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Phone</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-300">Phone</label>
+                    {formData.phone && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, phone: '' })}
+                        className="text-[10px] text-slate-400 hover:text-white"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={formData.phone ?? ''}
@@ -761,7 +866,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">WhatsApp Number (e.g. 8801700000000)</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-300">WhatsApp Number (e.g. 8801700000000)</label>
+                    {formData.whatsappNumber && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, whatsappNumber: '' })}
+                        className="text-[10px] text-slate-400 hover:text-white"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={formData.whatsappNumber ?? ''}
@@ -771,7 +887,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Location</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-300">Location</label>
+                    {formData.location && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, location: '' })}
+                        className="text-[10px] text-slate-400 hover:text-white"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={formData.location ?? ''}
@@ -879,7 +1006,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             alt={photo.caption}
                             className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = "/imran-hasan.jpg";
+                              (e.target as HTMLImageElement).src = "/Profile-Photo.png";
                             }}
                           />
                           <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-slate-900/80 backdrop-blur-xs text-[10px] font-semibold text-slate-200 border border-slate-700">
@@ -988,7 +1115,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {/* Stat 1 */}
                   <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
-                    <label className="block text-[11px] text-slate-400">Pill 1 (Problems Solved)</label>
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[11px] text-slate-400">Pill 1 (Problems Solved)</label>
+                      {(formData.heroStats?.stat1Value || formData.heroStats?.stat1Label) && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              heroStats: { ...formData.heroStats, stat1Value: '', stat1Label: '' }
+                            })
+                          }
+                          className="text-[10px] text-slate-400 hover:text-white"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
                     <input
                       type="text"
                       value={formData.heroStats?.stat1Value ?? ''}
@@ -998,7 +1141,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           heroStats: { ...formData.heroStats, stat1Value: e.target.value }
                         })
                       }
-                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-xs text-white"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-xs text-white focus:outline-none focus:border-sky-500"
                       placeholder="620+"
                     />
                     <input
@@ -1010,14 +1153,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           heroStats: { ...formData.heroStats, stat1Label: e.target.value }
                         })
                       }
-                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-xs text-white"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-xs text-white focus:outline-none focus:border-sky-500"
                       placeholder="Problems Solved"
                     />
                   </div>
 
                   {/* Stat 2 */}
                   <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
-                    <label className="block text-[11px] text-slate-400">Pill 2 (Projects Count)</label>
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[11px] text-slate-400">Pill 2 (Projects Count)</label>
+                      {(formData.heroStats?.stat2Value || formData.heroStats?.stat2Label) && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              heroStats: { ...formData.heroStats, stat2Value: '', stat2Label: '' }
+                            })
+                          }
+                          className="text-[10px] text-slate-400 hover:text-white"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
                     <input
                       type="text"
                       value={formData.heroStats?.stat2Value ?? ''}
@@ -1027,7 +1186,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           heroStats: { ...formData.heroStats, stat2Value: e.target.value }
                         })
                       }
-                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-xs text-white"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-xs text-white focus:outline-none focus:border-sky-500"
                       placeholder="15+"
                     />
                     <input
@@ -1039,14 +1198,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           heroStats: { ...formData.heroStats, stat2Label: e.target.value }
                         })
                       }
-                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-xs text-white"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-xs text-white focus:outline-none focus:border-sky-500"
                       placeholder="Fullstack Projects"
                     />
                   </div>
 
                   {/* Stat 3 */}
                   <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
-                    <label className="block text-[11px] text-slate-400">Pill 3 (Award / Contest)</label>
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[11px] text-slate-400">Pill 3 (Award / Contest)</label>
+                      {(formData.heroStats?.stat3Value || formData.heroStats?.stat3Label) && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              heroStats: { ...formData.heroStats, stat3Value: '', stat3Label: '' }
+                            })
+                          }
+                          className="text-[10px] text-slate-400 hover:text-white"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
                     <input
                       type="text"
                       value={formData.heroStats?.stat3Value ?? ''}
@@ -1056,7 +1231,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           heroStats: { ...formData.heroStats, stat3Value: e.target.value }
                         })
                       }
-                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-xs text-white"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-xs text-white focus:outline-none focus:border-sky-500"
                       placeholder="2nd Position"
                     />
                     <input
@@ -1068,7 +1243,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           heroStats: { ...formData.heroStats, stat3Label: e.target.value }
                         })
                       }
-                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-xs text-white"
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-xs text-white focus:outline-none focus:border-sky-500"
                       placeholder="DUET IUPC"
                     />
                   </div>
@@ -1080,7 +1255,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Button Labels</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Resume Button Text</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] text-slate-400">Resume Button Text</label>
+                      {formData.heroButtons?.resumeText && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              heroButtons: { ...formData.heroButtons, resumeText: '' }
+                            })
+                          }
+                          className="text-[10px] text-slate-400 hover:text-white"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
                     <input
                       type="text"
                       value={formData.heroButtons?.resumeText ?? ''}
@@ -1096,7 +1287,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Contact Me Button Text</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] text-slate-400">Contact Me Button Text</label>
+                      {formData.heroButtons?.contactText && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              heroButtons: { ...formData.heroButtons, contactText: '' }
+                            })
+                          }
+                          className="text-[10px] text-slate-400 hover:text-white"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
                     <input
                       type="text"
                       value={formData.heroButtons?.contactText ?? ''}
@@ -1112,7 +1319,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Book a Call Button Text</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] text-slate-400">Book a Call Button Text</label>
+                      {formData.heroButtons?.bookCallText && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              heroButtons: { ...formData.heroButtons, bookCallText: '' }
+                            })
+                          }
+                          className="text-[10px] text-slate-400 hover:text-white"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
                     <input
                       type="text"
                       value={formData.heroButtons?.bookCallText ?? ''}
@@ -1150,7 +1373,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">GitHub Profile URL</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-300">GitHub Profile URL</label>
+                    {formData.socials?.github && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            socials: { ...formData.socials, github: '' }
+                          })
+                        }
+                        className="text-[10px] text-slate-400 hover:text-white"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="url"
                     value={formData.socials?.github || ''}
@@ -1166,7 +1405,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">LinkedIn Profile URL</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-300">LinkedIn Profile URL</label>
+                    {formData.socials?.linkedin && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            socials: { ...formData.socials, linkedin: '' }
+                          })
+                        }
+                        className="text-[10px] text-slate-400 hover:text-white"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="url"
                     value={formData.socials?.linkedin || ''}
@@ -1182,7 +1437,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Facebook URL</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-300">Facebook URL</label>
+                    {formData.socials?.facebook && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            socials: { ...formData.socials, facebook: '' }
+                          })
+                        }
+                        className="text-[10px] text-slate-400 hover:text-white"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="url"
                     value={formData.socials?.facebook || ''}
@@ -1198,7 +1469,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Codeforces URL</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-300">Codeforces URL</label>
+                    {formData.socials?.codeforces && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            socials: { ...formData.socials, codeforces: '' }
+                          })
+                        }
+                        className="text-[10px] text-slate-400 hover:text-white"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="url"
                     value={formData.socials?.codeforces || ''}
@@ -1214,7 +1501,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">CodeChef URL</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-300">CodeChef URL</label>
+                    {formData.socials?.codechef && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            socials: { ...formData.socials, codechef: '' }
+                          })
+                        }
+                        className="text-[10px] text-slate-400 hover:text-white"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="url"
                     value={formData.socials?.codechef || ''}
@@ -1230,7 +1533,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">LeetCode URL</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-300">LeetCode URL</label>
+                    {formData.socials?.leetcode && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            socials: { ...formData.socials, leetcode: '' }
+                          })
+                        }
+                        className="text-[10px] text-slate-400 hover:text-white"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="url"
                     value={formData.socials?.leetcode || ''}
@@ -1242,6 +1561,70 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     }
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
                     placeholder="https://leetcode.com/..."
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-300">Twitter / X URL</label>
+                    {formData.socials?.twitter && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            socials: { ...formData.socials, twitter: '' }
+                          })
+                        }
+                        className="text-[10px] text-slate-400 hover:text-white"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="url"
+                    value={formData.socials?.twitter || ''}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        socials: { ...formData.socials, twitter: e.target.value }
+                      })
+                    }
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
+                    placeholder="https://x.com/..."
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-300">YouTube Channel URL</label>
+                    {formData.socials?.youtube && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            socials: { ...formData.socials, youtube: '' }
+                          })
+                        }
+                        className="text-[10px] text-slate-400 hover:text-white"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="url"
+                    value={formData.socials?.youtube || ''}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        socials: { ...formData.socials, youtube: e.target.value }
+                      })
+                    }
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
+                    placeholder="https://youtube.com/@..."
                   />
                 </div>
               </div>
@@ -1256,131 +1639,304 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <h2 className="text-lg font-bold text-white">Featured Projects ({formData.projects?.length || 0})</h2>
                   <p className="text-xs text-slate-400">Add, edit, or remove fullstack software projects</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newProj = {
-                      id: `proj-${Date.now()}`,
-                      title: 'New Fullstack Project',
-                      description: 'Project description showcasing architecture and impact.',
-                      tech: ['React', 'Node.js', 'Tailwind CSS'],
-                      metrics: 'Improved workflow efficiency.',
-                      github: 'https://github.com/alaminislam',
-                      live: 'https://alamin-islam-portfolio.vercel.app'
-                    };
-                    const updated = [newProj, ...(formData.projects || [])];
-                    setFormData({ ...formData, projects: updated });
-                    onUpdatePortfolioData({ ...formData, projects: updated });
-                  }}
-                  className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Project</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newProj = {
+                        id: `proj-${Date.now()}`,
+                        title: '',
+                        description: '',
+                        tech: [],
+                        metrics: '',
+                        github: '',
+                        live: ''
+                      };
+                      const updated = [newProj, ...(formData.projects || [])];
+                      setFormData({ ...formData, projects: updated });
+                    }}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Blank Project</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newProj = {
+                        id: `proj-${Date.now()}`,
+                        title: 'New Fullstack Project',
+                        description: 'Project description showcasing architecture and impact.',
+                        tech: ['React', 'Node.js', 'Tailwind CSS'],
+                        metrics: 'Improved workflow efficiency.',
+                        github: 'https://github.com/alaminislam',
+                        live: 'https://alamin-islam-portfolio.vercel.app'
+                      };
+                      const updated = [newProj, ...(formData.projects || [])];
+                      setFormData({ ...formData, projects: updated });
+                    }}
+                    className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Project</span>
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-4">
-                {formData.projects?.map((proj, pIdx) => (
-                  <div key={proj.id} className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
-                    <div className="flex items-center justify-between">
-                      <input
-                        type="text"
-                        value={proj.title ?? ''}
-                        onChange={(e) => {
-                          const updated = [...formData.projects];
-                          updated[pIdx].title = e.target.value;
-                          setFormData({ ...formData, projects: updated });
-                        }}
-                        placeholder="Project Title"
-                        className="text-sm font-bold text-white bg-transparent border-b border-transparent focus:border-sky-500 px-1 py-0.5 focus:outline-none flex-1"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (confirm(`Delete project "${proj.title}"?`)) {
-                            const updated = formData.projects.filter((_, i) => i !== pIdx);
-                            setFormData({ ...formData, projects: updated });
-                            onUpdatePortfolioData({ ...formData, projects: updated });
-                          }
-                        }}
-                        className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <textarea
-                      rows={2}
-                      value={proj.description ?? ''}
-                      onChange={(e) => {
-                        const updated = [...formData.projects];
-                        updated[pIdx].description = e.target.value;
-                        setFormData({ ...formData, projects: updated });
-                      }}
-                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-sky-500 resize-none"
-                      placeholder="Project Description..."
-                    />
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-                      <div>
-                        <label className="block text-[10px] text-slate-500">Tech Stack (comma separated)</label>
-                        <input
-                          type="text"
-                          value={proj.tech ? proj.tech.join(', ') : ''}
-                          onChange={(e) => {
-                            const updated = [...formData.projects];
-                            updated[pIdx].tech = e.target.value.split(',').map((s) => s.trim()).filter(Boolean);
-                            setFormData({ ...formData, projects: updated });
-                          }}
-                          placeholder="React, Node.js..."
-                          className="w-full px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] text-slate-500">Impact / Metrics Note</label>
-                        <input
-                          type="text"
-                          value={proj.metrics ?? ''}
-                          onChange={(e) => {
-                            const updated = [...formData.projects];
-                            updated[pIdx].metrics = e.target.value;
-                            setFormData({ ...formData, projects: updated });
-                          }}
-                          placeholder="e.g. 10k+ active users"
-                          className="w-full px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] text-slate-500">Live Demo URL</label>
-                        <input
-                          type="url"
-                          value={proj.live ?? ''}
-                          onChange={(e) => {
-                            const updated = [...formData.projects];
-                            updated[pIdx].live = e.target.value;
-                            setFormData({ ...formData, projects: updated });
-                          }}
-                          placeholder="https://..."
-                          className="w-full px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] text-slate-500">GitHub URL</label>
-                        <input
-                          type="url"
-                          value={proj.github ?? ''}
-                          onChange={(e) => {
-                            const updated = [...formData.projects];
-                            updated[pIdx].github = e.target.value;
-                            setFormData({ ...formData, projects: updated });
-                          }}
-                          placeholder="https://github.com/..."
-                          className="w-full px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white"
-                        />
-                      </div>
-                    </div>
+                {(!formData.projects || formData.projects.length === 0) ? (
+                  <div className="p-6 rounded-xl bg-slate-950 border border-slate-800 text-center text-xs text-slate-400">
+                    No projects found. Click &quot;Add Blank Project&quot; to insert your portfolio projects.
                   </div>
-                ))}
+                ) : (
+                  formData.projects.map((proj, pIdx) => (
+                    <div key={proj.id || pIdx} className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1 flex-1">
+                          <input
+                            type="text"
+                            value={proj.title ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = (formData.projects || []).map((item, i) =>
+                                i === pIdx ? { ...item, title: val } : item
+                              );
+                              setFormData({ ...formData, projects: updated });
+                            }}
+                            placeholder="Project Title"
+                            className="text-sm font-bold text-white bg-slate-900 border border-slate-800 rounded px-2 py-1 focus:border-sky-500 focus:outline-none flex-1"
+                          />
+                          {proj.title && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = (formData.projects || []).map((item, i) =>
+                                  i === pIdx ? { ...item, title: '' } : item
+                                );
+                                setFormData({ ...formData, projects: updated });
+                              }}
+                              className="px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-white bg-slate-800 rounded"
+                              title="Clear title"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Reorder and Delete Controls */}
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            disabled={pIdx === 0}
+                            onClick={() => {
+                              if (pIdx === 0) return;
+                              const updated = [...(formData.projects || [])];
+                              const temp = updated[pIdx - 1];
+                              updated[pIdx - 1] = updated[pIdx];
+                              updated[pIdx] = temp;
+                              setFormData({ ...formData, projects: updated });
+                            }}
+                            className="p-1 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                            title="Move Up"
+                          >
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={pIdx === (formData.projects || []).length - 1}
+                            onClick={() => {
+                              if (pIdx === (formData.projects || []).length - 1) return;
+                              const updated = [...(formData.projects || [])];
+                              const temp = updated[pIdx + 1];
+                              updated[pIdx + 1] = updated[pIdx];
+                              updated[pIdx] = temp;
+                              setFormData({ ...formData, projects: updated });
+                            }}
+                            className="p-1 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                            title="Move Down"
+                          >
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = (formData.projects || []).filter((_, i) => i !== pIdx);
+                              setFormData({ ...formData, projects: updated });
+                            }}
+                            className="p-1 text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer ml-1"
+                            title="Delete project"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-[10px] text-slate-400">Description</label>
+                          {proj.description && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = (formData.projects || []).map((item, i) =>
+                                  i === pIdx ? { ...item, description: '' } : item
+                                );
+                                setFormData({ ...formData, projects: updated });
+                              }}
+                              className="text-[10px] text-slate-400 hover:text-white"
+                            >
+                              Clear text
+                            </button>
+                          )}
+                        </div>
+                        <textarea
+                          rows={2}
+                          value={proj.description ?? ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const updated = (formData.projects || []).map((item, i) =>
+                              i === pIdx ? { ...item, description: val } : item
+                            );
+                            setFormData({ ...formData, projects: updated });
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-sky-500 resize-none"
+                          placeholder="Project Description..."
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                        <div>
+                          <div className="flex items-center justify-between mb-0.5">
+                            <label className="block text-[10px] text-slate-500">Tech Stack (comma separated)</label>
+                            {proj.tech && proj.tech.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = (formData.projects || []).map((item, i) =>
+                                    i === pIdx ? { ...item, tech: [] } : item
+                                  );
+                                  setFormData({ ...formData, projects: updated });
+                                }}
+                                className="text-[9px] text-slate-400 hover:text-white"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                          <input
+                            type="text"
+                            value={proj.tech ? proj.tech.join(', ') : ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = (formData.projects || []).map((item, i) =>
+                                i === pIdx ? { ...item, tech: val.length > 0 ? val.split(',').map((s) => s.trim()).filter(Boolean) : [] } : item
+                              );
+                              setFormData({ ...formData, projects: updated });
+                            }}
+                            placeholder="React, Node.js..."
+                            className="w-full px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white focus:outline-none focus:border-sky-500"
+                          />
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-0.5">
+                            <label className="block text-[10px] text-slate-500">Impact / Metrics Note</label>
+                            {proj.metrics && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = (formData.projects || []).map((item, i) =>
+                                    i === pIdx ? { ...item, metrics: '' } : item
+                                  );
+                                  setFormData({ ...formData, projects: updated });
+                                }}
+                                className="text-[9px] text-slate-400 hover:text-white"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                          <input
+                            type="text"
+                            value={proj.metrics ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = (formData.projects || []).map((item, i) =>
+                                i === pIdx ? { ...item, metrics: val } : item
+                              );
+                              setFormData({ ...formData, projects: updated });
+                            }}
+                            placeholder="e.g. 10k+ active users"
+                            className="w-full px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white focus:outline-none focus:border-sky-500"
+                          />
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-0.5">
+                            <label className="block text-[10px] text-slate-500">Live Demo URL</label>
+                            {proj.live && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = (formData.projects || []).map((item, i) =>
+                                    i === pIdx ? { ...item, live: '' } : item
+                                  );
+                                  setFormData({ ...formData, projects: updated });
+                                }}
+                                className="text-[9px] text-slate-400 hover:text-white"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                          <input
+                            type="url"
+                            value={proj.live ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = (formData.projects || []).map((item, i) =>
+                                i === pIdx ? { ...item, live: val } : item
+                              );
+                              setFormData({ ...formData, projects: updated });
+                            }}
+                            placeholder="https://..."
+                            className="w-full px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white focus:outline-none focus:border-sky-500"
+                          />
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-0.5">
+                            <label className="block text-[10px] text-slate-500">GitHub URL</label>
+                            {proj.github && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = (formData.projects || []).map((item, i) =>
+                                    i === pIdx ? { ...item, github: '' } : item
+                                  );
+                                  setFormData({ ...formData, projects: updated });
+                                }}
+                                className="text-[9px] text-slate-400 hover:text-white"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                          <input
+                            type="url"
+                            value={proj.github ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = (formData.projects || []).map((item, i) =>
+                                i === pIdx ? { ...item, github: val } : item
+                              );
+                              setFormData({ ...formData, projects: updated });
+                            }}
+                            placeholder="https://github.com/..."
+                            className="w-full px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white focus:outline-none focus:border-sky-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}
@@ -1393,81 +1949,256 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <h2 className="text-lg font-bold text-white">Skills & Technologies</h2>
                   <p className="text-xs text-slate-400">Edit proficiency levels and skill names across categories</p>
                 </div>
-                <button
-                  onClick={handleSaveData}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold"
-                >
-                  <Save className="w-3.5 h-3.5" />
-                  <span>Save Changes</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newCat = {
+                        category: '',
+                        skills: [{ name: '', level: '' }]
+                      };
+                      const updated = [...(formData.skills || []), newCat];
+                      setFormData({ ...formData, skills: updated });
+                    }}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Blank Category</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newCat = {
+                        category: 'New Technical Stack',
+                        skills: [
+                          { name: 'Primary Tech', level: 'Expert' },
+                          { name: 'Secondary Tech', level: 'Intermediate' }
+                        ]
+                      };
+                      const updated = [...(formData.skills || []), newCat];
+                      setFormData({ ...formData, skills: updated });
+                    }}
+                    className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Category</span>
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-6">
-                {formData.skills?.map((cat, cIdx) => (
-                  <div key={cIdx} className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
-                    <input
-                      type="text"
-                      value={cat.category ?? ''}
-                      onChange={(e) => {
-                        const updated = [...formData.skills];
-                        updated[cIdx].category = e.target.value;
-                        setFormData({ ...formData, skills: updated });
-                      }}
-                      className="text-xs font-bold text-sky-400 bg-transparent uppercase tracking-wider border-b border-transparent focus:border-sky-500 pb-0.5 focus:outline-none"
-                    />
+                {(!formData.skills || formData.skills.length === 0) ? (
+                  <div className="p-6 rounded-xl bg-slate-950 border border-slate-800 text-center text-xs text-slate-400">
+                    No skill categories configured. Click &quot;Add Blank Category&quot; to begin.
+                  </div>
+                ) : (
+                  formData.skills.map((cat, cIdx) => (
+                    <div key={cIdx} className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+                      <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-800/60">
+                        <div className="flex items-center gap-1 flex-1">
+                          <input
+                            type="text"
+                            value={cat.category ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = (formData.skills || []).map((c, i) =>
+                                i === cIdx ? { ...c, category: val } : c
+                              );
+                              setFormData({ ...formData, skills: updated });
+                            }}
+                            placeholder="Category Title (e.g. Frontend & UI)"
+                            className="text-xs font-bold text-sky-400 bg-slate-900 border border-slate-800 rounded px-2 py-1 uppercase tracking-wider focus:border-sky-500 focus:outline-none flex-1"
+                          />
+                          {cat.category && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = (formData.skills || []).map((c, i) =>
+                                  i === cIdx ? { ...c, category: '' } : c
+                                );
+                                setFormData({ ...formData, skills: updated });
+                              }}
+                              className="px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-white bg-slate-800 rounded"
+                              title="Clear category name"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {cat.skills?.map((skill, sIdx) => (
-                        <div key={sIdx} className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg p-1.5">
-                          <input
-                            type="text"
-                            value={skill.name ?? ''}
-                            onChange={(e) => {
-                              const updated = [...formData.skills];
-                              updated[cIdx].skills[sIdx].name = e.target.value;
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            disabled={cIdx === 0}
+                            onClick={() => {
+                              if (cIdx === 0) return;
+                              const updated = [...(formData.skills || [])];
+                              const temp = updated[cIdx - 1];
+                              updated[cIdx - 1] = updated[cIdx];
+                              updated[cIdx] = temp;
                               setFormData({ ...formData, skills: updated });
                             }}
-                            className="flex-1 bg-transparent text-xs text-white px-1 focus:outline-none"
-                          />
-                          <input
-                            type="text"
-                            value={skill.level ?? ''}
-                            onChange={(e) => {
-                              const updated = [...formData.skills];
-                              updated[cIdx].skills[sIdx].level = e.target.value;
+                            className="p-1 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                            title="Move Category Up"
+                          >
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={cIdx === (formData.skills || []).length - 1}
+                            onClick={() => {
+                              if (cIdx === (formData.skills || []).length - 1) return;
+                              const updated = [...(formData.skills || [])];
+                              const temp = updated[cIdx + 1];
+                              updated[cIdx + 1] = updated[cIdx];
+                              updated[cIdx] = temp;
                               setFormData({ ...formData, skills: updated });
                             }}
-                            className="w-20 bg-slate-950 text-[10px] text-sky-300 px-1 py-0.5 rounded border border-slate-800 text-center"
-                          />
+                            className="p-1 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                            title="Move Category Down"
+                          >
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          </button>
                           <button
                             type="button"
                             onClick={() => {
-                              const updated = [...formData.skills];
-                              updated[cIdx].skills = updated[cIdx].skills.filter((_, i) => i !== sIdx);
+                              const updated = (formData.skills || []).filter((_, i) => i !== cIdx);
                               setFormData({ ...formData, skills: updated });
                             }}
-                            className="text-rose-400 hover:text-rose-300 p-1"
+                            className="text-rose-400 hover:text-rose-300 p-1 cursor-pointer ml-1"
+                            title="Delete category"
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
-                      ))}
-                    </div>
+                      </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const updated = [...formData.skills];
-                        updated[cIdx].skills.push({ name: 'New Skill', level: 'Advanced' });
-                        setFormData({ ...formData, skills: updated });
-                      }}
-                      className="text-[11px] text-sky-400 hover:text-sky-300 font-medium flex items-center gap-1 pt-1"
-                    >
-                      <Plus className="w-3 h-3" />
-                      <span>Add skill to {cat.category}</span>
-                    </button>
-                  </div>
-                ))}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {cat.skills?.map((skill, sIdx) => (
+                          <div key={sIdx} className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg p-1.5">
+                            <input
+                              type="text"
+                              value={skill.name ?? ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const updated = (formData.skills || []).map((c, i) => {
+                                  if (i !== cIdx) return c;
+                                  const updatedSkills = (c.skills || []).map((s, si) =>
+                                    si === sIdx ? { ...s, name: val } : s
+                                  );
+                                  return { ...c, skills: updatedSkills };
+                                });
+                                setFormData({ ...formData, skills: updated });
+                              }}
+                              placeholder="Skill name"
+                              className="flex-1 bg-transparent text-xs text-white px-1 focus:outline-none"
+                            />
+                            {skill.name && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = (formData.skills || []).map((c, i) => {
+                                    if (i !== cIdx) return c;
+                                    const updatedSkills = (c.skills || []).map((s, si) =>
+                                      si === sIdx ? { ...s, name: '' } : s
+                                    );
+                                    return { ...c, skills: updatedSkills };
+                                  });
+                                  setFormData({ ...formData, skills: updated });
+                                }}
+                                className="text-[9px] text-slate-500 hover:text-slate-300 px-1"
+                                title="Clear skill name"
+                              >
+                                ×
+                              </button>
+                            )}
+                            <input
+                              type="text"
+                              value={skill.level ?? ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const updated = (formData.skills || []).map((c, i) => {
+                                  if (i !== cIdx) return c;
+                                  const updatedSkills = (c.skills || []).map((s, si) =>
+                                    si === sIdx ? { ...s, level: val } : s
+                                  );
+                                  return { ...c, skills: updatedSkills };
+                                });
+                                setFormData({ ...formData, skills: updated });
+                              }}
+                              placeholder="Level"
+                              className="w-20 bg-slate-950 text-[10px] text-sky-300 px-1 py-0.5 rounded border border-slate-800 text-center focus:outline-none"
+                            />
+                            {skill.level && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = (formData.skills || []).map((c, i) => {
+                                    if (i !== cIdx) return c;
+                                    const updatedSkills = (c.skills || []).map((s, si) =>
+                                      si === sIdx ? { ...s, level: '' } : s
+                                    );
+                                    return { ...c, skills: updatedSkills };
+                                  });
+                                  setFormData({ ...formData, skills: updated });
+                                }}
+                                className="text-[9px] text-slate-500 hover:text-slate-300 px-1"
+                                title="Clear level"
+                              >
+                                ×
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = (formData.skills || []).map((c, i) => {
+                                  if (i !== cIdx) return c;
+                                  return { ...c, skills: (c.skills || []).filter((_, si) => si !== sIdx) };
+                                });
+                                setFormData({ ...formData, skills: updated });
+                              }}
+                              className="text-rose-400 hover:text-rose-300 p-1 cursor-pointer"
+                              title="Delete skill"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center gap-3 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = (formData.skills || []).map((c, i) => {
+                              if (i !== cIdx) return c;
+                              return { ...c, skills: [...(c.skills || []), { name: '', level: '' }] };
+                            });
+                            setFormData({ ...formData, skills: updated });
+                          }}
+                          className="text-[11px] text-slate-400 hover:text-slate-200 font-medium flex items-center gap-1"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>Add Blank Skill</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = (formData.skills || []).map((c, i) => {
+                              if (i !== cIdx) return c;
+                              return { ...c, skills: [...(c.skills || []), { name: 'New Skill', level: 'Advanced' }] };
+                            });
+                            setFormData({ ...formData, skills: updated });
+                          }}
+                          className="text-[11px] text-sky-400 hover:text-sky-300 font-medium flex items-center gap-1"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>Add Skill to {cat.category || 'Category'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}
@@ -1480,113 +2211,269 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <h2 className="text-lg font-bold text-white">Work Experience</h2>
                   <p className="text-xs text-slate-400">Manage career positions and key accomplishment bullet points</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newExp = {
-                      id: `exp-${Date.now()}`,
-                      role: 'Software Engineer',
-                      company: 'Company / Organization',
-                      period: '2024 - Present',
-                      type: 'Full-time',
-                      highlights: ['Developed scalable cloud solutions.']
-                    };
-                    const updated = [newExp, ...(formData.experiences || [])];
-                    setFormData({ ...formData, experiences: updated });
-                    onUpdatePortfolioData({ ...formData, experiences: updated });
-                  }}
-                  className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Experience</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newExp = {
+                        id: `exp-${Date.now()}`,
+                        role: '',
+                        company: '',
+                        period: '',
+                        type: '',
+                        highlights: []
+                      };
+                      const updated = [newExp, ...(formData.experiences || [])];
+                      setFormData({ ...formData, experiences: updated });
+                    }}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Blank Experience</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newExp = {
+                        id: `exp-${Date.now()}`,
+                        role: 'Software Engineer',
+                        company: 'Company / Organization',
+                        period: '2024 - Present',
+                        type: 'Full-time',
+                        highlights: ['Developed scalable cloud solutions.']
+                      };
+                      const updated = [newExp, ...(formData.experiences || [])];
+                      setFormData({ ...formData, experiences: updated });
+                    }}
+                    className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add With Template</span>
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-4">
-                {formData.experiences?.map((exp, eIdx) => (
-                  <div key={exp.id} className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex gap-3 items-center flex-1">
-                        <input
-                          type="text"
-                          value={exp.role ?? ''}
-                          onChange={(e) => {
-                            const updated = [...formData.experiences];
-                            updated[eIdx].role = e.target.value;
-                            setFormData({ ...formData, experiences: updated });
-                          }}
-                          placeholder="Job Title / Role"
-                          className="text-sm font-bold text-white bg-transparent border-b border-transparent focus:border-sky-500 px-1 focus:outline-none"
-                        />
-                        <span className="text-slate-500">•</span>
-                        <input
-                          type="text"
-                          value={exp.company ?? ''}
-                          onChange={(e) => {
-                            const updated = [...formData.experiences];
-                            updated[eIdx].company = e.target.value;
-                            setFormData({ ...formData, experiences: updated });
-                          }}
-                          placeholder="Company / Organization"
-                          className="text-xs text-sky-400 bg-transparent border-b border-transparent focus:border-sky-500 px-1 focus:outline-none"
-                        />
+                {(!formData.experiences || formData.experiences.length === 0) ? (
+                  <div className="p-6 rounded-xl bg-slate-950 border border-slate-800 text-center text-xs text-slate-400">
+                    No experience records found. Click &quot;Add Blank Experience&quot; to add your career roles.
+                  </div>
+                ) : (
+                  formData.experiences.map((exp, eIdx) => (
+                    <div key={exp.id || eIdx} className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-2 flex-1">
+                          <div className="flex items-center gap-1 flex-1 min-w-[180px]">
+                            <input
+                              type="text"
+                              value={exp.role ?? ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const updated = (formData.experiences || []).map((item, i) =>
+                                  i === eIdx ? { ...item, role: val } : item
+                                );
+                                setFormData({ ...formData, experiences: updated });
+                              }}
+                              placeholder="Job Title / Role (e.g. Lead Engineer)"
+                              className="text-sm font-bold text-white bg-slate-900 border border-slate-800 rounded px-2 py-1 focus:border-sky-500 focus:outline-none w-full"
+                            />
+                            {exp.role && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = (formData.experiences || []).map((item, i) =>
+                                    i === eIdx ? { ...item, role: '' } : item
+                                  );
+                                  setFormData({ ...formData, experiences: updated });
+                                }}
+                                className="px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-white bg-slate-800 rounded"
+                                title="Clear role"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1 flex-1 min-w-[180px]">
+                            <input
+                              type="text"
+                              value={exp.company ?? ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const updated = (formData.experiences || []).map((item, i) =>
+                                  i === eIdx ? { ...item, company: val } : item
+                                );
+                                setFormData({ ...formData, experiences: updated });
+                              }}
+                              placeholder="Company / Organization"
+                              className="text-xs text-sky-400 bg-slate-900 border border-slate-800 rounded px-2 py-1 focus:border-sky-500 focus:outline-none w-full"
+                            />
+                            {exp.company && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = (formData.experiences || []).map((item, i) =>
+                                    i === eIdx ? { ...item, company: '' } : item
+                                  );
+                                  setFormData({ ...formData, experiences: updated });
+                                }}
+                                className="px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-white bg-slate-800 rounded"
+                                title="Clear company"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Reorder and Delete Controls */}
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            disabled={eIdx === 0}
+                            onClick={() => {
+                              if (eIdx === 0) return;
+                              const updated = [...(formData.experiences || [])];
+                              const temp = updated[eIdx - 1];
+                              updated[eIdx - 1] = updated[eIdx];
+                              updated[eIdx] = temp;
+                              setFormData({ ...formData, experiences: updated });
+                            }}
+                            className="p-1 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                            title="Move Up"
+                          >
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={eIdx === (formData.experiences || []).length - 1}
+                            onClick={() => {
+                              if (eIdx === (formData.experiences || []).length - 1) return;
+                              const updated = [...(formData.experiences || [])];
+                              const temp = updated[eIdx + 1];
+                              updated[eIdx + 1] = updated[eIdx];
+                              updated[eIdx] = temp;
+                              setFormData({ ...formData, experiences: updated });
+                            }}
+                            className="p-1 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                            title="Move Down"
+                          >
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = (formData.experiences || []).filter((_, i) => i !== eIdx);
+                              setFormData({ ...formData, experiences: updated });
+                            }}
+                            className="text-rose-400 hover:text-rose-300 p-1 cursor-pointer ml-1"
+                            title="Remove experience"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const updated = formData.experiences.filter((_, i) => i !== eIdx);
-                          setFormData({ ...formData, experiences: updated });
-                          onUpdatePortfolioData({ ...formData, experiences: updated });
-                        }}
-                        className="text-rose-400 hover:text-rose-300 p-1 cursor-pointer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="text"
+                            value={exp.period ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = (formData.experiences || []).map((item, i) =>
+                                i === eIdx ? { ...item, period: val } : item
+                              );
+                              setFormData({ ...formData, experiences: updated });
+                            }}
+                            className="px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white flex-1 focus:outline-none focus:border-sky-500"
+                            placeholder="Period (e.g. 2023 - Present)"
+                          />
+                          {exp.period && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = (formData.experiences || []).map((item, i) =>
+                                  i === eIdx ? { ...item, period: '' } : item
+                                );
+                                setFormData({ ...formData, experiences: updated });
+                              }}
+                              className="px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-white bg-slate-800 rounded"
+                              title="Clear period"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        value={exp.period ?? ''}
-                        onChange={(e) => {
-                          const updated = [...formData.experiences];
-                          updated[eIdx].period = e.target.value;
-                          setFormData({ ...formData, experiences: updated });
-                        }}
-                        className="px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white"
-                        placeholder="Period (e.g. 2023 - Present)"
-                      />
-                      <input
-                        type="text"
-                        value={exp.type ?? ''}
-                        onChange={(e) => {
-                          const updated = [...formData.experiences];
-                          updated[eIdx].type = e.target.value;
-                          setFormData({ ...formData, experiences: updated });
-                        }}
-                        className="px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white"
-                        placeholder="Type (e.g. Full-time / Contract)"
-                      />
-                    </div>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="text"
+                            value={exp.type ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = (formData.experiences || []).map((item, i) =>
+                                i === eIdx ? { ...item, type: val } : item
+                              );
+                              setFormData({ ...formData, experiences: updated });
+                            }}
+                            className="px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white flex-1 focus:outline-none focus:border-sky-500"
+                            placeholder="Type (e.g. Full-time / Remote)"
+                          />
+                          {exp.type && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = (formData.experiences || []).map((item, i) =>
+                                  i === eIdx ? { ...item, type: '' } : item
+                                );
+                                setFormData({ ...formData, experiences: updated });
+                              }}
+                              className="px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-white bg-slate-800 rounded"
+                              title="Clear type"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+                      </div>
 
-                    {/* Highlights */}
-                    <div>
-                      <label className="block text-[10px] text-slate-400 mb-1">Accomplishments & Highlights (One per line)</label>
-                      <textarea
-                        rows={3}
-                        value={exp.highlights ? exp.highlights.join('\n') : ''}
-                        onChange={(e) => {
-                          const updated = [...formData.experiences];
-                          updated[eIdx].highlights = e.target.value.split('\n');
-                          setFormData({ ...formData, experiences: updated });
-                        }}
-                        className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 resize-none leading-relaxed"
-                        placeholder="One bullet point per line..."
-                      />
+                      {/* Highlights */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-[10px] text-slate-400">Accomplishments & Highlights (One per line)</label>
+                          {exp.highlights && exp.highlights.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = (formData.experiences || []).map((item, i) =>
+                                  i === eIdx ? { ...item, highlights: [] } : item
+                                );
+                                setFormData({ ...formData, experiences: updated });
+                              }}
+                              className="text-[10px] text-slate-400 hover:text-white"
+                            >
+                              Clear bullets
+                            </button>
+                          )}
+                        </div>
+                        <textarea
+                          rows={3}
+                          value={exp.highlights ? exp.highlights.join('\n') : ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const updated = (formData.experiences || []).map((item, i) =>
+                              i === eIdx ? { ...item, highlights: val.length > 0 ? val.split('\n') : [] } : item
+                            );
+                            setFormData({ ...formData, experiences: updated });
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 resize-none leading-relaxed focus:outline-none focus:border-sky-500"
+                          placeholder="One bullet point per line..."
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           )}
@@ -1599,93 +2486,233 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <h2 className="text-lg font-bold text-white">Achievements & Competitions</h2>
                   <p className="text-xs text-slate-400">Contest rankings, medals, and competitive programming highlights</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newAch = {
-                      id: `ach-${Date.now()}`,
-                      title: 'Contest Honor / Award',
-                      organization: 'Organization',
-                      year: '2025',
-                      description: 'Details about the accomplishment.'
-                    };
-                    const updated = [newAch, ...(formData.achievements || [])];
-                    setFormData({ ...formData, achievements: updated });
-                    onUpdatePortfolioData({ ...formData, achievements: updated });
-                  }}
-                  className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Achievement</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newAch = {
+                        id: `ach-${Date.now()}`,
+                        title: '',
+                        organization: '',
+                        year: '',
+                        description: ''
+                      };
+                      const updated = [newAch, ...(formData.achievements || [])];
+                      setFormData({ ...formData, achievements: updated });
+                    }}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Blank Award</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newAch = {
+                        id: `ach-${Date.now()}`,
+                        title: 'Honor / Competition Title',
+                        organization: 'Organization / Platform',
+                        year: new Date().getFullYear().toString(),
+                        description: 'Details about the accomplishment or rating rank.'
+                      };
+                      const updated = [newAch, ...(formData.achievements || [])];
+                      setFormData({ ...formData, achievements: updated });
+                    }}
+                    className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add With Template</span>
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-4">
-                {formData.achievements?.map((ach, aIdx) => (
-                  <div key={ach.id} className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
-                    <div className="flex items-center justify-between">
-                      <input
-                        type="text"
-                        value={ach.title ?? ''}
-                        onChange={(e) => {
-                          const updated = [...formData.achievements];
-                          updated[aIdx].title = e.target.value;
-                          setFormData({ ...formData, achievements: updated });
-                        }}
-                        placeholder="Honor / Competition Title"
-                        className="text-sm font-bold text-white bg-transparent border-b border-transparent focus:border-sky-500 px-1 focus:outline-none flex-1"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const updated = formData.achievements.filter((_, i) => i !== aIdx);
-                          setFormData({ ...formData, achievements: updated });
-                          onUpdatePortfolioData({ ...formData, achievements: updated });
-                        }}
-                        className="text-rose-400 hover:text-rose-300 p-1 cursor-pointer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        value={ach.organization ?? ''}
-                        onChange={(e) => {
-                          const updated = [...formData.achievements];
-                          updated[aIdx].organization = e.target.value;
-                          setFormData({ ...formData, achievements: updated });
-                        }}
-                        className="px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-slate-300"
-                        placeholder="Organization / Platform (e.g. Codeforces, ICPC)"
-                      />
-                      <input
-                        type="text"
-                        value={ach.year ?? ''}
-                        onChange={(e) => {
-                          const updated = [...formData.achievements];
-                          updated[aIdx].year = e.target.value;
-                          setFormData({ ...formData, achievements: updated });
-                        }}
-                        className="px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-slate-300"
-                        placeholder="Year (e.g. 2025)"
-                      />
-                    </div>
-
-                    <textarea
-                      rows={2}
-                      value={ach.description ?? ''}
-                      onChange={(e) => {
-                        const updated = [...formData.achievements];
-                        updated[aIdx].description = e.target.value;
-                        setFormData({ ...formData, achievements: updated });
-                      }}
-                      placeholder="Details about the rank, rating, or accomplishment..."
-                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 resize-none"
-                    />
+                {(!formData.achievements || formData.achievements.length === 0) ? (
+                  <div className="p-6 rounded-xl bg-slate-950 border border-slate-800 text-center text-xs text-slate-400">
+                    No achievements added yet. Click &quot;Add Blank Award&quot; to insert honors, contests, or hackathon awards.
                   </div>
-                ))}
+                ) : (
+                  formData.achievements.map((ach, aIdx) => (
+                    <div key={ach.id || aIdx} className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1 flex-1">
+                          <input
+                            type="text"
+                            value={ach.title ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = (formData.achievements || []).map((item, i) =>
+                                i === aIdx ? { ...item, title: val } : item
+                              );
+                              setFormData({ ...formData, achievements: updated });
+                            }}
+                            placeholder="Honor / Competition Title"
+                            className="text-sm font-bold text-white bg-slate-900 border border-slate-800 rounded px-2 py-1 focus:border-sky-500 focus:outline-none flex-1"
+                          />
+                          {ach.title && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = (formData.achievements || []).map((item, i) =>
+                                  i === aIdx ? { ...item, title: '' } : item
+                                );
+                                setFormData({ ...formData, achievements: updated });
+                              }}
+                              className="px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-white bg-slate-800 rounded"
+                              title="Clear title"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Reorder & Delete */}
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            disabled={aIdx === 0}
+                            onClick={() => {
+                              if (aIdx === 0) return;
+                              const updated = [...(formData.achievements || [])];
+                              const temp = updated[aIdx - 1];
+                              updated[aIdx - 1] = updated[aIdx];
+                              updated[aIdx] = temp;
+                              setFormData({ ...formData, achievements: updated });
+                            }}
+                            className="p-1 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                            title="Move Up"
+                          >
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={aIdx === (formData.achievements || []).length - 1}
+                            onClick={() => {
+                              if (aIdx === (formData.achievements || []).length - 1) return;
+                              const updated = [...(formData.achievements || [])];
+                              const temp = updated[aIdx + 1];
+                              updated[aIdx + 1] = updated[aIdx];
+                              updated[aIdx] = temp;
+                              setFormData({ ...formData, achievements: updated });
+                            }}
+                            className="p-1 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                            title="Move Down"
+                          >
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = (formData.achievements || []).filter((_, i) => i !== aIdx);
+                              setFormData({ ...formData, achievements: updated });
+                            }}
+                            className="text-rose-400 hover:text-rose-300 p-1 cursor-pointer ml-1"
+                            title="Remove achievement"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="text"
+                            value={ach.organization ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = (formData.achievements || []).map((item, i) =>
+                                i === aIdx ? { ...item, organization: val } : item
+                              );
+                              setFormData({ ...formData, achievements: updated });
+                            }}
+                            className="px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-slate-300 flex-1 focus:outline-none focus:border-sky-500"
+                            placeholder="Organization / Platform (e.g. Codeforces, ICPC)"
+                          />
+                          {ach.organization && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = (formData.achievements || []).map((item, i) =>
+                                  i === aIdx ? { ...item, organization: '' } : item
+                                );
+                                setFormData({ ...formData, achievements: updated });
+                              }}
+                              className="px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-white bg-slate-800 rounded"
+                              title="Clear organization"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="text"
+                            value={ach.year ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = (formData.achievements || []).map((item, i) =>
+                                i === aIdx ? { ...item, year: val } : item
+                              );
+                              setFormData({ ...formData, achievements: updated });
+                            }}
+                            className="px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-slate-300 flex-1 focus:outline-none focus:border-sky-500"
+                            placeholder="Year (e.g. 2025)"
+                          />
+                          {ach.year && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = (formData.achievements || []).map((item, i) =>
+                                  i === aIdx ? { ...item, year: '' } : item
+                                );
+                                setFormData({ ...formData, achievements: updated });
+                              }}
+                              className="px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-white bg-slate-800 rounded"
+                              title="Clear year"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-[10px] text-slate-400">Description & Details</label>
+                          {ach.description && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = (formData.achievements || []).map((item, i) =>
+                                  i === aIdx ? { ...item, description: '' } : item
+                                );
+                                setFormData({ ...formData, achievements: updated });
+                              }}
+                              className="text-[10px] text-slate-400 hover:text-white"
+                            >
+                              Clear text
+                            </button>
+                          )}
+                        </div>
+                        <textarea
+                          rows={2}
+                          value={ach.description ?? ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const updated = (formData.achievements || []).map((item, i) =>
+                              i === aIdx ? { ...item, description: val } : item
+                            );
+                            setFormData({ ...formData, achievements: updated });
+                          }}
+                          placeholder="Details about the rank, rating, or accomplishment..."
+                          className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 resize-none focus:outline-none focus:border-sky-500"
+                        />
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}
@@ -1698,93 +2725,233 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <h2 className="text-lg font-bold text-white">Education & Academics</h2>
                   <p className="text-xs text-slate-400">Formal degrees, polytechnic institutions, and academic training</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newEdu = {
-                      id: `edu-${Date.now()}`,
-                      degree: 'Degree Name',
-                      institution: 'University / Institute Name',
-                      period: '2021 - 2025',
-                      details: 'Coursework and academic highlights.'
-                    };
-                    const updated = [newEdu, ...(formData.education || [])];
-                    setFormData({ ...formData, education: updated });
-                    onUpdatePortfolioData({ ...formData, education: updated });
-                  }}
-                  className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Education</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newEdu = {
+                        id: `edu-${Date.now()}`,
+                        degree: '',
+                        institution: '',
+                        period: '',
+                        details: ''
+                      };
+                      const updated = [newEdu, ...(formData.education || [])];
+                      setFormData({ ...formData, education: updated });
+                    }}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Blank Education</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newEdu = {
+                        id: `edu-${Date.now()}`,
+                        degree: 'Diploma in Computer Science & Technology',
+                        institution: 'Polytechnic Institute',
+                        period: '2021 - 2025',
+                        details: 'Focused on algorithms, software architecture, and practical engineering projects.'
+                      };
+                      const updated = [newEdu, ...(formData.education || [])];
+                      setFormData({ ...formData, education: updated });
+                    }}
+                    className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add With Template</span>
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-4">
-                {formData.education?.map((edu, edIdx) => (
-                  <div key={edu.id} className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
-                    <div className="flex items-center justify-between">
-                      <input
-                        type="text"
-                        value={edu.degree ?? ''}
-                        onChange={(e) => {
-                          const updated = [...formData.education];
-                          updated[edIdx].degree = e.target.value;
-                          setFormData({ ...formData, education: updated });
-                        }}
-                        placeholder="Degree / Certificate"
-                        className="text-sm font-bold text-white bg-transparent border-b border-transparent focus:border-sky-500 px-1 focus:outline-none flex-1"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const updated = formData.education.filter((_, i) => i !== edIdx);
-                          setFormData({ ...formData, education: updated });
-                          onUpdatePortfolioData({ ...formData, education: updated });
-                        }}
-                        className="text-rose-400 hover:text-rose-300 p-1 cursor-pointer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        value={edu.institution ?? ''}
-                        onChange={(e) => {
-                          const updated = [...formData.education];
-                          updated[edIdx].institution = e.target.value;
-                          setFormData({ ...formData, education: updated });
-                        }}
-                        className="px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-slate-300"
-                        placeholder="Institution / Board"
-                      />
-                      <input
-                        type="text"
-                        value={edu.period ?? ''}
-                        onChange={(e) => {
-                          const updated = [...formData.education];
-                          updated[edIdx].period = e.target.value;
-                          setFormData({ ...formData, education: updated });
-                        }}
-                        className="px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-slate-300"
-                        placeholder="Period (e.g. 2021 - 2025)"
-                      />
-                    </div>
-
-                    <textarea
-                      rows={2}
-                      value={edu.details ?? ''}
-                      onChange={(e) => {
-                        const updated = [...formData.education];
-                        updated[edIdx].details = e.target.value;
-                        setFormData({ ...formData, education: updated });
-                      }}
-                      placeholder="Coursework, concentrations, or thesis details..."
-                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 resize-none"
-                    />
+                {(!formData.education || formData.education.length === 0) ? (
+                  <div className="p-6 rounded-xl bg-slate-950 border border-slate-800 text-center text-xs text-slate-400">
+                    No education records added yet. Click &quot;Add Blank Education&quot; to insert degrees or certificates.
                   </div>
-                ))}
+                ) : (
+                  formData.education.map((edu, edIdx) => (
+                    <div key={edu.id || edIdx} className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1 flex-1">
+                          <input
+                            type="text"
+                            value={edu.degree ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = (formData.education || []).map((item, i) =>
+                                i === edIdx ? { ...item, degree: val } : item
+                              );
+                              setFormData({ ...formData, education: updated });
+                            }}
+                            placeholder="Degree / Certificate (e.g. Diploma in CST)"
+                            className="text-sm font-bold text-white bg-slate-900 border border-slate-800 rounded px-2 py-1 focus:border-sky-500 focus:outline-none flex-1"
+                          />
+                          {edu.degree && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = (formData.education || []).map((item, i) =>
+                                  i === edIdx ? { ...item, degree: '' } : item
+                                );
+                                setFormData({ ...formData, education: updated });
+                              }}
+                              className="px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-white bg-slate-800 rounded"
+                              title="Clear degree"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Reorder & Delete */}
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            disabled={edIdx === 0}
+                            onClick={() => {
+                              if (edIdx === 0) return;
+                              const updated = [...(formData.education || [])];
+                              const temp = updated[edIdx - 1];
+                              updated[edIdx - 1] = updated[edIdx];
+                              updated[edIdx] = temp;
+                              setFormData({ ...formData, education: updated });
+                            }}
+                            className="p-1 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                            title="Move Up"
+                          >
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={edIdx === (formData.education || []).length - 1}
+                            onClick={() => {
+                              if (edIdx === (formData.education || []).length - 1) return;
+                              const updated = [...(formData.education || [])];
+                              const temp = updated[edIdx + 1];
+                              updated[edIdx + 1] = updated[edIdx];
+                              updated[edIdx] = temp;
+                              setFormData({ ...formData, education: updated });
+                            }}
+                            className="p-1 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                            title="Move Down"
+                          >
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = (formData.education || []).filter((_, i) => i !== edIdx);
+                              setFormData({ ...formData, education: updated });
+                            }}
+                            className="text-rose-400 hover:text-rose-300 p-1 cursor-pointer ml-1"
+                            title="Remove education"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="text"
+                            value={edu.institution ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = (formData.education || []).map((item, i) =>
+                                i === edIdx ? { ...item, institution: val } : item
+                              );
+                              setFormData({ ...formData, education: updated });
+                            }}
+                            className="px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-slate-300 flex-1 focus:outline-none focus:border-sky-500"
+                            placeholder="Institution / Board"
+                          />
+                          {edu.institution && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = (formData.education || []).map((item, i) =>
+                                  i === edIdx ? { ...item, institution: '' } : item
+                                );
+                                setFormData({ ...formData, education: updated });
+                              }}
+                              className="px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-white bg-slate-800 rounded"
+                              title="Clear institution"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="text"
+                            value={edu.period ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = (formData.education || []).map((item, i) =>
+                                i === edIdx ? { ...item, period: val } : item
+                              );
+                              setFormData({ ...formData, education: updated });
+                            }}
+                            className="px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-slate-300 flex-1 focus:outline-none focus:border-sky-500"
+                            placeholder="Period (e.g. 2021 - 2025)"
+                          />
+                          {edu.period && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = (formData.education || []).map((item, i) =>
+                                  i === edIdx ? { ...item, period: '' } : item
+                                );
+                                setFormData({ ...formData, education: updated });
+                              }}
+                              className="px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-white bg-slate-800 rounded"
+                              title="Clear period"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-[10px] text-slate-400">Details, Concentrations or Thesis</label>
+                          {edu.details && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = (formData.education || []).map((item, i) =>
+                                  i === edIdx ? { ...item, details: '' } : item
+                                );
+                                setFormData({ ...formData, education: updated });
+                              }}
+                              className="text-[10px] text-slate-400 hover:text-white"
+                            >
+                              Clear details
+                            </button>
+                          )}
+                        </div>
+                        <textarea
+                          rows={2}
+                          value={edu.details ?? ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const updated = (formData.education || []).map((item, i) =>
+                              i === edIdx ? { ...item, details: val } : item
+                            );
+                            setFormData({ ...formData, education: updated });
+                          }}
+                          placeholder="Coursework, concentrations, or thesis details..."
+                          className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 resize-none focus:outline-none focus:border-sky-500"
+                        />
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}
@@ -2338,23 +3505,40 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Brand Name Text (e.g. Root / Imran Hasan) */}
+                  {/* Brand Name Text (e.g. Root / Al Amin Islam) */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-1">
                       Brand Name / Logo Text
                     </label>
-                    <input
-                      type="text"
-                      value={formData.navbar?.brandText ?? ''}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          navbar: { ...formData.navbar, brandText: e.target.value }
-                        })
-                      }
-                      placeholder={formData.name || 'Root'}
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
-                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={formData.navbar?.brandText ?? ''}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            navbar: { ...formData.navbar, brandText: e.target.value }
+                          })
+                        }
+                        placeholder={formData.name || 'Root'}
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
+                      />
+                      {formData.navbar?.brandText && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              navbar: { ...formData.navbar, brandText: '' }
+                            })
+                          }
+                          className="px-2 py-1 text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded transition-colors"
+                          title="Clear field"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
                     <span className="text-[10px] text-slate-500 mt-1 block">
                       Main title on the top navbar (e.g., "Root" or your name)
                     </span>
@@ -2365,19 +3549,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <label className="block text-xs font-semibold text-slate-300 mb-1">
                       Logo Subtitle / Tagline (Below Logo)
                     </label>
-                    <input
-                      type="text"
-                      value={formData.logoSubtitle ?? formData.navbar?.brandSubtitle ?? ''}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          logoSubtitle: e.target.value,
-                          navbar: { ...formData.navbar, brandSubtitle: e.target.value }
-                        })
-                      }
-                      placeholder="Software & Web Developer"
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
-                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={formData.navbar?.brandSubtitle !== undefined ? formData.navbar.brandSubtitle : (formData.logoSubtitle ?? '')}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFormData({
+                            ...formData,
+                            logoSubtitle: val,
+                            navbar: { ...formData.navbar, brandSubtitle: val }
+                          });
+                        }}
+                        placeholder="Software & Web Developer"
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
+                      />
+                      {(formData.navbar?.brandSubtitle || formData.logoSubtitle) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData({
+                              ...formData,
+                              logoSubtitle: '',
+                              navbar: { ...formData.navbar, brandSubtitle: '' }
+                            });
+                          }}
+                          className="px-2 py-1 text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded transition-colors"
+                          title="Clear field"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
                     <span className="text-[10px] text-slate-500 mt-1 block">
                       Text that appears directly underneath the logo title
                     </span>
@@ -2695,17 +3898,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </label>
                             <input
                               type="text"
-                              value={link.label}
+                              value={link.label ?? ''}
                               onChange={(e) => {
-                                const updated = [...(formData.footer?.links || [])];
-                                updated[idx] = { ...updated[idx], label: e.target.value };
+                                const updated = (formData.footer?.links || []).map((l, i) =>
+                                  i === idx ? { ...l, label: e.target.value } : l
+                                );
                                 setFormData({
                                   ...formData,
                                   footer: { ...formData.footer, links: updated }
                                 });
                               }}
                               placeholder="e.g. Developed by Al Amin Islam"
-                              className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
+                              className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white focus:outline-none focus:border-sky-500"
                             />
                           </div>
 
@@ -2716,17 +3920,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </label>
                             <input
                               type="text"
-                              value={link.url}
+                              value={link.url ?? ''}
                               onChange={(e) => {
-                                const updated = [...(formData.footer?.links || [])];
-                                updated[idx] = { ...updated[idx], url: e.target.value };
+                                const updated = (formData.footer?.links || []).map((l, i) =>
+                                  i === idx ? { ...l, url: e.target.value } : l
+                                );
                                 setFormData({
                                   ...formData,
                                   footer: { ...formData.footer, links: updated }
                                 });
                               }}
                               placeholder="https://facebook.com/..."
-                              className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
+                              className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white focus:outline-none focus:border-sky-500"
                             />
                           </div>
 
@@ -3023,18 +4228,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
-                        value={formData.theme?.backgroundColor || '#ffffff'}
+                        value={formData.theme?.backgroundColor && formData.theme.backgroundColor.startsWith('#') && formData.theme.backgroundColor.length === 7 ? formData.theme.backgroundColor : '#ffffff'}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
                             theme: { ...formData.theme, backgroundColor: e.target.value }
                           })
                         }
-                        className="w-10 h-9 rounded-lg border border-slate-700 bg-slate-900 cursor-pointer p-0.5"
+                        className="w-10 h-9 rounded-lg border border-slate-700 bg-slate-900 cursor-pointer p-0.5 shrink-0"
                       />
                       <input
                         type="text"
-                        value={formData.theme?.backgroundColor || '#ffffff'}
+                        value={formData.theme?.backgroundColor ?? ''}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -3042,8 +4247,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           })
                         }
                         placeholder="#ffffff"
-                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white uppercase font-mono"
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white uppercase font-mono focus:outline-none focus:border-sky-500"
                       />
+                      {formData.theme?.backgroundColor && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              theme: { ...formData.theme, backgroundColor: '' }
+                            })
+                          }
+                          className="px-2 py-1 text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded transition-colors"
+                          title="Clear field"
+                        >
+                          Clear
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -3055,18 +4275,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
-                        value={formData.theme?.accentColor || '#0284c7'}
+                        value={formData.theme?.accentColor && formData.theme.accentColor.startsWith('#') && formData.theme.accentColor.length === 7 ? formData.theme.accentColor : '#0284c7'}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
                             theme: { ...formData.theme, accentColor: e.target.value }
                           })
                         }
-                        className="w-10 h-9 rounded-lg border border-slate-700 bg-slate-900 cursor-pointer p-0.5"
+                        className="w-10 h-9 rounded-lg border border-slate-700 bg-slate-900 cursor-pointer p-0.5 shrink-0"
                       />
                       <input
                         type="text"
-                        value={formData.theme?.accentColor || '#0284c7'}
+                        value={formData.theme?.accentColor ?? ''}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -3074,8 +4294,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           })
                         }
                         placeholder="#0284c7"
-                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white uppercase font-mono"
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white uppercase font-mono focus:outline-none focus:border-sky-500"
                       />
+                      {formData.theme?.accentColor && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              theme: { ...formData.theme, accentColor: '' }
+                            })
+                          }
+                          className="px-2 py-1 text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded transition-colors"
+                          title="Clear field"
+                        >
+                          Clear
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -3132,18 +4367,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <label className="block text-xs font-semibold text-slate-300 mb-1">
                       Grid Lines / Pattern Color
                     </label>
-                    <input
-                      type="text"
-                      value={formData.theme?.gridColor || 'rgba(56, 189, 248, 0.12)'}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          theme: { ...formData.theme, gridColor: e.target.value }
-                        })
-                      }
-                      placeholder="rgba(56, 189, 248, 0.12)"
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white font-mono"
-                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={formData.theme?.gridColor ?? ''}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            theme: { ...formData.theme, gridColor: e.target.value }
+                          })
+                        }
+                        placeholder="rgba(56, 189, 248, 0.12)"
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white font-mono focus:outline-none focus:border-sky-500"
+                      />
+                      {formData.theme?.gridColor && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              theme: { ...formData.theme, gridColor: '' }
+                            })
+                          }
+                          className="px-2 py-1 text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded transition-colors"
+                          title="Clear field"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Grid Size Slider */}
