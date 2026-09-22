@@ -46,9 +46,12 @@ export const mergePortfolioData = (raw: any): PortfolioDataType => {
       : (rawSocials.github || PORTFOLIO_DATA.socials.github)
   };
 
-  // Ensure logo brand initials / badge text defaults to 'root' if empty or legacy 'AI' / 'AL'
-  const rawLogoText = raw.navbar?.logoBadgeText || raw.logoBadgeText || raw.brandInitials;
-  const sanitizedLogoBadge = (rawLogoText && rawLogoText !== 'AI' && rawLogoText !== 'AL') ? rawLogoText : 'root';
+  // Ensure logo brand initials / badge text and logoImageUrl are reliably preserved
+  const rawLogoText = raw.navbar?.logoBadgeText !== undefined 
+    ? raw.navbar.logoBadgeText 
+    : (raw.logoBadgeText !== undefined ? raw.logoBadgeText : raw.brandInitials);
+  const sanitizedLogoBadge = (rawLogoText !== undefined && rawLogoText !== null && rawLogoText !== '') ? rawLogoText : 'root';
+  const sanitizedLogoImage = raw.navbar?.logoImageUrl !== undefined ? raw.navbar.logoImageUrl : (raw.logoImageUrl || '');
 
   return {
     ...PORTFOLIO_DATA,
@@ -57,13 +60,15 @@ export const mergePortfolioData = (raw: any): PortfolioDataType => {
     email: sanitizedEmail,
     brandInitials: sanitizedLogoBadge,
     logoBadgeText: sanitizedLogoBadge,
+    logoImageUrl: sanitizedLogoImage,
     socials: sanitizedSocials,
     heroButtons: { ...PORTFOLIO_DATA.heroButtons, ...(raw.heroButtons || {}) },
     heroStats: { ...PORTFOLIO_DATA.heroStats, ...(raw.heroStats || {}) },
     navbar: { 
       ...PORTFOLIO_DATA.navbar, 
       ...(raw.navbar || {}),
-      logoBadgeText: (raw.navbar?.logoBadgeText && raw.navbar.logoBadgeText !== 'AI' && raw.navbar.logoBadgeText !== 'AL') ? raw.navbar.logoBadgeText : sanitizedLogoBadge
+      logoBadgeText: sanitizedLogoBadge,
+      logoImageUrl: sanitizedLogoImage
     },
     theme: { ...PORTFOLIO_DATA.theme, ...(raw.theme || {}) },
     footer: {

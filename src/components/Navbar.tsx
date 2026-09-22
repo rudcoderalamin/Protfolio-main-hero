@@ -50,8 +50,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           aria-label={`${brandName} Home`}
         >
           {/* Rotating Multi-Color Neon Border Logo Badge */}
-          <div className="h-10 sm:h-11 min-w-10 sm:min-w-11 px-2.5 neon-rotating-logo-box group-hover:scale-105 transition-transform duration-300 shrink-0">
-            <div className="neon-logo-inner px-2">
+          <div className="h-10 sm:h-11 min-w-10 sm:min-w-11 px-2 neon-rotating-logo-box group-hover:scale-105 transition-transform duration-300 shrink-0">
+            <div className={`neon-logo-inner overflow-hidden ${logoImageUrl ? 'p-1' : 'px-2'}`}>
               {logoImageUrl ? (
                 <img
                   src={logoImageUrl}

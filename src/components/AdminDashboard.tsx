@@ -143,6 +143,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [newPhotoCaption, setNewPhotoCaption] = useState('');
   const [newPhotoTag, setNewPhotoTag] = useState('Portrait');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
   const importFileRef = useRef<HTMLInputElement>(null);
 
   // Security Form State
@@ -246,6 +247,68 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setTimeout(() => setSaveSuccessMessage(''), 3000);
     };
     reader.readAsDataURL(file);
+  };
+
+  // Logo Photo Upload Handler (Local file from Device to Base64)
+  const handleLogoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Logo image is too large! Please choose an image under 5MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64Url = event.target?.result as string;
+      const updated = {
+        ...formData,
+        logoImageUrl: base64Url,
+        navbar: {
+          ...formData.navbar,
+          logoImageUrl: base64Url
+        }
+      };
+      setFormData(updated);
+      onUpdatePortfolioData(updated);
+      setSaveSuccessMessage('Logo photo uploaded successfully from device!');
+      setTimeout(() => setSaveSuccessMessage(''), 3000);
+      if (logoFileInputRef.current) logoFileInputRef.current.value = '';
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Remove Logo Photo & Revert to Inner Text Monogram
+  const handleRemoveLogoPhoto = () => {
+    const updated = {
+      ...formData,
+      logoImageUrl: '',
+      navbar: {
+        ...formData.navbar,
+        logoImageUrl: ''
+      }
+    };
+    setFormData(updated);
+    onUpdatePortfolioData(updated);
+    if (logoFileInputRef.current) logoFileInputRef.current.value = '';
+    setSaveSuccessMessage('Logo photo removed. Reverted to text monogram logo!');
+    setTimeout(() => setSaveSuccessMessage(''), 3000);
+  };
+
+  // Handle Logo Inner Text / Badge Text Change
+  const handleLogoBadgeTextChange = (val: string) => {
+    const updated = {
+      ...formData,
+      brandInitials: val,
+      logoBadgeText: val,
+      navbar: {
+        ...formData.navbar,
+        logoBadgeText: val
+      }
+    };
+    setFormData(updated);
+    onUpdatePortfolioData(updated);
   };
 
   // Add Photo via URL
@@ -557,7 +620,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               { id: 'education', label: 'Education', icon: GraduationCap },
               { id: 'section_headers', label: 'Section Titles & Subtitles', icon: Globe },
               { id: 'modal_texts', label: 'Modals & WhatsApp Chat', icon: MessageSquare },
-              { id: 'navbar_footer', label: 'Navbar & Footer', icon: Sliders },
+              { id: 'navbar_footer', label: 'Logo, Navbar & Footer', icon: Sliders },
               { id: 'theme', label: 'Theme & Background', icon: Palette },
               { id: 'security', label: 'Security & Backup', icon: ShieldCheck },
             ].map((tab) => {
@@ -642,46 +705,88 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   />
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-semibold text-slate-300">
-                      Logo Inner Text / Code (e.g. root)
-                    </label>
-                    {(formData.brandInitials || formData.logoBadgeText || formData.navbar?.logoBadgeText) && (
+                <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                      <label className="block text-xs font-semibold text-slate-200">
+                        Header Logo Inner Text (লোগোর ভেতরের নাম)
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {(formData.brandInitials || formData.logoBadgeText || formData.navbar?.logoBadgeText) && (
+                        <button
+                          type="button"
+                          onClick={() => handleLogoBadgeTextChange('')}
+                          className="text-[10px] text-slate-400 hover:text-white"
+                        >
+                          Clear
+                        </button>
+                      )}
                       <button
                         type="button"
-                        onClick={() =>
-                          setFormData({
-                            ...formData,
-                            brandInitials: '',
-                            logoBadgeText: '',
-                            navbar: { ...formData.navbar, logoBadgeText: '' }
-                          })
-                        }
-                        className="text-[10px] text-slate-400 hover:text-white"
+                        onClick={() => setActiveTab('navbar_footer')}
+                        className="text-[10px] text-sky-400 hover:text-sky-300 underline"
                       >
-                        Clear
+                        Full Logo Settings →
                       </button>
-                    )}
+                    </div>
                   </div>
-                  <input
-                    type="text"
-                    value={formData.navbar?.logoBadgeText ?? formData.logoBadgeText ?? formData.brandInitials ?? ''}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setFormData({
-                        ...formData,
-                        brandInitials: val,
-                        logoBadgeText: val,
-                        navbar: { ...formData.navbar, logoBadgeText: val }
-                      });
-                    }}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-sky-500 font-mono"
-                    placeholder="root"
-                  />
-                  <span className="text-[10px] text-slate-500 mt-1 block">
-                    Text displayed inside the rotating neon logo box in the header (e.g. root)
-                  </span>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={formData.navbar?.logoBadgeText ?? formData.logoBadgeText ?? formData.brandInitials ?? ''}
+                      onChange={(e) => handleLogoBadgeTextChange(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-cyan-300 focus:outline-none focus:border-cyan-400 font-mono font-bold"
+                      placeholder="root"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => logoFileInputRef.current?.click()}
+                      className="px-3 py-2 bg-sky-950/70 border border-sky-800 text-sky-300 hover:bg-sky-900/80 rounded-xl text-xs font-semibold shrink-0 flex items-center gap-1.5 transition-colors"
+                      title="Upload custom logo photo from device"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Photo</span>
+                    </button>
+                  </div>
+
+                  {/* Preset Buttons */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    <span className="text-[10px] text-slate-500 mr-1">Presets:</span>
+                    {['root', 'DEV', 'AI', '</>', 'AMI', 'PRO', 'CODE'].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => handleLogoBadgeTextChange(preset)}
+                        className="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-cyan-300 text-[11px] font-mono border border-slate-700/60 transition-colors"
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Photo status if active */}
+                  {(formData.logoImageUrl || formData.navbar?.logoImageUrl) && (
+                    <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-950/40 border border-emerald-900/50 mt-1">
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={formData.navbar?.logoImageUrl || formData.logoImageUrl}
+                          alt="Logo"
+                          className="w-6 h-6 object-cover rounded border border-emerald-500/50"
+                        />
+                        <span className="text-[10px] text-emerald-300 font-medium">Active Photo Logo</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRemoveLogoPhoto}
+                        className="text-[10px] text-rose-400 hover:text-rose-300 font-medium"
+                      >
+                        Remove Photo
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -3506,217 +3611,324 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </button>
               </div>
 
-              {/* Website Brand Logo, Badge & Subtitle (User-requested feature) */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+              {/* BRAND LOGO, MONOGRAM & PHOTO UPLOAD SECTION */}
+              <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-5 space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
                   <div>
-                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                      <Sliders className="w-4 h-4 text-sky-400" />
-                      <span>Website Brand Logo & Subtitle Configuration</span>
-                    </h3>
-                    <p className="text-[11px] text-slate-400">
-                      Customize the top-left logo, the badge (e.g. R999), and the subtitle text below the logo.
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-cyan-400" />
+                      <h3 className="text-sm font-bold text-white">
+                        Header Logo & Brand Monogram (হেডার লোগো ও ব্র্যান্ডের নাম)
+                      </h3>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      লোগোর ভেতরের টেক্সট/কোড পরিবর্তন করুন (যেমন: root) অথবা ডিভাইস থেকে ফটো/আইকন আপলোড করুন।
                     </p>
                   </div>
-                  <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-sky-950/80 border border-sky-800 text-sky-400 font-medium w-fit">
-                    Full Logo Control
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Brand Name Text (e.g. Root / Al Amin Islam) */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">
-                      Brand Name / Logo Text
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={formData.navbar?.brandText ?? ''}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            navbar: { ...formData.navbar, brandText: e.target.value }
-                          })
-                        }
-                        placeholder={formData.name || 'Root'}
-                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
-                      />
-                      {formData.navbar?.brandText && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setFormData({
-                              ...formData,
-                              navbar: { ...formData.navbar, brandText: '' }
-                            })
-                          }
-                          className="px-2 py-1 text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded transition-colors"
-                          title="Clear field"
-                        >
-                          Clear
-                        </button>
-                      )}
-                    </div>
-                    <span className="text-[10px] text-slate-500 mt-1 block">
-                      Main title on the top navbar (e.g., "Root" or your name)
-                    </span>
-                  </div>
-
-                  {/* Subtitle Text Below Logo (User specifically highlighted this) */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">
-                      Logo Subtitle / Tagline (Below Logo)
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={formData.navbar?.brandSubtitle !== undefined ? formData.navbar.brandSubtitle : (formData.logoSubtitle ?? '')}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setFormData({
-                            ...formData,
-                            logoSubtitle: val,
-                            navbar: { ...formData.navbar, brandSubtitle: val }
-                          });
-                        }}
-                        placeholder="Software & Web Developer"
-                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
-                      />
-                      {(formData.navbar?.brandSubtitle || formData.logoSubtitle) && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFormData({
-                              ...formData,
-                              logoSubtitle: '',
-                              navbar: { ...formData.navbar, brandSubtitle: '' }
-                            });
-                          }}
-                          className="px-2 py-1 text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded transition-colors"
-                          title="Clear field"
-                        >
-                          Clear
-                        </button>
-                      )}
-                    </div>
-                    <span className="text-[10px] text-slate-500 mt-1 block">
-                      Text that appears directly underneath the logo title
-                    </span>
-                  </div>
-
-                  {/* Logo Badge Acronym (e.g. root) */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-xs font-semibold text-slate-300">
-                        Logo Inner Text / Monogram (Inside Logo Badge)
-                      </label>
-                      {(formData.navbar?.logoBadgeText || formData.logoBadgeText || formData.brandInitials) && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setFormData({
-                              ...formData,
-                              brandInitials: '',
-                              logoBadgeText: '',
-                              navbar: { ...formData.navbar, logoBadgeText: '' }
-                            })
-                          }
-                          className="text-[10px] text-slate-400 hover:text-white"
-                        >
-                          Clear
-                        </button>
-                      )}
-                    </div>
-                    <input
-                      type="text"
-                      value={formData.navbar?.logoBadgeText ?? formData.logoBadgeText ?? formData.brandInitials ?? ''}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setFormData({
-                          ...formData,
-                          brandInitials: val,
-                          logoBadgeText: val,
-                          navbar: { ...formData.navbar, logoBadgeText: val }
-                        });
-                      }}
-                      placeholder="root"
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500 font-mono"
-                    />
-                    <span className="text-[10px] text-slate-500 mt-1 block">
-                      Code/text shown inside the glowing neon logo box (e.g. root)
-                    </span>
-                  </div>
-
-                  {/* Logo Image URL (Optional) */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">
-                      Custom Logo Image URL (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.logoImageUrl ?? ''}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          logoImageUrl: e.target.value
-                        })
-                      }
-                      placeholder="https://... (Leave blank to use stylized letter badge)"
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
-                    />
-                    <span className="text-[10px] text-slate-500 mt-1 block">
-                      Direct image link for custom brand icon
-                    </span>
-                  </div>
-
-                  {/* Status Dot Toggle */}
-                  <div className="flex flex-col justify-center">
-                    <label className="text-xs font-semibold text-slate-300 mb-2">
-                      Green Online Status Indicator Dot
-                    </label>
-                    <label className="inline-flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.navbar?.showStatusDot !== false}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            navbar: { ...formData.navbar, showStatusDot: e.target.checked }
-                          })
-                        }
-                        className="w-4 h-4 rounded text-sky-600 bg-slate-900 border-slate-700 focus:ring-sky-500"
-                      />
-                      <span className="text-xs text-slate-300">Display pulsating active status dot</span>
-                    </label>
+                  <div className="flex items-center gap-2">
+                    {(formData.logoImageUrl || formData.navbar?.logoImageUrl) ? (
+                      <span className="text-[11px] px-2.5 py-1 rounded-full bg-emerald-950/80 border border-emerald-700/60 text-emerald-300 font-semibold flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        Custom Photo Active
+                      </span>
+                    ) : (
+                      <span className="text-[11px] px-2.5 py-1 rounded-full bg-cyan-950/80 border border-cyan-800/60 text-cyan-300 font-semibold flex items-center gap-1.5 font-mono">
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                        Text: {formData.navbar?.logoBadgeText || formData.logoBadgeText || formData.brandInitials || 'root'}
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {/* Live Logo Preview Box */}
-                <div className="mt-2 p-3 rounded-lg bg-slate-900/90 border border-slate-800 flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-slate-400">Live Navbar Logo Preview:</span>
-                  <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-white shadow-xs border border-slate-200">
-                    <div className="relative w-8 h-8 rounded-lg bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white text-[10px] font-black tracking-tighter shadow-xs">
-                      {formData.logoImageUrl ? (
-                        <img
-                          src={formData.logoImageUrl}
-                          alt="Logo"
-                          className="w-full h-full object-cover rounded-lg"
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                  {/* Left Column: Controls (Text + Photo Upload) */}
+                  <div className="space-y-4">
+                    {/* 1. Logo Inner Text / Code */}
+                    <div className="bg-slate-900/90 border border-slate-800/90 rounded-xl p-3.5 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-bold text-slate-200">
+                          Logo Inner Text / Code (লোগোর ভেতরের নাম)
+                        </label>
+                        {(formData.navbar?.logoBadgeText || formData.logoBadgeText || formData.brandInitials) && (
+                          <button
+                            type="button"
+                            onClick={() => handleLogoBadgeTextChange('')}
+                            className="text-[10px] text-slate-400 hover:text-white transition-colors"
+                          >
+                            Clear Text
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={formData.navbar?.logoBadgeText ?? formData.logoBadgeText ?? formData.brandInitials ?? ''}
+                          onChange={(e) => handleLogoBadgeTextChange(e.target.value)}
+                          placeholder="root"
+                          className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-sm text-cyan-300 font-mono font-bold focus:outline-none focus:border-cyan-400"
                         />
-                      ) : (
-                        <span>{formData.logoBadgeText || 'R999'}</span>
-                      )}
-                      {formData.navbar?.showStatusDot !== false && (
-                        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white ring-1 ring-emerald-300" />
-                      )}
+                      </div>
+                      {/* Quick 1-click Preset Pills */}
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-[10px] text-slate-500 mr-1">Presets:</span>
+                        {['root', 'DEV', 'AI', '</>', 'AMI', 'PRO', 'CODE'].map((preset) => (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => handleLogoBadgeTextChange(preset)}
+                            className="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-cyan-300 text-[11px] font-mono border border-slate-700/60 transition-colors"
+                          >
+                            {preset}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-slate-400">
+                        * যখন কোনো ফটো আপলোড থাকবে না, তখন হেডারের নিয়ন বক্সের ভিতরে এই টেক্সটটি জ্বলজ্বল করবে।
+                      </p>
                     </div>
-                    <div className="flex flex-col text-left">
-                      <span className="text-xs font-bold text-slate-900 tracking-tight leading-tight">
-                        {formData.navbar?.brandText || formData.name || 'Root'}
-                      </span>
-                      <span className="text-[9px] font-medium text-slate-500 leading-tight">
-                        {formData.logoSubtitle || formData.navbar?.brandSubtitle || 'Software & Web Developer'}
-                      </span>
+
+                    {/* 2. Photo Upload from Device */}
+                    <div className="bg-slate-900/90 border border-slate-800/90 rounded-xl p-3.5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-bold text-slate-200">
+                          Logo Photo / Icon (ডিভাইস থেকে ফটো আপলোড)
+                        </label>
+                        {(formData.logoImageUrl || formData.navbar?.logoImageUrl) && (
+                          <button
+                            type="button"
+                            onClick={handleRemoveLogoPhoto}
+                            className="inline-flex items-center gap-1 text-[10px] text-rose-400 hover:text-rose-300"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>Remove Photo</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Hidden File Input for Device Upload */}
+                      <input
+                        ref={logoFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoFileUpload}
+                        className="hidden"
+                      />
+
+                      {/* Upload CTA or Active Photo Card */}
+                      {(formData.logoImageUrl || formData.navbar?.logoImageUrl) ? (
+                        <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-emerald-900/50">
+                          <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-lg overflow-hidden border-2 border-emerald-500/70 p-0.5 bg-slate-900 shrink-0">
+                              <img
+                                src={formData.navbar?.logoImageUrl || formData.logoImageUrl}
+                                alt="Active Logo"
+                                className="w-full h-full object-cover rounded-md"
+                              />
+                            </div>
+                            <div>
+                              <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                                <span>Active Logo Photo</span>
+                                <Check className="w-3 h-3 text-emerald-400" />
+                              </div>
+                              <span className="text-[10px] text-slate-400">Showing inside neon logo box</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => logoFileInputRef.current?.click()}
+                              className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors"
+                            >
+                              Change
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleRemoveLogoPhoto}
+                              className="p-1.5 rounded-lg bg-rose-950/60 border border-rose-900 text-rose-400 hover:bg-rose-900/80 transition-colors"
+                              title="Delete photo and switch back to text"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => logoFileInputRef.current?.click()}
+                          className="w-full py-3 px-4 border-2 border-dashed border-sky-800/80 hover:border-sky-500 rounded-xl bg-sky-950/20 hover:bg-sky-950/40 text-sky-400 transition-all flex flex-col items-center justify-center gap-1.5 group cursor-pointer"
+                        >
+                          <div className="w-9 h-9 rounded-full bg-sky-900/50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Upload className="w-4 h-4 text-sky-400" />
+                          </div>
+                          <span className="text-xs font-bold text-white">
+                            ডিভাইস থেকে ফটো আপলোড করুন (Upload from Device)
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            PNG, JPG, SVG, WebP (Max 5MB)
+                          </span>
+                        </button>
+                      )}
+
+                      {/* Optional URL input fallback */}
+                      <div className="pt-1">
+                        <label className="block text-[10px] text-slate-400 mb-1">
+                          অথবা অনলাইন ইমেজ লিংক দিন (Optional Image URL):
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={formData.navbar?.logoImageUrl ?? formData.logoImageUrl ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = {
+                                ...formData,
+                                logoImageUrl: val,
+                                navbar: { ...formData.navbar, logoImageUrl: val }
+                              };
+                              setFormData(updated);
+                              onUpdatePortfolioData(updated);
+                            }}
+                            placeholder="https://images.unsplash.com/... or /custom-logo.png"
+                            className="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-sky-500"
+                          />
+                          {(formData.navbar?.logoImageUrl || formData.logoImageUrl) && (
+                            <button
+                              type="button"
+                              onClick={handleRemoveLogoPhoto}
+                              className="px-2 py-1 text-[10px] text-slate-400 hover:text-white bg-slate-800 rounded"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Live Interactive Rotating Neon Preview & Brand Labels */}
+                  <div className="space-y-4">
+                    {/* Live Real-Time Interactive Rotating Neon Logo Preview */}
+                    <div className="bg-slate-900/90 border border-slate-800/90 rounded-xl p-4 flex flex-col justify-between h-full space-y-4">
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-xs font-bold text-slate-200">
+                            Live Navbar Header Preview (রিয়েল-টাইম প্রিভিউ):
+                          </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono">
+                            Header Output
+                          </span>
+                        </div>
+
+                        {/* Top Navbar Simulation Container */}
+                        <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between shadow-inner">
+                          <div className="flex items-center gap-3">
+                            {/* The Real Rotating Multi-Color Neon Border Badge */}
+                            <div className="h-11 min-w-11 px-2 neon-rotating-logo-box shrink-0">
+                              <div className={`neon-logo-inner overflow-hidden ${(formData.navbar?.logoImageUrl || formData.logoImageUrl) ? 'p-1' : 'px-2'}`}>
+                                {(formData.navbar?.logoImageUrl || formData.logoImageUrl) ? (
+                                  <img
+                                    src={formData.navbar?.logoImageUrl || formData.logoImageUrl}
+                                    alt="Logo"
+                                    className="w-full h-full object-cover rounded-[10px]"
+                                  />
+                                ) : (
+                                  <span className="neon-logo-letters font-black uppercase text-xs sm:text-sm font-mono tracking-wider">
+                                    {formData.navbar?.logoBadgeText || formData.logoBadgeText || formData.brandInitials || 'root'}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Name & Subtitle beside Logo */}
+                            <div className="flex flex-col text-left">
+                              <div className="flex items-center gap-1.5">
+                                <span className="neon-live-text text-sm font-extrabold tracking-tight">
+                                  {formData.navbar?.brandText || formData.name || 'Al Amin Islam'}
+                                </span>
+                                {formData.navbar?.showStatusDot !== false && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping shrink-0" />
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
+                                {formData.navbar?.showStatusDot !== false && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
+                                )}
+                                <span>
+                                  {formData.navbar?.brandSubtitle || formData.logoSubtitle || 'Fullstack Developer'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="hidden sm:flex items-center gap-2 text-[10px] text-slate-500 font-mono">
+                            {(formData.navbar?.logoImageUrl || formData.logoImageUrl) ? (
+                              <span className="text-emerald-400">Photo Mode</span>
+                            ) : (
+                              <span className="text-cyan-400">Text Mode</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Brand Title & Subtitle Inputs */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                            Brand Title (Header)
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.navbar?.brandText ?? ''}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                navbar: { ...formData.navbar, brandText: e.target.value }
+                              })
+                            }
+                            placeholder={formData.name || 'Al Amin Islam'}
+                            className="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-sky-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                            Logo Subtitle / Tagline
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.navbar?.brandSubtitle !== undefined ? formData.navbar.brandSubtitle : (formData.logoSubtitle ?? '')}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setFormData({
+                                ...formData,
+                                logoSubtitle: val,
+                                navbar: { ...formData.navbar, brandSubtitle: val }
+                              });
+                            }}
+                            placeholder="Fullstack Developer"
+                            className="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-sky-500"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Status Dot Toggle */}
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
+                        <span className="text-xs text-slate-300">Pulsating Active Status Dot</span>
+                        <label className="inline-flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.navbar?.showStatusDot !== false}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                navbar: { ...formData.navbar, showStatusDot: e.target.checked }
+                              })
+                            }
+                            className="w-4 h-4 rounded text-sky-600 bg-slate-950 border-slate-700 focus:ring-sky-500"
+                          />
+                          <span className="text-xs text-slate-400">Show Dot</span>
+                        </label>
+                      </div>
                     </div>
                   </div>
                 </div>
