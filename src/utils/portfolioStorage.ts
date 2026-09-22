@@ -81,7 +81,9 @@ export const mergePortfolioData = (raw: any): PortfolioDataType => {
     contactModal: { ...PORTFOLIO_DATA.contactModal, ...(raw.contactModal || {}) },
     bookCallModal: { ...PORTFOLIO_DATA.bookCallModal, ...(raw.bookCallModal || {}) },
     resumeModal: { ...PORTFOLIO_DATA.resumeModal, ...(raw.resumeModal || {}) },
-    whatsappWidget: { ...PORTFOLIO_DATA.whatsappWidget, ...(raw.whatsappWidget || {}) }
+    whatsappWidget: { ...PORTFOLIO_DATA.whatsappWidget, ...(raw.whatsappWidget || {}) },
+    photoRotation: { ...PORTFOLIO_DATA.photoRotation, ...(raw.photoRotation || {}) },
+    autoRotateSeconds: raw.photoRotation?.intervalSeconds ?? raw.autoRotateSeconds ?? PORTFOLIO_DATA.autoRotateSeconds
   };
 };
 

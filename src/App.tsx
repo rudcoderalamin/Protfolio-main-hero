@@ -13,6 +13,7 @@ import { ContactModal } from './components/ContactModal';
 import { DetailModal } from './components/DetailModal';
 import { WhatsAppWidget } from './components/WhatsAppWidget';
 import { AdminDashboard } from './components/AdminDashboard';
+import { RgbEdgeBeams } from './components/RgbEdgeBeams';
 import { ProfilePhoto } from './data/portfolioData';
 import { generateBackgroundStyles } from './utils/themeEngine';
 import {
@@ -176,10 +177,13 @@ export default function App() {
     }
   }, []);
 
-  // 2. Automatically rotate profile photo every 5 seconds ("পাঁচ সেকেন্ড পর পর যেন অটোমেটিক চেঞ্জ হয়")
+  // 2. Automatically rotate profile photo (customizable interval & toggleable in Admin Dashboard)
   useEffect(() => {
     if (photos.length <= 1) return;
-    const intervalSeconds = portfolioData.autoRotateSeconds || 5;
+    const isAutoRotateEnabled = portfolioData.photoRotation?.autoRotate !== false;
+    if (!isAutoRotateEnabled) return;
+
+    const intervalSeconds = portfolioData.photoRotation?.intervalSeconds || portfolioData.autoRotateSeconds || 5;
     const timer = setInterval(() => {
       setCurrentPhotoIndex((prev) => {
         const next = (prev + 1) % photos.length;
@@ -190,10 +194,10 @@ export default function App() {
         }
         return next;
       });
-    }, intervalSeconds * 1000);
+    }, Math.max(1, intervalSeconds) * 1000);
 
     return () => clearInterval(timer);
-  }, [photos.length, portfolioData.autoRotateSeconds]);
+  }, [photos.length, portfolioData.photoRotation?.autoRotate, portfolioData.photoRotation?.intervalSeconds, portfolioData.autoRotateSeconds]);
 
   const navigateToRoute = (route: 'portfolio' | 'admin') => {
     if (route === 'admin') {
@@ -292,6 +296,11 @@ export default function App() {
         isDark ? 'text-slate-100' : 'text-slate-800'
       }`}
     >
+      {/* Device-Responsive 4-Edge & Outermost 2-Lines RGB Blinking & Traveling Laser Beams */}
+      {theme.rgbBorderBlink !== false && (
+        <RgbEdgeBeams gridSize={theme.gridSize || 34} isDark={isDark} />
+      )}
+
       {/* Top Navigation */}
       <Navbar
         onOpenBookCall={() => setIsBookCallOpen(true)}

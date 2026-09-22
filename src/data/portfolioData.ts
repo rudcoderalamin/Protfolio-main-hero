@@ -52,6 +52,15 @@ export interface FooterLinkItem {
   openNewTab?: boolean;
 }
 
+export interface PhotoRotationConfig {
+  showBadge: boolean; // Hide or Show the badge underneath photo
+  autoRotate: boolean; // Enable or disable auto-rotation
+  intervalSeconds: number; // Duration in seconds (default 5s)
+  badgePrefix: string; // e.g. "Photo" or "ছবি"
+  badgeAutoRotateText: string; // e.g. "Auto-rotates 5s" or custom text
+  badgeTooltip?: string;
+}
+
 export interface ThemeConfig {
   preset: string; // 'blueprint' | 'dots' | 'dots-dark' | 'isometric' | 'hexagon' | 'circuit' | 'crosshairs' | 'cyber' | 'aurora' | 'terminal' | 'sunset' | 'minimal' | 'obsidian' | 'spotlight' | 'custom'
   backgroundColor: string;
@@ -63,6 +72,8 @@ export interface ThemeConfig {
   accentColor: string;
   backgroundImageUrl?: string;
   backgroundOverlayOpacity?: number;
+  rgbBorderBlink?: boolean; // Controls device-responsive outermost edge RGB blinking & traveling lines
+  rgbProfileRing?: boolean; // Controls neon RGB color ring around the profile photo
 }
 
 export const DEFAULT_PROFILE_PHOTOS: ProfilePhoto[] = [
@@ -125,6 +136,17 @@ export const PORTFOLIO_DATA = {
     reloadTooltip: "Auto-rotates every 5s • Click to cycle"
   },
 
+  // Profile Photo Auto-Rotation Details & Badge Settings (User Controllable)
+  autoRotateSeconds: 5,
+  photoRotation: {
+    showBadge: true,
+    autoRotate: true,
+    intervalSeconds: 5,
+    badgePrefix: "Photo",
+    badgeAutoRotateText: "Auto-rotates 5s",
+    badgeTooltip: "Click to cycle next photo manually. Automatically changes every 5 seconds & on web reload."
+  } as PhotoRotationConfig,
+
   // Hero Quick Stats Pills
   heroStats: {
     stat1Value: "620+",
@@ -157,11 +179,13 @@ export const PORTFOLIO_DATA = {
     preset: "blueprint", // 'blueprint' | 'dots' | 'cyber' | 'aurora' | 'minimal' | 'obsidian' | 'spotlight' | 'sunset' | 'custom'
     backgroundColor: "#ffffff",
     patternType: "blueprint",
-    gridColor: "rgba(56, 189, 248, 0.12)",
+    gridColor: "#38bdf8",
     gridSize: 34,
-    patternOpacity: 100,
+    patternOpacity: 25,
     textColorMode: "dark", // 'dark' = dark text on light bg, 'light' = white/bright text on dark bg
-    accentColor: "#0284c7"
+    accentColor: "#0284c7",
+    rgbBorderBlink: true,
+    rgbProfileRing: false
   } as ThemeConfig,
 
   // Footer Texts, Executable Code & Custom Links
@@ -302,9 +326,6 @@ export const PORTFOLIO_DATA = {
     buttonText: "Start WhatsApp Chat",
     defaultMessage: "Hello Al Amin! I saw your portfolio and would like to talk."
   },
-
-  // Rotation Settings
-  autoRotateSeconds: 5,
 
   // Stats Breakdown
   stats: [

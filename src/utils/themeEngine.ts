@@ -24,37 +24,33 @@ export function hexToRgba(hex: string, alpha: number = 0.18): string {
 /**
  * Normalizes any color input (hex, rgb, rgba) and applies the target opacity percentage (0-100)
  */
-export function formatLineColor(color: string | undefined, opacityPercent: number = 18, isDark: boolean = false): string {
+export function formatLineColor(color: string | undefined, opacityPercent: number = 25, isDark: boolean = false): string {
+  if (opacityPercent <= 0) {
+    return 'transparent';
+  }
+  const alpha = Math.max(0, Math.min(1, opacityPercent / 100));
+  const fallbackHex = isDark ? '#38bdf8' : '#0284c7';
+
   if (!color || color === 'transparent') {
-    return isDark ? 'rgba(56, 189, 248, 0.15)' : 'rgba(56, 189, 248, 0.12)';
+    return hexToRgba(fallbackHex, alpha);
   }
   const trimmed = color.trim();
-  const alpha = Math.max(0.01, Math.min(1, opacityPercent / 100));
 
   // If user entered a Hex color (#38bdf8)
   if (trimmed.startsWith('#')) {
     return hexToRgba(trimmed, alpha);
   }
 
-  // If user entered rgba(r, g, b, a)
-  if (trimmed.startsWith('rgba(')) {
-    // If opacityPercent is explicitly customized and not 100, we can re-scale the alpha
-    const parts = trimmed.slice(5, -1).split(',').map(s => s.trim());
-    if (parts.length >= 4) {
-      return `rgba(${parts[0]}, ${parts[1]}, ${parts[2]}, ${alpha})`;
-    }
-    return trimmed;
-  }
-
-  // If user entered rgb(r, g, b)
-  if (trimmed.startsWith('rgb(')) {
-    const parts = trimmed.slice(4, -1).split(',').map(s => s.trim());
-    if (parts.length >= 3) {
-      return `rgba(${parts[0]}, ${parts[1]}, ${parts[2]}, ${alpha})`;
+  // If user entered rgba(r, g, b, a) or rgb(r, g, b)
+  if (trimmed.startsWith('rgba(') || trimmed.startsWith('rgb(')) {
+    const nums = trimmed.match(/\d+/g);
+    if (nums && nums.length >= 3) {
+      return `rgba(${nums[0]}, ${nums[1]}, ${nums[2]}, ${Number(alpha.toFixed(3))})`;
     }
   }
 
-  return trimmed;
+  // Fallback to hex conversion
+  return hexToRgba(colorToHex(trimmed, fallbackHex), alpha);
 }
 
 /**
@@ -303,7 +299,7 @@ export function generateBackgroundStyles(theme?: Partial<ThemeConfig>): React.CS
   const isDark = theme?.textColorMode === 'light';
   const bgColor = theme?.backgroundColor || (isDark ? '#090d16' : '#ffffff');
   const patternType = theme?.patternType || theme?.preset || 'blueprint';
-  const opacity = typeof theme?.patternOpacity === 'number' ? theme.patternOpacity : 18;
+  const opacity = typeof theme?.patternOpacity === 'number' ? theme.patternOpacity : 25;
   const rawGridColor = theme?.gridColor || (isDark ? '#38bdf8' : '#0284c7');
   const effectiveLineColor = formatLineColor(rawGridColor, opacity, isDark);
   const gridSize = theme?.gridSize || 34;
@@ -327,8 +323,8 @@ export function generateBackgroundStyles(theme?: Partial<ThemeConfig>): React.CS
     return baseStyles;
   }
 
-  // 1. Minimal: No pattern
-  if (patternType === 'minimal') {
+  // If opacity is 0 or pattern is minimal, render pure solid background
+  if (opacity <= 0 || patternType === 'minimal') {
     return baseStyles;
   }
 

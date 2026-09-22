@@ -19,6 +19,9 @@ import {
   Check,
   AlertCircle,
   Eye,
+  EyeOff,
+  Clock,
+  RotateCw,
   Key,
   ChevronRight,
   Code2,
@@ -39,7 +42,7 @@ import {
   ArrowUp,
   ArrowDown
 } from 'lucide-react';
-import { ProfilePhoto } from '../data/portfolioData';
+import { ProfilePhoto, PhotoRotationConfig } from '../data/portfolioData';
 import {
   PortfolioDataType,
   getAdminPassword,
@@ -357,6 +360,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setTimeout(() => setSaveSuccessMessage(''), 3000);
   };
 
+  // Update Photo Auto-Rotation Details & Badge Controller
+  const handlePhotoRotationChange = (updates: Partial<PhotoRotationConfig>) => {
+    const current: PhotoRotationConfig = formData.photoRotation || {
+      showBadge: true,
+      autoRotate: true,
+      intervalSeconds: formData.autoRotateSeconds || 5,
+      badgePrefix: 'Photo',
+      badgeAutoRotateText: 'Auto-rotates 5s',
+      badgeTooltip: 'Click to cycle next photo manually. Automatically changes every 5 seconds & on web reload.'
+    };
+
+    const updatedRotation: PhotoRotationConfig = {
+      ...current,
+      ...updates
+    };
+
+    const updatedFormData = {
+      ...formData,
+      photoRotation: updatedRotation,
+      autoRotateSeconds: updatedRotation.intervalSeconds
+    };
+
+    setFormData(updatedFormData);
+    onUpdatePortfolioData(updatedFormData);
+  };
+
   // Change Admin Password
   const handleChangePassword = (e: React.FormEvent) => {
     e.preventDefault();
@@ -508,6 +537,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // ==========================================
   // VIEW 2: AUTHENTICATED ADMIN DASHBOARD
   // ==========================================
+  const photoRotationConfig: PhotoRotationConfig = formData.photoRotation || {
+    showBadge: true,
+    autoRotate: true,
+    intervalSeconds: formData.autoRotateSeconds || 5,
+    badgePrefix: 'Photo',
+    badgeAutoRotateText: 'Auto-rotates 5s',
+    badgeTooltip: 'Click to cycle next photo manually. Automatically changes every 5 seconds & on web reload.'
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-sky-500 selection:text-white">
       {/* Top Header Bar */}
@@ -845,6 +883,50 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     placeholder="1+ Year Exp."
                   />
                 </div>
+
+                {/* Photo Auto-Rotation Details Badge Quick Control */}
+                <div className="sm:col-span-2 p-3 bg-slate-950/80 border border-slate-800 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-sky-600/20 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
+                      <RotateCw className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="block text-xs font-semibold text-white">
+                        Photo Auto-Rotation Details Badge (ফটোর নিচের ডিটেইলস ব্যাজ)
+                      </span>
+                      <span className="text-[11px] text-slate-400">
+                        {photoRotationConfig.showBadge !== false
+                          ? `Visible on site: "${photoRotationConfig.badgePrefix || 'Photo'} 1/N • ${photoRotationConfig.badgeAutoRotateText || 'Auto-rotates 5s'}"`
+                          : 'Currently Hidden from visitor view'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handlePhotoRotationChange({
+                          showBadge: photoRotationConfig.showBadge === false ? true : false
+                        })
+                      }
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
+                        photoRotationConfig.showBadge !== false
+                          ? 'bg-emerald-950/60 border-emerald-600/50 text-emerald-300 hover:bg-emerald-900/60'
+                          : 'bg-rose-950/60 border-rose-800/60 text-rose-300 hover:bg-rose-900/60'
+                      }`}
+                    >
+                      {photoRotationConfig.showBadge !== false ? 'Visible (Show)' : 'Hidden (Hide)'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('photos')}
+                      className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700/60 transition-colors cursor-pointer flex items-center gap-1"
+                    >
+                      <span>Full Settings & Edit Text</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* Typewriter Titles */}
@@ -1037,12 +1119,271 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {/* TAB 2: PHOTOS MANAGEMENT */}
           {activeTab === 'photos' && (
             <div className="space-y-6">
-              <div className="border-b border-slate-800 pb-4">
-                <h2 className="text-lg font-bold text-white">Profile Photos & Rotation Cycle</h2>
-                <p className="text-xs text-slate-400">
-                  Photos automatically rotate every 5 seconds on the user site and advance on each page reload.
-                  Add, edit, or delete photos here.
-                </p>
+              <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-white">Profile Photos & Rotation Cycle</h2>
+                  <p className="text-xs text-slate-400">
+                    Manage profile photos, auto-rotation cycle, and the photo details badge under the portrait.
+                  </p>
+                </div>
+                <button
+                  onClick={handleSaveData}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold cursor-pointer"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save Changes</span>
+                </button>
+              </div>
+
+              {/* DEDICATED SECTION: PHOTO AUTO-ROTATION DETAILS & BADGE CONTROLLER */}
+              <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-5 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-sky-600/20 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
+                      <RotateCw className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-white">
+                          Photo Details & Auto-Rotation Badge
+                        </h3>
+                        {photoRotationConfig.showBadge !== false ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-950/80 border border-emerald-600/50 text-emerald-400 flex items-center gap-1">
+                            <Eye className="w-3 h-3" />
+                            Currently Visible (অন)
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-950/80 border border-rose-600/50 text-rose-400 flex items-center gap-1">
+                            <EyeOff className="w-3 h-3" />
+                            Currently Hidden (অফ / লুকানো)
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        ফটোর নিচে যে "Photo 1/3 • Auto-rotates 5s" ডিটেইলসটি রয়েছে, তা এখান থেকে শো/হাইড বা টেক্সট এডিট করতে পারবেন।
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Primary Hide/Show Quick Button */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handlePhotoRotationChange({
+                        showBadge: photoRotationConfig.showBadge === false ? true : false
+                      })
+                    }
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-xs ${
+                      photoRotationConfig.showBadge !== false
+                        ? 'bg-emerald-600/20 border-emerald-500/40 text-emerald-300 hover:bg-emerald-600/30'
+                        : 'bg-rose-950/40 border-rose-800/60 text-rose-300 hover:bg-rose-900/40'
+                    }`}
+                  >
+                    {photoRotationConfig.showBadge !== false ? (
+                      <>
+                        <Eye className="w-4 h-4 text-emerald-400" />
+                        <span>Badge is SHOWING (হাইড করতে ক্লিক করুন)</span>
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff className="w-4 h-4 text-rose-400" />
+                        <span>Badge is HIDDEN (শো করতে ক্লিক করুন)</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Configuration Options Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Left Column: Toggles & Rotation Interval */}
+                  <div className="space-y-3">
+                    <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-between">
+                      <div>
+                        <span className="block text-xs font-semibold text-white">
+                          Show Badge on Website (ফটোর নিচে ব্যাজ প্রদর্শন)
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          টগল অন থাকলে ভিজিটররা ফটোর নিচের এই ডিটেইলস ব্যাজটি দেখতে পাবেন
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={photoRotationConfig.showBadge !== false}
+                          onChange={(e) => handlePhotoRotationChange({ showBadge: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-600"></div>
+                      </label>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-between">
+                      <div>
+                        <span className="block text-xs font-semibold text-white">
+                          Auto-Rotate Photos (অটো রোটেশন সক্রিয় রাখুন)
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          নির্দিষ্ট সময় পর পর স্বয়ংক্রিয়ভাবে ছবি পরিবর্তন হবে
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={photoRotationConfig.autoRotate !== false}
+                          onChange={(e) => handlePhotoRotationChange({ autoRotate: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-600"></div>
+                      </label>
+                    </div>
+
+                    {/* Rotation Interval Duration */}
+                    <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-white flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-sky-400" />
+                          <span>Rotation Interval (টাইমার)</span>
+                        </label>
+                        <span className="text-xs font-mono font-bold text-sky-400">
+                          {photoRotationConfig.intervalSeconds || 5}s (Seconds)
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="range"
+                          min="2"
+                          max="20"
+                          step="1"
+                          value={photoRotationConfig.intervalSeconds || 5}
+                          onChange={(e) =>
+                            handlePhotoRotationChange({
+                              intervalSeconds: parseInt(e.target.value, 10) || 5
+                            })
+                          }
+                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-500"
+                        />
+                      </div>
+                      <div className="flex gap-2 pt-1 flex-wrap">
+                        {[3, 5, 8, 10].map((sec) => (
+                          <button
+                            key={sec}
+                            type="button"
+                            onClick={() =>
+                              handlePhotoRotationChange({
+                                intervalSeconds: sec,
+                                badgeAutoRotateText: `Auto-rotates ${sec}s`
+                              })
+                            }
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-colors cursor-pointer ${
+                              (photoRotationConfig.intervalSeconds || 5) === sec
+                                ? 'bg-sky-600 text-white border-sky-500'
+                                : 'bg-slate-800/80 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                            }`}
+                          >
+                            {sec}s {sec === 5 && '(Default)'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Editable Texts */}
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1">
+                        Photo Counter Prefix / Label (যেমন: "Photo" বা "ছবি")
+                      </label>
+                      <input
+                        type="text"
+                        value={photoRotationConfig.badgePrefix ?? 'Photo'}
+                        onChange={(e) => handlePhotoRotationChange({ badgePrefix: e.target.value })}
+                        placeholder="Photo"
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
+                      />
+                      <span className="text-[10px] text-slate-500 mt-1 block">
+                        টেক্সট প্রিভিউ: {photoRotationConfig.badgePrefix || 'Photo'} 1/{photosList.length || 2}
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1">
+                        Auto-Rotation Tag Text (যেমন: "Auto-rotates 5s" বা "৫ সেকেন্ড পর পর")
+                      </label>
+                      <input
+                        type="text"
+                        value={photoRotationConfig.badgeAutoRotateText ?? 'Auto-rotates 5s'}
+                        onChange={(e) => handlePhotoRotationChange({ badgeAutoRotateText: e.target.value })}
+                        placeholder="Auto-rotates 5s"
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1">
+                        Hover Tooltip Text (মাউস হোভার করলে যা দেখাবে)
+                      </label>
+                      <input
+                        type="text"
+                        value={
+                          photoRotationConfig.badgeTooltip ??
+                          'Click to cycle next photo manually. Automatically changes every 5 seconds & on web reload.'
+                        }
+                        onChange={(e) => handlePhotoRotationChange({ badgeTooltip: e.target.value })}
+                        placeholder="Tooltip on hover"
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Real-time Preview Banner */}
+                <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+                      <span>Live Site Preview (ওয়েবসাইটে যেমন দেখাবে)</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handlePhotoRotationChange({
+                          showBadge: true,
+                          autoRotate: true,
+                          intervalSeconds: 5,
+                          badgePrefix: 'Photo',
+                          badgeAutoRotateText: 'Auto-rotates 5s',
+                          badgeTooltip:
+                            'Click to cycle next photo manually. Automatically changes every 5 seconds & on web reload.'
+                        })
+                      }
+                      className="text-[11px] text-sky-400 hover:text-sky-300 underline cursor-pointer"
+                    >
+                      Reset to Default (ডিফল্ট করুন)
+                    </button>
+                  </div>
+
+                  <div className="py-3 px-4 rounded-lg bg-slate-950/70 border border-slate-800 flex items-center justify-center min-h-[56px]">
+                    {photoRotationConfig.showBadge !== false ? (
+                      <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-sky-50 border border-sky-200 text-[11px] font-medium text-sky-700 shadow-2xs">
+                        <RotateCw className="w-3 h-3 text-sky-500" />
+                        <span>
+                          {photoRotationConfig.badgePrefix ? `${photoRotationConfig.badgePrefix} ` : 'Photo '}
+                          1/{photosList.length || 2}
+                        </span>
+                        {photoRotationConfig.badgeAutoRotateText && (
+                          <span className="text-[10px] text-sky-600/90 bg-white px-2 py-0.5 rounded-full border border-sky-200 font-medium">
+                            {photoRotationConfig.badgeAutoRotateText}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-xs text-rose-400/90 font-medium italic">
+                        <EyeOff className="w-4 h-4 text-rose-400" />
+                        <span>ব্যাজটি এখন সম্পূর্ণ HIDDEN (লুকানো)। পাবলিক সাইটে ফটোর নিচে এটি আর প্রদর্শিত হবে না।</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Add Photo Card */}
@@ -4676,29 +5017,86 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     />
                   </div>
 
-                  {/* Pattern Opacity Slider */}
+                  {/* Background Grid Lines Opacity Slider (User Requested) */}
                   <div>
                     <div className="flex justify-between items-center mb-1">
                       <label className="text-xs font-semibold text-slate-300">
-                        Pattern Intensity / Opacity
+                        Background Grid Lines Opacity (ব্যাকগ্রাউন্ড গার্ডের/গ্রিডের লাইনের অপাসসিটি)
                       </label>
-                      <span className="text-[10px] text-sky-400 font-mono">
-                        {formData.theme?.patternOpacity ?? 100}%
+                      <span className="text-[11px] text-sky-400 font-mono font-bold">
+                        {formData.theme?.patternOpacity ?? 25}%
                       </span>
                     </div>
                     <input
                       type="range"
-                      min={5}
+                      min={0}
                       max={100}
-                      value={formData.theme?.patternOpacity ?? 100}
+                      step={1}
+                      value={formData.theme?.patternOpacity ?? 25}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
                           theme: { ...formData.theme, patternOpacity: Number(e.target.value) }
                         })
                       }
-                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-500"
+                      className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-500"
                     />
+                    {/* Quick Preset Buttons for Opacity */}
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                      {[
+                        { label: '0% Off', val: 0 },
+                        { label: '12% Soft', val: 12 },
+                        { label: '25% Subtle', val: 25 },
+                        { label: '50% Medium', val: 50 },
+                        { label: '80% Bold', val: 80 },
+                        { label: '100% Solid', val: 100 }
+                      ].map((preset) => (
+                        <button
+                          key={preset.val}
+                          type="button"
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              theme: { ...formData.theme, patternOpacity: preset.val }
+                            })
+                          }
+                          className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer ${
+                            (formData.theme?.patternOpacity ?? 25) === preset.val
+                              ? 'bg-sky-600 text-white font-bold'
+                              : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Device Responsive Edge RGB Blinking Lines (User Requested) */}
+                  <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+                        <span>Edge RGB Blinking & Traveling Lines (চারদিকের আরজিবি ব্লিংক লাইন)</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Device-responsive RGB blinking, pulsing and traveling laser lines on the outermost edges & sides
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={formData.theme?.rgbBorderBlink !== false}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            theme: { ...formData.theme, rgbBorderBlink: e.target.checked }
+                          })
+                        }
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-sky-500"></div>
+                    </label>
                   </div>
 
                   {/* Optional Background Photo URL */}
@@ -4775,13 +5173,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </span>
                     </div>
 
-                    <div className="text-center my-auto relative z-10">
-                      <h4 className="text-base font-extrabold tracking-tight">
-                        {formData.name || 'Al Amin Islam'}
-                      </h4>
-                      <p className="text-xs opacity-75 mt-0.5 line-clamp-1">
-                        {formData.bio || 'Frontend Web Developer & Competitive Programmer'}
-                      </p>
+                    {/* Edge RGB Lines Preview indicator inside preview box */}
+                    {formData.theme?.rgbBorderBlink !== false && (
+                      <>
+                        <div className="absolute top-0 bottom-0 left-0 w-[2px] bg-gradient-to-b from-cyan-400 via-purple-500 to-pink-500 animate-pulse pointer-events-none" />
+                        <div className="absolute top-0 bottom-0 right-0 w-[2px] bg-gradient-to-b from-pink-500 via-purple-500 to-cyan-400 animate-pulse pointer-events-none" />
+                        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-cyan-400 via-pink-500 to-amber-400 animate-pulse pointer-events-none" />
+                        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-amber-400 via-purple-500 to-cyan-400 animate-pulse pointer-events-none" />
+                      </>
+                    )}
+
+                    <div className="flex items-center justify-center gap-3.5 my-auto relative z-10 py-1">
+                      {/* Mini Avatar */}
+                      <div className="relative w-12 h-12 shrink-0">
+                        <div className="w-full h-full rounded-full overflow-hidden border border-white/50 bg-slate-200 shadow-sm">
+                          <img
+                            src={photos[0]?.url || '/Profile-Photo.png'}
+                            alt="Preview"
+                            className="w-full h-full object-cover object-top"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="text-left">
+                        <h4 className="text-sm font-extrabold tracking-tight">
+                          {formData.name || 'Al Amin Islam'}
+                        </h4>
+                        <p className="text-[11px] opacity-75 mt-0.5 line-clamp-1">
+                          {formData.bio || 'Frontend Web Developer & Competitive Programmer'}
+                        </p>
+                        <span className="inline-flex items-center gap-1 text-[9px] text-sky-400 font-mono mt-0.5">
+                          Grid Opacity: {formData.theme?.patternOpacity ?? 25}%
+                        </span>
+                      </div>
                     </div>
 
                     <div

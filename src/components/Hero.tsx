@@ -71,6 +71,7 @@ export const Hero: React.FC<HeroProps> = ({
 
   const heroStats = data.heroStats || PORTFOLIO_DATA.heroStats;
   const heroButtons = data.heroButtons || PORTFOLIO_DATA.heroButtons;
+  const photoRotation = data.photoRotation || PORTFOLIO_DATA.photoRotation;
   const isDark = data.theme?.textColorMode === 'light';
 
   return (
@@ -79,12 +80,12 @@ export const Hero: React.FC<HeroProps> = ({
       id="hero-section-container"
     >
       {/* Profile Photo Stage with smooth 5-second rotation & Manual Reload Button */}
-      <div className="relative mb-6">
-        {/* Decorative soft glowing blur ring */}
-        <div className={`absolute -inset-1.5 rounded-full opacity-60 blur-md animate-pulse ${
+      <div className="relative mb-6" id="hero-profile-stage">
+        {/* Soft subtle glow behind avatar */}
+        <div className={`absolute -inset-1.5 rounded-full opacity-40 blur-md ${
           isDark
-            ? 'bg-gradient-to-tr from-cyan-400 via-sky-600 to-indigo-500'
-            : 'bg-gradient-to-tr from-sky-300 via-sky-100 to-sky-200'
+            ? 'bg-gradient-to-tr from-cyan-900 via-sky-800 to-indigo-900'
+            : 'bg-gradient-to-tr from-sky-200 via-sky-100 to-sky-50'
         }`} />
 
         {/* Circular Avatar Frame */}
@@ -133,23 +134,28 @@ export const Hero: React.FC<HeroProps> = ({
         </div>
       </div>
 
-      {/* Auto-Rotation & Quick Reload Badge (No edit/upload buttons on user site) */}
-      <div className="mb-4 flex items-center justify-center">
-        <button
-          onClick={onNextPhoto}
-          className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-sky-50 hover:bg-sky-100 border border-sky-200 text-[11px] font-medium text-sky-700 shadow-2xs transition-all duration-150 cursor-pointer active:scale-95 group"
-          title="Click to cycle next photo manually. Automatically changes every 5 seconds & on web reload."
-          id="hero-reload-photo-indicator"
-        >
-          <RotateCw className="w-3 h-3 text-sky-500 group-hover:rotate-180 transition-transform duration-500" />
-          <span>
-            Photo {currentPhotoIndex + 1}/{photosCount}
-          </span>
-          <span className="text-[10px] text-sky-600/90 bg-white px-2 py-0.5 rounded-full border border-sky-200 font-medium">
-            Auto-rotates 5s
-          </span>
-        </button>
-      </div>
+      {/* Auto-Rotation & Quick Reload Badge (Can be hidden or shown via Admin Dashboard) */}
+      {photoRotation.showBadge !== false && (
+        <div className="mb-4 flex items-center justify-center">
+          <button
+            onClick={onNextPhoto}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-sky-50 hover:bg-sky-100 border border-sky-200 text-[11px] font-medium text-sky-700 shadow-2xs transition-all duration-150 cursor-pointer active:scale-95 group"
+            title={photoRotation.badgeTooltip || "Click to cycle next photo manually. Automatically changes every 5 seconds & on web reload."}
+            id="hero-reload-photo-indicator"
+          >
+            <RotateCw className="w-3 h-3 text-sky-500 group-hover:rotate-180 transition-transform duration-500" />
+            <span>
+              {photoRotation.badgePrefix ? `${photoRotation.badgePrefix} ` : 'Photo '}
+              {currentPhotoIndex + 1}/{photosCount}
+            </span>
+            {photoRotation.badgeAutoRotateText && (
+              <span className="text-[10px] text-sky-600/90 bg-white px-2 py-0.5 rounded-full border border-sky-200 font-medium">
+                {photoRotation.badgeAutoRotateText}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Main Name Heading */}
       <motion.h1
