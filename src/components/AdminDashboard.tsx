@@ -54,6 +54,7 @@ import {
   isQuotaExceeded
 } from '../utils/portfolioStorage';
 import { AdminMessagesTab } from './AdminMessagesTab';
+import { THEME_PRESETS, colorToHex, generateBackgroundStyles } from '../utils/themeEngine';
 
 interface AdminDashboardProps {
   portfolioData: PortfolioDataType;
@@ -644,12 +645,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-semibold text-slate-300">
-                      Brand Monogram Initials
+                      Logo Inner Text / Code (e.g. root)
                     </label>
-                    {formData.brandInitials && (
+                    {(formData.brandInitials || formData.logoBadgeText || formData.navbar?.logoBadgeText) && (
                       <button
                         type="button"
-                        onClick={() => setFormData({ ...formData, brandInitials: '' })}
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            brandInitials: '',
+                            logoBadgeText: '',
+                            navbar: { ...formData.navbar, logoBadgeText: '' }
+                          })
+                        }
                         className="text-[10px] text-slate-400 hover:text-white"
                       >
                         Clear
@@ -658,11 +666,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </div>
                   <input
                     type="text"
-                    value={formData.brandInitials ?? ''}
-                    onChange={(e) => setFormData({ ...formData, brandInitials: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-sky-500"
-                    placeholder="AI"
+                    value={formData.navbar?.logoBadgeText ?? formData.logoBadgeText ?? formData.brandInitials ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData({
+                        ...formData,
+                        brandInitials: val,
+                        logoBadgeText: val,
+                        navbar: { ...formData.navbar, logoBadgeText: val }
+                      });
+                    }}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-sky-500 font-mono"
+                    placeholder="root"
                   />
+                  <span className="text-[10px] text-slate-500 mt-1 block">
+                    Text displayed inside the rotating neon logo box in the header (e.g. root)
+                  </span>
                 </div>
 
                 <div>
@@ -3586,25 +3605,46 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </span>
                   </div>
 
-                  {/* Logo Badge Acronym (e.g. R999 / AI) */}
+                  {/* Logo Badge Acronym (e.g. root) */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">
-                      Logo Badge Code / Monogram
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-semibold text-slate-300">
+                        Logo Inner Text / Monogram (Inside Logo Badge)
+                      </label>
+                      {(formData.navbar?.logoBadgeText || formData.logoBadgeText || formData.brandInitials) && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              brandInitials: '',
+                              logoBadgeText: '',
+                              navbar: { ...formData.navbar, logoBadgeText: '' }
+                            })
+                          }
+                          className="text-[10px] text-slate-400 hover:text-white"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
                     <input
                       type="text"
-                      value={formData.logoBadgeText ?? ''}
-                      onChange={(e) =>
+                      value={formData.navbar?.logoBadgeText ?? formData.logoBadgeText ?? formData.brandInitials ?? ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
                         setFormData({
                           ...formData,
-                          logoBadgeText: e.target.value
-                        })
-                      }
-                      placeholder="R999"
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
+                          brandInitials: val,
+                          logoBadgeText: val,
+                          navbar: { ...formData.navbar, logoBadgeText: val }
+                        });
+                      }}
+                      placeholder="root"
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500 font-mono"
                     />
                     <span className="text-[10px] text-slate-500 mt-1 block">
-                      Small code/badge (e.g., R999 or AI) in the logo icon
+                      Code/text shown inside the glowing neon logo box (e.g. root)
                     </span>
                   </div>
 
@@ -4109,70 +4149,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
                   Quick 1-Click Theme Presets
                 </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-                  {[
-                    {
-                      id: 'blueprint',
-                      name: 'Classic Blueprint',
-                      desc: 'White canvas with sky blueprint grid',
-                      bgColor: '#ffffff',
-                      pattern: 'blueprint',
-                      gridColor: 'rgba(56, 189, 248, 0.12)',
-                      textColorMode: 'dark' as const,
-                      accent: '#0284c7'
-                    },
-                    {
-                      id: 'cyber',
-                      name: 'Cyber Midnight',
-                      desc: 'Dark navy with cyan digital grid',
-                      bgColor: '#0b1120',
-                      pattern: 'cyber',
-                      gridColor: 'rgba(56, 189, 248, 0.18)',
-                      textColorMode: 'light' as const,
-                      accent: '#38bdf8'
-                    },
-                    {
-                      id: 'obsidian',
-                      name: 'Obsidian Black',
-                      desc: 'Deep black with subtle engineering lines',
-                      bgColor: '#090d16',
-                      pattern: 'obsidian',
-                      gridColor: 'rgba(56, 189, 248, 0.09)',
-                      textColorMode: 'light' as const,
-                      accent: '#06b6d4'
-                    },
-                    {
-                      id: 'aurora',
-                      name: 'Aurora Night',
-                      desc: 'Dark space with ambient cosmic glow',
-                      bgColor: '#080c14',
-                      pattern: 'aurora',
-                      gridColor: 'rgba(168, 85, 247, 0.25)',
-                      textColorMode: 'light' as const,
-                      accent: '#a855f7'
-                    },
-                    {
-                      id: 'dots',
-                      name: 'Matrix Dot Grid',
-                      desc: 'Modern tech geometric dots',
-                      bgColor: '#ffffff',
-                      pattern: 'dots',
-                      gridColor: 'rgba(56, 189, 248, 0.2)',
-                      textColorMode: 'dark' as const,
-                      accent: '#0284c7'
-                    },
-                    {
-                      id: 'minimal',
-                      name: 'Clean Minimal',
-                      desc: 'Pure crisp solid background',
-                      bgColor: '#f8fafc',
-                      pattern: 'minimal',
-                      gridColor: 'transparent',
-                      textColorMode: 'dark' as const,
-                      accent: '#0284c7'
-                    }
-                  ].map((preset) => {
-                    const isSelected = (formData.theme?.preset === preset.id);
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                  {THEME_PRESETS.map((preset) => {
+                    const isSelected = formData.theme?.preset === preset.id;
                     return (
                       <button
                         key={preset.id}
@@ -4185,11 +4164,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               preset: preset.id,
                               backgroundColor: preset.bgColor,
                               patternType: preset.pattern,
-                              gridColor: preset.gridColor,
+                              gridColor: preset.gridColorHex,
+                              patternOpacity: preset.opacity,
+                              gridSize: preset.gridSize,
                               textColorMode: preset.textColorMode,
-                              accentColor: preset.accent,
-                              gridSize: 34,
-                              patternOpacity: 100
+                              accentColor: preset.accent
                             }
                           });
                         }}
@@ -4200,12 +4179,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <span className="w-3.5 h-3.5 rounded-full border border-slate-700 shadow-2xs" style={{ backgroundColor: preset.bgColor }} />
+                          <span
+                            className="w-4 h-4 rounded-full border border-slate-700 shadow-sm"
+                            style={{ backgroundColor: preset.bgColor }}
+                          />
                           {isSelected && <Check className="w-3.5 h-3.5 text-sky-400" />}
                         </div>
                         <div>
                           <span className="text-xs font-bold text-white block">{preset.name}</span>
-                          <span className="text-[10px] text-slate-400 block mt-0.5 line-clamp-1">{preset.desc}</span>
+                          <span className="text-[10px] text-slate-400 block mt-0.5 line-clamp-1">
+                            {preset.desc}
+                          </span>
                         </div>
                       </button>
                     );
@@ -4228,7 +4212,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
-                        value={formData.theme?.backgroundColor && formData.theme.backgroundColor.startsWith('#') && formData.theme.backgroundColor.length === 7 ? formData.theme.backgroundColor : '#ffffff'}
+                        value={
+                          formData.theme?.backgroundColor &&
+                          formData.theme.backgroundColor.startsWith('#') &&
+                          formData.theme.backgroundColor.length === 7
+                            ? formData.theme.backgroundColor
+                            : '#ffffff'
+                        }
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -4275,7 +4265,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
-                        value={formData.theme?.accentColor && formData.theme.accentColor.startsWith('#') && formData.theme.accentColor.length === 7 ? formData.theme.accentColor : '#0284c7'}
+                        value={
+                          formData.theme?.accentColor &&
+                          formData.theme.accentColor.startsWith('#') &&
+                          formData.theme.accentColor.length === 7
+                            ? formData.theme.accentColor
+                            : '#0284c7'
+                        }
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -4343,7 +4339,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       Background Pattern Style
                     </label>
                     <select
-                      value={formData.theme?.patternType || 'blueprint'}
+                      value={formData.theme?.patternType || 'dots'}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -4352,9 +4348,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       }
                       className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white"
                     >
-                      <option value="blueprint">Blueprint Technical Grid</option>
-                      <option value="cyber">Cyber Matrix Digital Grid</option>
                       <option value="dots">Modern Dot Matrix Pattern</option>
+                      <option value="dots-dark">Cyber Stardust Dots</option>
+                      <option value="dots-dense">Dense Tech Micropoints</option>
+                      <option value="blueprint">Blueprint Technical Grid</option>
+                      <option value="isometric">Diamond Isometric Mesh (45°)</option>
+                      <option value="crosshairs">Technical Drafting Crosshairs</option>
+                      <option value="hexagon">Futuristic Hexagon Honeycomb</option>
+                      <option value="circuit">Circuit Board PCB Trace</option>
+                      <option value="cyber">Cyber Matrix Digital Grid</option>
                       <option value="aurora">Cosmic Aurora Ambient Mesh</option>
                       <option value="spotlight">Focused Radial Spotlight</option>
                       <option value="obsidian">Obsidian Subtle Cyber</option>
@@ -4362,12 +4364,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </select>
                   </div>
 
-                  {/* Grid Lines Color */}
+                  {/* Grid Lines / Dots Color with Quick Swatches */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-1">
                       Grid Lines / Pattern Color
                     </label>
                     <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={colorToHex(formData.theme?.gridColor)}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            theme: { ...formData.theme, gridColor: e.target.value }
+                          })
+                        }
+                        className="w-10 h-9 rounded-lg border border-slate-700 bg-slate-900 cursor-pointer p-0.5 shrink-0"
+                      />
                       <input
                         type="text"
                         value={formData.theme?.gridColor ?? ''}
@@ -4377,7 +4390,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             theme: { ...formData.theme, gridColor: e.target.value }
                           })
                         }
-                        placeholder="rgba(56, 189, 248, 0.12)"
+                        placeholder="rgba(56, 189, 248, 0.18) or #38bdf8"
                         className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white font-mono focus:outline-none focus:border-sky-500"
                       />
                       {formData.theme?.gridColor && (
@@ -4396,13 +4409,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </button>
                       )}
                     </div>
+                    {/* Quick Swatches */}
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      {[
+                        { color: '#00f0ff', label: 'Cyan' },
+                        { color: '#38bdf8', label: 'Sky' },
+                        { color: '#10b981', label: 'Emerald' },
+                        { color: '#f43f5e', label: 'Rose' },
+                        { color: '#f59e0b', label: 'Amber' },
+                        { color: '#a855f7', label: 'Violet' },
+                        { color: '#64748b', label: 'Slate' },
+                        { color: '#ffffff', label: 'White' },
+                        { color: '#090d16', label: 'Navy' }
+                      ].map((swatch) => (
+                        <button
+                          key={swatch.color}
+                          type="button"
+                          title={swatch.label}
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              theme: { ...formData.theme, gridColor: swatch.color }
+                            })
+                          }
+                          className="w-4 h-4 rounded-full border border-slate-700 hover:scale-110 transition-transform"
+                          style={{ backgroundColor: swatch.color }}
+                        />
+                      ))}
+                    </div>
                   </div>
 
                   {/* Grid Size Slider */}
                   <div>
                     <div className="flex justify-between items-center mb-1">
                       <label className="text-xs font-semibold text-slate-300">
-                        Grid Size
+                        Grid / Dot Spacing
                       </label>
                       <span className="text-[10px] text-sky-400 font-mono">
                         {formData.theme?.gridSize || 34}px
@@ -4422,6 +4463,67 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-500"
                     />
                   </div>
+
+                  {/* Pattern Opacity Slider */}
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-xs font-semibold text-slate-300">
+                        Pattern Intensity / Opacity
+                      </label>
+                      <span className="text-[10px] text-sky-400 font-mono">
+                        {formData.theme?.patternOpacity ?? 100}%
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={5}
+                      max={100}
+                      value={formData.theme?.patternOpacity ?? 100}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          theme: { ...formData.theme, patternOpacity: Number(e.target.value) }
+                        })
+                      }
+                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-500"
+                    />
+                  </div>
+
+                  {/* Optional Background Photo URL */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Custom Background Wallpaper / Photo URL (Optional)
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={formData.theme?.backgroundImageUrl ?? ''}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            theme: { ...formData.theme, backgroundImageUrl: e.target.value }
+                          })
+                        }
+                        placeholder="https://images.unsplash.com/... or /custom-bg.jpg"
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
+                      />
+                      {formData.theme?.backgroundImageUrl && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              theme: { ...formData.theme, backgroundImageUrl: '' }
+                            })
+                          }
+                          className="px-2 py-1 text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded transition-colors"
+                          title="Clear field"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Real-Time Live Preview Canvas Container */}
@@ -4432,21 +4534,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <div
                     className="w-full h-44 rounded-xl border border-slate-700/60 p-4 flex flex-col justify-between relative overflow-hidden transition-all duration-300 shadow-inner"
                     style={{
-                      backgroundColor: formData.theme?.backgroundColor || '#ffffff',
-                      backgroundImage:
-                        formData.theme?.patternType === 'minimal'
-                          ? 'none'
-                          : formData.theme?.patternType === 'dots'
-                          ? `radial-gradient(${formData.theme?.gridColor || 'rgba(56, 189, 248, 0.2)'} 1.5px, transparent 1.5px)`
-                          : `linear-gradient(to right, ${formData.theme?.gridColor || 'rgba(56, 189, 248, 0.12)'} 1px, transparent 1px), linear-gradient(to bottom, ${formData.theme?.gridColor || 'rgba(56, 189, 248, 0.12)'} 1px, transparent 1px)`,
-                      backgroundSize: `${formData.theme?.gridSize || 34}px ${formData.theme?.gridSize || 34}px`,
+                      ...generateBackgroundStyles(formData.theme),
                       color: formData.theme?.textColorMode === 'light' ? '#f8fafc' : '#0f172a'
                     }}
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between relative z-10">
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-md bg-sky-600 flex items-center justify-center text-white text-[10px] font-bold">
-                          {formData.logoBadgeText || 'R999'}
+                        <div className="px-2 py-1 rounded-md bg-sky-600 flex items-center justify-center text-white text-[11px] font-mono font-bold tracking-tight">
+                          {formData.navbar?.logoBadgeText || formData.logoBadgeText || formData.brandInitials || 'root'}
                         </div>
                         <div>
                           <div className="text-xs font-bold leading-tight">
@@ -4457,7 +4552,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           </div>
                         </div>
                       </div>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold border"
+                      <span
+                        className="text-[10px] px-2 py-0.5 rounded-full font-semibold border"
                         style={{
                           borderColor: formData.theme?.accentColor || '#0284c7',
                           color: formData.theme?.accentColor || '#0284c7'
@@ -4467,7 +4563,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </span>
                     </div>
 
-                    <div className="text-center my-auto">
+                    <div className="text-center my-auto relative z-10">
                       <h4 className="text-base font-extrabold tracking-tight">
                         {formData.name || 'Al Amin Islam'}
                       </h4>
@@ -4476,10 +4572,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </p>
                     </div>
 
-                    <div className="flex items-center justify-between text-[10px] opacity-70 border-t pt-2"
-                      style={{ borderColor: formData.theme?.textColorMode === 'light' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}
+                    <div
+                      className="flex items-center justify-between text-[10px] opacity-70 border-t pt-2 relative z-10"
+                      style={{
+                        borderColor:
+                          formData.theme?.textColorMode === 'light'
+                            ? 'rgba(255,255,255,0.1)'
+                            : 'rgba(0,0,0,0.1)'
+                      }}
                     >
-                      <span>{formData.footer?.copyrightText?.replace(/\{year\}/g, '2026') || '© 2026 Built with Next.js & Tailwind CSS'}</span>
+                      <span>
+                        {formData.footer?.copyrightText?.replace(/\{year\}/g, '2026') ||
+                          '© 2026 Built with Next.js & Tailwind CSS'}
+                      </span>
                       <span className="font-semibold text-sky-500">
                         {formData.footer?.links?.[0]?.label || 'Developed by Al Amin Islam'}
                       </span>

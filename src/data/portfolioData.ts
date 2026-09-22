@@ -53,7 +53,7 @@ export interface FooterLinkItem {
 }
 
 export interface ThemeConfig {
-  preset: string; // 'blueprint' | 'dots' | 'cyber' | 'aurora' | 'minimal' | 'obsidian' | 'spotlight' | 'sunset' | 'custom'
+  preset: string; // 'blueprint' | 'dots' | 'dots-dark' | 'isometric' | 'hexagon' | 'circuit' | 'crosshairs' | 'cyber' | 'aurora' | 'terminal' | 'sunset' | 'minimal' | 'obsidian' | 'spotlight' | 'custom'
   backgroundColor: string;
   patternType: string;
   gridColor: string;
@@ -61,6 +61,8 @@ export interface ThemeConfig {
   patternOpacity: number;
   textColorMode: 'dark' | 'light' | 'auto';
   accentColor: string;
+  backgroundImageUrl?: string;
+  backgroundOverlayOpacity?: number;
 }
 
 export const DEFAULT_PROFILE_PHOTOS: ProfilePhoto[] = [
@@ -82,9 +84,9 @@ export const PORTFOLIO_DATA = {
   // Brand & Identity
   name: "Al Amin Islam",
   nickname: "Al Amin",
-  brandInitials: "AI",
+  brandInitials: "root",
   logoSubtitle: "Fullstack Developer",
-  logoBadgeText: "AI",
+  logoBadgeText: "root",
   logoImageUrl: "",
   greetingPrefix: "Hi, I'm",
   greetingEmoji: "👋",
@@ -137,7 +139,7 @@ export const PORTFOLIO_DATA = {
   navbar: {
     brandText: "Al Amin Islam",
     brandSubtitle: "Fullstack Developer",
-    logoBadgeText: "AI",
+    logoBadgeText: "root",
     logoImageUrl: "",
     showStatusDot: true,
     statusDotText: "Active & Available",

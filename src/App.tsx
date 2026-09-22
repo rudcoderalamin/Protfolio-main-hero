@@ -14,6 +14,7 @@ import { DetailModal } from './components/DetailModal';
 import { WhatsAppWidget } from './components/WhatsAppWidget';
 import { AdminDashboard } from './components/AdminDashboard';
 import { ProfilePhoto } from './data/portfolioData';
+import { generateBackgroundStyles } from './utils/themeEngine';
 import {
   PortfolioDataType,
   getStoredPortfolioData,
@@ -267,9 +268,9 @@ export default function App() {
     preset: 'blueprint',
     backgroundColor: '#ffffff',
     patternType: 'blueprint',
-    gridColor: 'rgba(56, 189, 248, 0.12)',
+    gridColor: '#38bdf8',
     gridSize: 34,
-    patternOpacity: 100,
+    patternOpacity: 18,
     textColorMode: 'dark',
     accentColor: '#0284c7'
   };
@@ -277,78 +278,7 @@ export default function App() {
   const isDark = theme.textColorMode === 'light';
 
   const getBackgroundStyles = (): React.CSSProperties => {
-    const bgColor = theme.backgroundColor || (isDark ? '#090d16' : '#ffffff');
-    const patternType = theme.patternType || theme.preset || 'blueprint';
-    const gridColor = theme.gridColor || (isDark ? 'rgba(56, 189, 248, 0.15)' : 'rgba(56, 189, 248, 0.12)');
-    const gridSize = theme.gridSize || 34;
-
-    if (patternType === 'minimal') {
-      return { backgroundColor: bgColor };
-    }
-
-    if (patternType === 'dots') {
-      return {
-        backgroundColor: bgColor,
-        backgroundImage: `radial-gradient(${gridColor} 1.5px, transparent 1.5px)`,
-        backgroundSize: `${gridSize}px ${gridSize}px`,
-      };
-    }
-
-    if (patternType === 'cyber' || patternType === 'matrix') {
-      return {
-        backgroundColor: bgColor,
-        backgroundImage: `
-          linear-gradient(to right, ${gridColor} 1px, transparent 1px),
-          linear-gradient(to bottom, ${gridColor} 1px, transparent 1px)
-        `,
-        backgroundSize: `${gridSize}px ${gridSize}px`,
-      };
-    }
-
-    if (patternType === 'aurora') {
-      return {
-        backgroundColor: bgColor,
-        backgroundImage: isDark
-          ? `
-            radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.25) 0px, transparent 50%),
-            radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.25) 0px, transparent 50%),
-            radial-gradient(at 50% 100%, rgba(236, 72, 153, 0.18) 0px, transparent 50%)
-          `
-          : `
-            radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.15) 0px, transparent 50%),
-            radial-gradient(at 100% 0%, rgba(192, 132, 252, 0.15) 0px, transparent 50%),
-            radial-gradient(at 50% 100%, rgba(244, 114, 182, 0.12) 0px, transparent 50%)
-          `,
-      };
-    }
-
-    if (patternType === 'spotlight') {
-      return {
-        backgroundColor: bgColor,
-        backgroundImage: `radial-gradient(circle at 50% 35%, transparent 20%, ${gridColor} 100%)`,
-      };
-    }
-
-    if (patternType === 'obsidian') {
-      return {
-        backgroundColor: '#090d16',
-        backgroundImage: `
-          linear-gradient(to right, rgba(56, 189, 248, 0.08) 1px, transparent 1px),
-          linear-gradient(to bottom, rgba(56, 189, 248, 0.08) 1px, transparent 1px)
-        `,
-        backgroundSize: `${gridSize}px ${gridSize}px`,
-      };
-    }
-
-    // Default Blueprint Grid
-    return {
-      backgroundColor: bgColor,
-      backgroundImage: `
-        linear-gradient(to right, ${gridColor} 1px, transparent 1px),
-        linear-gradient(to bottom, ${gridColor} 1px, transparent 1px)
-      `,
-      backgroundSize: `${gridSize}px ${gridSize}px`,
-    };
+    return generateBackgroundStyles(portfolioData.theme);
   };
 
   const footerLinks = portfolioData.footer?.links || [];

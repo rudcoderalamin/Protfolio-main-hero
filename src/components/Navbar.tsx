@@ -18,9 +18,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const brandName = portfolioData?.navbar?.brandText || portfolioData?.name || 'Al Amin Islam';
-  const brandInitials = portfolioData?.navbar?.logoBadgeText || portfolioData?.brandInitials || 'AI';
+  const rawInitials = portfolioData?.navbar?.logoBadgeText || portfolioData?.logoBadgeText || portfolioData?.brandInitials || 'root';
+  const brandInitials = rawInitials || 'root';
   const brandSubtitle = portfolioData?.navbar?.brandSubtitle || portfolioData?.logoSubtitle || portfolioData?.title || 'Fullstack Developer';
-  const logoImageUrl = portfolioData?.navbar?.logoImageUrl;
+  const logoImageUrl = portfolioData?.navbar?.logoImageUrl || portfolioData?.logoImageUrl;
   const statusDotText = portfolioData?.navbar?.statusDotText || 'Active & Available';
   const bookCallText = portfolioData?.navbar?.bookCallBtnText || portfolioData?.heroButtons?.bookCallText || 'Book a Call';
   const isDark = portfolioData?.theme?.textColorMode === 'light';
@@ -49,8 +50,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           aria-label={`${brandName} Home`}
         >
           {/* Rotating Multi-Color Neon Border Logo Badge */}
-          <div className="w-10 h-10 sm:w-11 sm:h-11 neon-rotating-logo-box group-hover:scale-105 transition-transform duration-300 shrink-0">
-            <div className="neon-logo-inner">
+          <div className="h-10 sm:h-11 min-w-10 sm:min-w-11 px-2.5 neon-rotating-logo-box group-hover:scale-105 transition-transform duration-300 shrink-0">
+            <div className="neon-logo-inner px-2">
               {logoImageUrl ? (
                 <img
                   src={logoImageUrl}
@@ -58,7 +59,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="w-full h-full object-cover rounded-[10px]"
                 />
               ) : (
-                <span className="neon-logo-letters text-sm sm:text-base font-black tracking-wider">
+                <span className={`neon-logo-letters font-black uppercase ${
+                  brandInitials.length > 4
+                    ? 'text-[10px] sm:text-xs tracking-tight'
+                    : brandInitials.length > 2
+                    ? 'text-xs sm:text-sm tracking-normal'
+                    : 'text-sm sm:text-base tracking-wider'
+                }`}>
                   {brandInitials}
                 </span>
               )}
