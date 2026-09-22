@@ -71,6 +71,7 @@ export const Hero: React.FC<HeroProps> = ({
 
   const heroStats = data.heroStats || PORTFOLIO_DATA.heroStats;
   const heroButtons = data.heroButtons || PORTFOLIO_DATA.heroButtons;
+  const isDark = data.theme?.textColorMode === 'light';
 
   return (
     <section 
@@ -80,11 +81,19 @@ export const Hero: React.FC<HeroProps> = ({
       {/* Profile Photo Stage with smooth 5-second rotation & Manual Reload Button */}
       <div className="relative mb-6">
         {/* Decorative soft glowing blur ring */}
-        <div className="absolute -inset-1.5 rounded-full bg-gradient-to-tr from-sky-300 via-sky-100 to-sky-200 opacity-60 blur-md animate-pulse" />
+        <div className={`absolute -inset-1.5 rounded-full opacity-60 blur-md animate-pulse ${
+          isDark
+            ? 'bg-gradient-to-tr from-cyan-400 via-sky-600 to-indigo-500'
+            : 'bg-gradient-to-tr from-sky-300 via-sky-100 to-sky-200'
+        }`} />
 
         {/* Circular Avatar Frame */}
         <div 
-          className="relative w-44 h-44 sm:w-52 sm:h-52 md:w-56 md:h-56 rounded-full p-1.5 bg-white shadow-xl shadow-sky-900/5 ring-1 ring-slate-200/80 overflow-visible"
+          className={`relative w-44 h-44 sm:w-52 sm:h-52 md:w-56 md:h-56 rounded-full p-1.5 shadow-xl ring-1 overflow-visible ${
+            isDark
+              ? 'bg-slate-900 shadow-cyan-950/30 ring-slate-700/80'
+              : 'bg-white shadow-sky-900/5 ring-slate-200/80'
+          }`}
           id="hero-avatar-frame"
         >
           <div className="w-full h-full rounded-full overflow-hidden relative bg-slate-100">
@@ -147,7 +156,9 @@ export const Hero: React.FC<HeroProps> = ({
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-2"
+        className={`text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-2 ${
+          isDark ? 'text-white' : 'text-slate-900'
+        }`}
         id="hero-name-heading"
       >
         {data.greetingPrefix || "Hi, I'm"} {data.name} <span className="inline-block animate-wave origin-[70%_70%]">{data.greetingEmoji || "👋"}</span>
@@ -156,11 +167,15 @@ export const Hero: React.FC<HeroProps> = ({
       {/* Animated Typing Subtitle */}
       <div className="h-8 sm:h-10 flex items-center justify-center mb-4">
         <span
-          className="text-sky-600 font-bold text-xl sm:text-2xl md:text-3xl tracking-tight inline-flex items-center"
+          className={`font-bold text-xl sm:text-2xl md:text-3xl tracking-tight inline-flex items-center ${
+            isDark ? 'text-cyan-400' : 'text-sky-600'
+          }`}
           id="hero-typewriter-title"
         >
           {currentText}
-          <span className="inline-block w-0.5 h-6 sm:h-7 bg-sky-600 ml-1 animate-pulse" />
+          <span className={`inline-block w-0.5 h-6 sm:h-7 ml-1 animate-pulse ${
+            isDark ? 'bg-cyan-400' : 'bg-sky-600'
+          }`} />
         </span>
       </div>
 
@@ -169,7 +184,9 @@ export const Hero: React.FC<HeroProps> = ({
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="max-w-2xl text-slate-600 text-sm sm:text-base md:text-lg leading-relaxed mb-6 font-normal px-2"
+        className={`max-w-2xl text-sm sm:text-base md:text-lg leading-relaxed mb-6 font-normal px-2 ${
+          isDark ? 'text-slate-300' : 'text-slate-600'
+        }`}
         id="hero-bio-paragraph"
       >
         {data.bio}
@@ -301,27 +318,29 @@ export const Hero: React.FC<HeroProps> = ({
       </motion.div>
 
       {/* Subtle quick stat pills */}
-      <div className="mt-12 flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs sm:text-sm text-slate-500">
+      <div className={`mt-12 flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs sm:text-sm ${
+        isDark ? 'text-slate-400' : 'text-slate-500'
+      }`}>
         <div
           onClick={() => onSelectSection('achievements')}
-          className="flex items-center gap-1.5 cursor-pointer hover:text-sky-600 transition-colors"
+          className="flex items-center gap-1.5 cursor-pointer hover:text-sky-400 transition-colors"
         >
           <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-          <span className="font-semibold text-slate-800">{heroStats.stat1Value}</span> {heroStats.stat1Label}
+          <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{heroStats.stat1Value}</span> {heroStats.stat1Label}
         </div>
-        <div className="w-1 h-1 rounded-full bg-slate-300" />
+        <div className={`w-1 h-1 rounded-full ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
         <div
           onClick={() => onSelectSection('projects')}
-          className="flex items-center gap-1.5 cursor-pointer hover:text-sky-600 transition-colors"
+          className="flex items-center gap-1.5 cursor-pointer hover:text-sky-400 transition-colors"
         >
-          <span className="font-semibold text-slate-800">{heroStats.stat2Value}</span> {heroStats.stat2Label}
+          <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{heroStats.stat2Value}</span> {heroStats.stat2Label}
         </div>
-        <div className="w-1 h-1 rounded-full bg-slate-300" />
+        <div className={`w-1 h-1 rounded-full ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
         <div
           onClick={() => onSelectSection('achievements')}
-          className="flex items-center gap-1.5 cursor-pointer hover:text-sky-600 transition-colors"
+          className="flex items-center gap-1.5 cursor-pointer hover:text-sky-400 transition-colors"
         >
-          <span className="font-semibold text-slate-800">{heroStats.stat3Value}</span> {heroStats.stat3Label}
+          <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{heroStats.stat3Value}</span> {heroStats.stat3Label}
         </div>
       </div>
     </section>

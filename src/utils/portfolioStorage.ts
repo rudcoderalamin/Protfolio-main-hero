@@ -33,7 +33,12 @@ export const mergePortfolioData = (raw: any): PortfolioDataType => {
     heroButtons: { ...PORTFOLIO_DATA.heroButtons, ...(raw.heroButtons || {}) },
     heroStats: { ...PORTFOLIO_DATA.heroStats, ...(raw.heroStats || {}) },
     navbar: { ...PORTFOLIO_DATA.navbar, ...(raw.navbar || {}) },
-    footer: { ...PORTFOLIO_DATA.footer, ...(raw.footer || {}) },
+    theme: { ...PORTFOLIO_DATA.theme, ...(raw.theme || {}) },
+    footer: {
+      ...PORTFOLIO_DATA.footer,
+      ...(raw.footer || {}),
+      links: Array.isArray(raw.footer?.links) ? raw.footer.links : PORTFOLIO_DATA.footer.links
+    },
     sectionTitles: { ...PORTFOLIO_DATA.sectionTitles, ...(raw.sectionTitles || {}) },
     sectionSubtitles: { ...PORTFOLIO_DATA.sectionSubtitles, ...(raw.sectionSubtitles || {}) },
     contactModal: { ...PORTFOLIO_DATA.contactModal, ...(raw.contactModal || {}) },

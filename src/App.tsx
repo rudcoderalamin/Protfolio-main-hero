@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { ExternalLink } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { BookCallModal } from './components/BookCallModal';
@@ -261,9 +262,106 @@ export default function App() {
   const rawFooterText = portfolioData.footer?.copyrightText || `© {year} ${portfolioData.name}. Built with Next.js & Tailwind CSS.`;
   const formattedFooterText = rawFooterText.replace(/\{year\}/g, currentYear);
 
+  // Dynamic Theme & Background Calculation
+  const theme = portfolioData.theme || {
+    preset: 'blueprint',
+    backgroundColor: '#ffffff',
+    patternType: 'blueprint',
+    gridColor: 'rgba(56, 189, 248, 0.12)',
+    gridSize: 34,
+    patternOpacity: 100,
+    textColorMode: 'dark',
+    accentColor: '#0284c7'
+  };
+
+  const isDark = theme.textColorMode === 'light';
+
+  const getBackgroundStyles = (): React.CSSProperties => {
+    const bgColor = theme.backgroundColor || (isDark ? '#090d16' : '#ffffff');
+    const patternType = theme.patternType || theme.preset || 'blueprint';
+    const gridColor = theme.gridColor || (isDark ? 'rgba(56, 189, 248, 0.15)' : 'rgba(56, 189, 248, 0.12)');
+    const gridSize = theme.gridSize || 34;
+
+    if (patternType === 'minimal') {
+      return { backgroundColor: bgColor };
+    }
+
+    if (patternType === 'dots') {
+      return {
+        backgroundColor: bgColor,
+        backgroundImage: `radial-gradient(${gridColor} 1.5px, transparent 1.5px)`,
+        backgroundSize: `${gridSize}px ${gridSize}px`,
+      };
+    }
+
+    if (patternType === 'cyber' || patternType === 'matrix') {
+      return {
+        backgroundColor: bgColor,
+        backgroundImage: `
+          linear-gradient(to right, ${gridColor} 1px, transparent 1px),
+          linear-gradient(to bottom, ${gridColor} 1px, transparent 1px)
+        `,
+        backgroundSize: `${gridSize}px ${gridSize}px`,
+      };
+    }
+
+    if (patternType === 'aurora') {
+      return {
+        backgroundColor: bgColor,
+        backgroundImage: isDark
+          ? `
+            radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.25) 0px, transparent 50%),
+            radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.25) 0px, transparent 50%),
+            radial-gradient(at 50% 100%, rgba(236, 72, 153, 0.18) 0px, transparent 50%)
+          `
+          : `
+            radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.15) 0px, transparent 50%),
+            radial-gradient(at 100% 0%, rgba(192, 132, 252, 0.15) 0px, transparent 50%),
+            radial-gradient(at 50% 100%, rgba(244, 114, 182, 0.12) 0px, transparent 50%)
+          `,
+      };
+    }
+
+    if (patternType === 'spotlight') {
+      return {
+        backgroundColor: bgColor,
+        backgroundImage: `radial-gradient(circle at 50% 35%, transparent 20%, ${gridColor} 100%)`,
+      };
+    }
+
+    if (patternType === 'obsidian') {
+      return {
+        backgroundColor: '#090d16',
+        backgroundImage: `
+          linear-gradient(to right, rgba(56, 189, 248, 0.08) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(56, 189, 248, 0.08) 1px, transparent 1px)
+        `,
+        backgroundSize: `${gridSize}px ${gridSize}px`,
+      };
+    }
+
+    // Default Blueprint Grid
+    return {
+      backgroundColor: bgColor,
+      backgroundImage: `
+        linear-gradient(to right, ${gridColor} 1px, transparent 1px),
+        linear-gradient(to bottom, ${gridColor} 1px, transparent 1px)
+      `,
+      backgroundSize: `${gridSize}px ${gridSize}px`,
+    };
+  };
+
+  const footerLinks = portfolioData.footer?.links || [];
+  const customFooterHtml = portfolioData.footer?.customHtml;
+
   // Public Home Portfolio View
   return (
-    <div className="min-h-screen blueprint-grid-bg flex flex-col justify-between selection:bg-sky-100 selection:text-sky-900 relative">
+    <div
+      style={getBackgroundStyles()}
+      className={`min-h-screen flex flex-col justify-between selection:bg-sky-100 selection:text-sky-900 relative transition-colors duration-300 ${
+        isDark ? 'text-slate-100' : 'text-slate-800'
+      }`}
+    >
       {/* Top Navigation */}
       <Navbar
         onOpenBookCall={() => setIsBookCallOpen(true)}
@@ -286,14 +384,52 @@ export default function App() {
         />
       </main>
 
-      {/* Clean User Footer (Strictly read-only: No admin buttons, No photo manager links) */}
-      <footer className="w-full border-t border-slate-100 bg-white/80 backdrop-blur-xs py-4 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-3">
-          <div>
-            {formattedFooterText}
+      {/* Clean User Footer with Dynamic Executable Links & Code */}
+      <footer className={`w-full border-t py-5 px-4 sm:px-6 transition-colors backdrop-blur-md ${
+        isDark
+          ? 'border-slate-800/80 bg-slate-950/85 text-slate-400'
+          : 'border-slate-100 bg-white/80 text-slate-500'
+      }`}>
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between text-xs gap-4">
+          {/* Left: Copyright or Custom Executable HTML */}
+          <div className="flex flex-col sm:flex-row items-center gap-2 text-center sm:text-left">
+            {customFooterHtml ? (
+              <div
+                dangerouslySetInnerHTML={{ __html: customFooterHtml }}
+                className="footer-custom-html-container inline-block"
+              />
+            ) : (
+              <div
+                dangerouslySetInnerHTML={{ __html: formattedFooterText }}
+                className="footer-copyright-text-container"
+              />
+            )}
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-4">
+          {/* Right: Custom Added Links (Facebook, Developed by, etc.) & Navigation */}
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+            {/* User Custom Footer Links */}
+            {footerLinks.map((link, idx) => (
+              <React.Fragment key={link.id || idx}>
+                <a
+                  href={link.url}
+                  target={link.openNewTab !== false ? '_blank' : undefined}
+                  rel={link.openNewTab !== false ? 'noopener noreferrer' : undefined}
+                  className={`inline-flex items-center gap-1 font-semibold transition-colors cursor-pointer ${
+                    isDark
+                      ? 'text-cyan-400 hover:text-cyan-300 hover:underline'
+                      : 'text-sky-600 hover:text-sky-700 hover:underline'
+                  }`}
+                  id={`footer-custom-link-${idx}`}
+                >
+                  <span>{link.label}</span>
+                  {link.openNewTab !== false && <ExternalLink className="w-3 h-3 opacity-75 shrink-0" />}
+                </a>
+                <span>•</span>
+              </React.Fragment>
+            ))}
+
+            {/* Standard Quick Section Links */}
             <button
               onClick={() => handleSectionSelect('skills')}
               className="hover:text-sky-600 transition-colors cursor-pointer"
@@ -315,7 +451,11 @@ export default function App() {
               {portfolioData.heroButtons?.contactText || 'Contact'}
             </button>
             <span>•</span>
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-medium border border-emerald-200">
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
+              isDark
+                ? 'bg-emerald-950/60 text-emerald-300 border-emerald-800/80'
+                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+            }`}>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <span>{portfolioData.footer?.statusBadge || 'Available for Hire'}</span>
             </span>

@@ -45,6 +45,24 @@ export interface ProfilePhoto {
   tag: string;
 }
 
+export interface FooterLinkItem {
+  id: string;
+  label: string;
+  url: string;
+  openNewTab?: boolean;
+}
+
+export interface ThemeConfig {
+  preset: string; // 'blueprint' | 'dots' | 'cyber' | 'aurora' | 'minimal' | 'obsidian' | 'spotlight' | 'sunset' | 'custom'
+  backgroundColor: string;
+  patternType: string;
+  gridColor: string;
+  gridSize: number;
+  patternOpacity: number;
+  textColorMode: 'dark' | 'light' | 'auto';
+  accentColor: string;
+}
+
 export const DEFAULT_PROFILE_PHOTOS: ProfilePhoto[] = [
   {
     id: "official-portrait",
@@ -65,6 +83,9 @@ export const PORTFOLIO_DATA = {
   name: "Al Amin Islam",
   nickname: "Al Amin",
   brandInitials: "AI",
+  logoSubtitle: "Fullstack Developer",
+  logoBadgeText: "AI",
+  logoImageUrl: "",
   greetingPrefix: "Hi, I'm",
   greetingEmoji: "👋",
   title: "Fullstack Web Developer",
@@ -112,10 +133,14 @@ export const PORTFOLIO_DATA = {
     stat3Label: "DUET IUPC"
   },
 
-  // Navbar Labels
+  // Navbar Labels & Brand Details
   navbar: {
     brandText: "Al Amin Islam",
-    brandSubtitle: "Fullstack Dev",
+    brandSubtitle: "Fullstack Developer",
+    logoBadgeText: "AI",
+    logoImageUrl: "",
+    showStatusDot: true,
+    statusDotText: "Active & Available",
     navHome: "Home",
     navSkills: "Skills",
     navProjects: "Projects",
@@ -125,10 +150,37 @@ export const PORTFOLIO_DATA = {
     bookCallBtnText: "Book a Call"
   },
 
-  // Footer Texts
+  // Dynamic Background & Visual Theme Configuration
+  theme: {
+    preset: "blueprint", // 'blueprint' | 'dots' | 'cyber' | 'aurora' | 'minimal' | 'obsidian' | 'spotlight' | 'sunset' | 'custom'
+    backgroundColor: "#ffffff",
+    patternType: "blueprint",
+    gridColor: "rgba(56, 189, 248, 0.12)",
+    gridSize: 34,
+    patternOpacity: 100,
+    textColorMode: "dark", // 'dark' = dark text on light bg, 'light' = white/bright text on dark bg
+    accentColor: "#0284c7"
+  } as ThemeConfig,
+
+  // Footer Texts, Executable Code & Custom Links
   footer: {
     copyrightText: "© {year} Al Amin Islam. Built with Next.js & Tailwind CSS.",
-    statusBadge: "Available for Hire"
+    statusBadge: "Available for Hire",
+    customHtml: "", // Allows writing custom HTML or links to execute in footer
+    links: [
+      {
+        id: "link-fb",
+        label: "Facebook",
+        url: "https://facebook.com",
+        openNewTab: true
+      },
+      {
+        id: "link-dev",
+        label: "Developed by Al Amin Islam",
+        url: "https://facebook.com",
+        openNewTab: true
+      }
+    ] as FooterLinkItem[]
   },
 
   // Detailed Modal Section Headers & Subtitles

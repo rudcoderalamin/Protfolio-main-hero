@@ -18,8 +18,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const brandName = portfolioData?.navbar?.brandText || portfolioData?.name || 'Al Amin Islam';
-  const brandInitials = portfolioData?.brandInitials || 'AI';
+  const brandInitials = portfolioData?.navbar?.logoBadgeText || portfolioData?.brandInitials || 'AI';
+  const brandSubtitle = portfolioData?.navbar?.brandSubtitle || portfolioData?.logoSubtitle || portfolioData?.title || 'Fullstack Developer';
+  const logoImageUrl = portfolioData?.navbar?.logoImageUrl;
+  const statusDotText = portfolioData?.navbar?.statusDotText || 'Active & Available';
   const bookCallText = portfolioData?.navbar?.bookCallBtnText || portfolioData?.heroButtons?.bookCallText || 'Book a Call';
+  const isDark = portfolioData?.theme?.textColorMode === 'light';
 
   const navItems: { id: 'home' | 'experience' | 'skills' | 'projects' | 'achievements' | 'education'; label: string }[] = [
     { id: 'home', label: portfolioData?.navbar?.navHome || 'Home' },
@@ -31,7 +35,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   ];
 
   return (
-    <header className="w-full sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-slate-100 transition-colors">
+    <header className={`w-full sticky top-0 z-40 transition-colors backdrop-blur-md ${
+      isDark
+        ? 'bg-slate-950/85 border-b border-slate-800/80 text-slate-100 shadow-lg shadow-black/20'
+        : 'bg-white/85 border-b border-slate-100 text-slate-800 shadow-xs'
+    }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         {/* Left: Brand Monogram / Name with Live Rotating Neon Light Effects */}
         <button
@@ -43,9 +51,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Rotating Multi-Color Neon Border Logo Badge */}
           <div className="w-10 h-10 sm:w-11 sm:h-11 neon-rotating-logo-box group-hover:scale-105 transition-transform duration-300 shrink-0">
             <div className="neon-logo-inner">
-              <span className="neon-logo-letters text-sm sm:text-base font-black tracking-wider">
-                {brandInitials}
-              </span>
+              {logoImageUrl ? (
+                <img
+                  src={logoImageUrl}
+                  alt={brandName}
+                  className="w-full h-full object-cover rounded-[10px]"
+                />
+              ) : (
+                <span className="neon-logo-letters text-sm sm:text-base font-black tracking-wider">
+                  {brandInitials}
+                </span>
+              )}
             </div>
           </div>
 
@@ -57,13 +73,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
               <span
                 className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping shrink-0"
-                title="Active & Available"
+                title={statusDotText}
               />
             </div>
-            <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-500 font-medium leading-tight mt-0.5">
+            <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-medium leading-tight mt-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 animate-pulse shadow-xs shadow-emerald-400" />
-              <span className="truncate text-slate-600 font-medium">
-                {portfolioData?.title || 'Fullstack Developer'}
+              <span className={`truncate font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                {brandSubtitle}
               </span>
             </div>
           </div>
@@ -82,8 +98,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }}
                 className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? 'text-sky-600 bg-sky-50 font-semibold'
-                    : 'text-slate-700 hover:text-sky-600 hover:bg-slate-50'
+                    ? isDark
+                      ? 'text-cyan-400 bg-cyan-950/70 font-semibold'
+                      : 'text-sky-600 bg-sky-50 font-semibold'
+                    : isDark
+                      ? 'text-slate-300 hover:text-cyan-300 hover:bg-slate-900/60'
+                      : 'text-slate-700 hover:text-sky-600 hover:bg-slate-50'
                 }`}
                 id={`nav-link-${item.id}`}
               >
@@ -118,7 +138,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-lg text-slate-700 hover:bg-slate-100 focus:outline-none cursor-pointer"
+            className={`p-2 rounded-lg focus:outline-none cursor-pointer ${
+              isDark ? 'text-slate-200 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'
+            }`}
             id="mobile-menu-toggle-btn"
             aria-label="Toggle navigation menu"
           >
@@ -129,7 +151,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Mobile Dropdown Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white/95 border-b border-slate-200 px-4 py-3 space-y-1 shadow-lg backdrop-blur-md">
+        <div className={`md:hidden border-b px-4 py-3 space-y-1 shadow-lg backdrop-blur-md ${
+          isDark
+            ? 'bg-slate-950/95 border-slate-800 text-slate-200'
+            : 'bg-white/95 border-slate-200 text-slate-700'
+        }`}>
           {navItems.map((item) => {
             const isActive = activeSection === item.id;
             return (
@@ -141,8 +167,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }}
                 className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
                   isActive
-                    ? 'text-sky-600 bg-sky-50 font-semibold'
-                    : 'text-slate-700 hover:bg-slate-50'
+                    ? isDark
+                      ? 'text-cyan-400 bg-cyan-950/70 font-semibold'
+                      : 'text-sky-600 bg-sky-50 font-semibold'
+                    : isDark
+                      ? 'text-slate-300 hover:bg-slate-900/60'
+                      : 'text-slate-700 hover:bg-slate-50'
                 }`}
               >
                 {item.label}

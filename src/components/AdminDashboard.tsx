@@ -34,7 +34,8 @@ import {
   Mail,
   FileText,
   Database,
-  Copy
+  Copy,
+  Palette
 } from 'lucide-react';
 import { ProfilePhoto } from '../data/portfolioData';
 import {
@@ -74,6 +75,7 @@ type TabType =
   | 'section_headers'
   | 'modal_texts'
   | 'navbar_footer'
+  | 'theme'
   | 'security';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -552,6 +554,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               { id: 'section_headers', label: 'Section Titles & Subtitles', icon: Globe },
               { id: 'modal_texts', label: 'Modals & WhatsApp Chat', icon: MessageSquare },
               { id: 'navbar_footer', label: 'Navbar & Footer', icon: Sliders },
+              { id: 'theme', label: 'Theme & Background', icon: Palette },
               { id: 'security', label: 'Security & Backup', icon: ShieldCheck },
             ].map((tab) => {
               const Icon = tab.icon;
@@ -2317,12 +2320,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </button>
               </div>
 
-              {/* Navbar Labels */}
-              <div className="space-y-3">
-                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Top Navbar Links & Brand</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* Website Brand Logo, Badge & Subtitle (User-requested feature) */}
+              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
                   <div>
-                    <label className="block text-[10px] text-slate-400 mb-1">Brand Name Display</label>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Sliders className="w-4 h-4 text-sky-400" />
+                      <span>Website Brand Logo & Subtitle Configuration</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-400">
+                      Customize the top-left logo, the badge (e.g. R999), and the subtitle text below the logo.
+                    </p>
+                  </div>
+                  <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-sky-950/80 border border-sky-800 text-sky-400 font-medium w-fit">
+                    Full Logo Control
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Brand Name Text (e.g. Root / Imran Hasan) */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Brand Name / Logo Text
+                    </label>
                     <input
                       type="text"
                       value={formData.navbar?.brandText ?? ''}
@@ -2332,10 +2352,137 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           navbar: { ...formData.navbar, brandText: e.target.value }
                         })
                       }
-                      placeholder={formData.name || 'Al Amin Islam'}
-                      className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
+                      placeholder={formData.name || 'Root'}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
                     />
+                    <span className="text-[10px] text-slate-500 mt-1 block">
+                      Main title on the top navbar (e.g., "Root" or your name)
+                    </span>
                   </div>
+
+                  {/* Subtitle Text Below Logo (User specifically highlighted this) */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Logo Subtitle / Tagline (Below Logo)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.logoSubtitle ?? formData.navbar?.brandSubtitle ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          logoSubtitle: e.target.value,
+                          navbar: { ...formData.navbar, brandSubtitle: e.target.value }
+                        })
+                      }
+                      placeholder="Software & Web Developer"
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
+                    />
+                    <span className="text-[10px] text-slate-500 mt-1 block">
+                      Text that appears directly underneath the logo title
+                    </span>
+                  </div>
+
+                  {/* Logo Badge Acronym (e.g. R999 / AI) */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Logo Badge Code / Monogram
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.logoBadgeText ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          logoBadgeText: e.target.value
+                        })
+                      }
+                      placeholder="R999"
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
+                    />
+                    <span className="text-[10px] text-slate-500 mt-1 block">
+                      Small code/badge (e.g., R999 or AI) in the logo icon
+                    </span>
+                  </div>
+
+                  {/* Logo Image URL (Optional) */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Custom Logo Image URL (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.logoImageUrl ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          logoImageUrl: e.target.value
+                        })
+                      }
+                      placeholder="https://... (Leave blank to use stylized letter badge)"
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
+                    />
+                    <span className="text-[10px] text-slate-500 mt-1 block">
+                      Direct image link for custom brand icon
+                    </span>
+                  </div>
+
+                  {/* Status Dot Toggle */}
+                  <div className="flex flex-col justify-center">
+                    <label className="text-xs font-semibold text-slate-300 mb-2">
+                      Green Online Status Indicator Dot
+                    </label>
+                    <label className="inline-flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.navbar?.showStatusDot !== false}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            navbar: { ...formData.navbar, showStatusDot: e.target.checked }
+                          })
+                        }
+                        className="w-4 h-4 rounded text-sky-600 bg-slate-900 border-slate-700 focus:ring-sky-500"
+                      />
+                      <span className="text-xs text-slate-300">Display pulsating active status dot</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Live Logo Preview Box */}
+                <div className="mt-2 p-3 rounded-lg bg-slate-900/90 border border-slate-800 flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-slate-400">Live Navbar Logo Preview:</span>
+                  <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-white shadow-xs border border-slate-200">
+                    <div className="relative w-8 h-8 rounded-lg bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white text-[10px] font-black tracking-tighter shadow-xs">
+                      {formData.logoImageUrl ? (
+                        <img
+                          src={formData.logoImageUrl}
+                          alt="Logo"
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      ) : (
+                        <span>{formData.logoBadgeText || 'R999'}</span>
+                      )}
+                      {formData.navbar?.showStatusDot !== false && (
+                        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white ring-1 ring-emerald-300" />
+                      )}
+                    </div>
+                    <div className="flex flex-col text-left">
+                      <span className="text-xs font-bold text-slate-900 tracking-tight leading-tight">
+                        {formData.navbar?.brandText || formData.name || 'Root'}
+                      </span>
+                      <span className="text-[9px] font-medium text-slate-500 leading-tight">
+                        {formData.logoSubtitle || formData.navbar?.brandSubtitle || 'Software & Web Developer'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Navbar Navigation Item Labels */}
+              <div className="space-y-3 pt-2">
+                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Top Navbar Links & Buttons</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <div>
                     <label className="block text-[10px] text-slate-400 mb-1">Nav Item: Home</label>
                     <input
@@ -2444,9 +2591,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
-              {/* Footer */}
-              <div className="space-y-3 pt-2">
-                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Footer Settings</h3>
+              {/* Footer Section & Clickable Links & Executable Code */}
+              <div className="space-y-4 pt-4 border-t border-slate-800">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-emerald-400" />
+                    <span>Footer Settings, Clickable Links & Executable Code</span>
+                  </h3>
+                  <span className="text-[11px] text-slate-400">
+                    Add custom clickable links (Facebook, Developer Credits) & run custom HTML code
+                  </span>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[10px] text-slate-400 mb-1">
@@ -2481,6 +2637,601 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       placeholder="Available for full-time opportunities"
                       className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
                     />
+                  </div>
+                </div>
+
+                {/* Custom Clickable Footer Links (e.g. Facebook, Developed by Al Amin Islam, etc.) */}
+                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <ExternalLink className="w-3.5 h-3.5 text-sky-400" />
+                        <span>Custom Clickable Footer Links</span>
+                      </h4>
+                      <p className="text-[11px] text-slate-400">
+                        Add links with custom titles that directly open the URL on tap (e.g., "Facebook", "Developed by Al Amin Islam")
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const currentLinks = formData.footer?.links || [];
+                        const newLink = {
+                          id: `link_${Date.now()}`,
+                          label: 'Developed by Al Amin Islam',
+                          url: 'https://facebook.com',
+                          openNewTab: true
+                        };
+                        setFormData({
+                          ...formData,
+                          footer: {
+                            ...formData.footer,
+                            links: [...currentLinks, newLink]
+                          }
+                        });
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Add Footer Link</span>
+                    </button>
+                  </div>
+
+                  {/* Links List */}
+                  {(!formData.footer?.links || formData.footer.links.length === 0) ? (
+                    <div className="p-4 rounded-lg bg-slate-900 border border-slate-800 text-center text-xs text-slate-400">
+                      No custom footer links added yet. Click &quot;Add Footer Link&quot; to insert Facebook, Developer profile, or personal social links.
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {formData.footer.links.map((link, idx) => (
+                        <div
+                          key={link.id || idx}
+                          className="p-3 rounded-lg bg-slate-900 border border-slate-800 flex flex-col sm:flex-row items-center gap-3"
+                        >
+                          {/* Label input */}
+                          <div className="w-full sm:w-1/3">
+                            <label className="block text-[10px] text-slate-400 mb-1">
+                              Link Title / Display Text
+                            </label>
+                            <input
+                              type="text"
+                              value={link.label}
+                              onChange={(e) => {
+                                const updated = [...(formData.footer?.links || [])];
+                                updated[idx] = { ...updated[idx], label: e.target.value };
+                                setFormData({
+                                  ...formData,
+                                  footer: { ...formData.footer, links: updated }
+                                });
+                              }}
+                              placeholder="e.g. Developed by Al Amin Islam"
+                              className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
+                            />
+                          </div>
+
+                          {/* URL input */}
+                          <div className="w-full sm:flex-1">
+                            <label className="block text-[10px] text-slate-400 mb-1">
+                              Target Web URL (Destination Link)
+                            </label>
+                            <input
+                              type="text"
+                              value={link.url}
+                              onChange={(e) => {
+                                const updated = [...(formData.footer?.links || [])];
+                                updated[idx] = { ...updated[idx], url: e.target.value };
+                                setFormData({
+                                  ...formData,
+                                  footer: { ...formData.footer, links: updated }
+                                });
+                              }}
+                              placeholder="https://facebook.com/..."
+                              className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
+                            />
+                          </div>
+
+                          {/* New tab checkbox */}
+                          <div className="flex items-center gap-2 self-start sm:self-center mt-2 sm:mt-4">
+                            <label className="inline-flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={link.openNewTab !== false}
+                                onChange={(e) => {
+                                  const updated = [...(formData.footer?.links || [])];
+                                  updated[idx] = { ...updated[idx], openNewTab: e.target.checked };
+                                  setFormData({
+                                    ...formData,
+                                    footer: { ...formData.footer, links: updated }
+                                  });
+                                }}
+                                className="w-3.5 h-3.5 rounded text-sky-600 bg-slate-950 border-slate-700"
+                              />
+                              <span>New Tab</span>
+                            </label>
+                          </div>
+
+                          {/* Actions: Test link & Delete */}
+                          <div className="flex items-center gap-2 self-end sm:self-center mt-2 sm:mt-4">
+                            {link.url && (
+                              <a
+                                href={link.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-sky-400"
+                                title="Test Open Link"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+                            <button
+                              onClick={() => {
+                                const updated = formData.footer?.links?.filter((_, i) => i !== idx) || [];
+                                setFormData({
+                                  ...formData,
+                                  footer: { ...formData.footer, links: updated }
+                                });
+                              }}
+                              className="p-1.5 rounded bg-slate-800 hover:bg-rose-900/60 text-slate-400 hover:text-rose-300 transition-colors"
+                              title="Delete Link"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer Custom HTML / Executable Code (User requested code runner) */}
+                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <Code2 className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>Custom Footer Executable Code / HTML Snippet</span>
+                      </h4>
+                      <p className="text-[11px] text-slate-400">
+                        Write custom HTML code here to run and render directly in the footer (e.g. customized links, badges, or scripts)
+                      </p>
+                    </div>
+
+                    {/* Quick Code Insert Helper Buttons */}
+                    <div className="flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const snippet = `<a href="https://facebook.com" target="_blank" rel="noopener noreferrer" class="font-bold text-sky-500 hover:underline">Facebook</a>`;
+                          setFormData({
+                            ...formData,
+                            footer: {
+                              ...formData.footer,
+                              customHtml: (formData.footer?.customHtml ? formData.footer.customHtml + '\n' : '') + snippet
+                            }
+                          });
+                        }}
+                        className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-sky-400 font-semibold"
+                      >
+                        + Insert Facebook Link
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const snippet = `<span>Developed by <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:underline font-bold">Al Amin Islam</a></span>`;
+                          setFormData({
+                            ...formData,
+                            footer: {
+                              ...formData.footer,
+                              customHtml: (formData.footer?.customHtml ? formData.footer.customHtml + '\n' : '') + snippet
+                            }
+                          });
+                        }}
+                        className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-emerald-400 font-semibold"
+                      >
+                        + Insert &quot;Developed by&quot; HTML
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            footer: {
+                              ...formData.footer,
+                              customHtml: ''
+                            }
+                          });
+                        }}
+                        className="px-2 py-1 rounded bg-slate-800 hover:bg-rose-900/60 text-[10px] text-slate-400 hover:text-rose-300 font-semibold"
+                      >
+                        Clear Code
+                      </button>
+                    </div>
+                  </div>
+
+                  <textarea
+                    rows={4}
+                    value={formData.footer?.customHtml ?? ''}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        footer: { ...formData.footer, customHtml: e.target.value }
+                      })
+                    }
+                    placeholder={`e.g. <a href="https://facebook.com/yourprofile" target="_blank" class="text-sky-400 hover:underline font-bold">Developed by Al Amin Islam</a>`}
+                    className="w-full font-mono text-xs px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-cyan-300 focus:outline-none focus:border-cyan-500"
+                  />
+
+                  {formData.footer?.customHtml && (
+                    <div className="p-3 rounded-lg bg-slate-900 border border-slate-800/80">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                        Code Live Execution Preview:
+                      </span>
+                      <div
+                        dangerouslySetInnerHTML={{ __html: formData.footer.customHtml }}
+                        className="text-xs text-slate-200"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: THEME & BACKGROUND (User-requested feature) */}
+          {activeTab === 'theme' && (
+            <div className="space-y-6">
+              <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <Palette className="w-5 h-5 text-sky-400" />
+                    <span>Website Theme, Colors & Background Design</span>
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    Change website canvas colors, pattern designs (Blueprint, Cyber, Matrix, Aurora, Minimal), and light/dark modes
+                  </p>
+                </div>
+                <button
+                  onClick={handleSaveData}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save Theme</span>
+                </button>
+              </div>
+
+              {/* Quick 1-Click Theme Presets */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  Quick 1-Click Theme Presets
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  {[
+                    {
+                      id: 'blueprint',
+                      name: 'Classic Blueprint',
+                      desc: 'White canvas with sky blueprint grid',
+                      bgColor: '#ffffff',
+                      pattern: 'blueprint',
+                      gridColor: 'rgba(56, 189, 248, 0.12)',
+                      textColorMode: 'dark' as const,
+                      accent: '#0284c7'
+                    },
+                    {
+                      id: 'cyber',
+                      name: 'Cyber Midnight',
+                      desc: 'Dark navy with cyan digital grid',
+                      bgColor: '#0b1120',
+                      pattern: 'cyber',
+                      gridColor: 'rgba(56, 189, 248, 0.18)',
+                      textColorMode: 'light' as const,
+                      accent: '#38bdf8'
+                    },
+                    {
+                      id: 'obsidian',
+                      name: 'Obsidian Black',
+                      desc: 'Deep black with subtle engineering lines',
+                      bgColor: '#090d16',
+                      pattern: 'obsidian',
+                      gridColor: 'rgba(56, 189, 248, 0.09)',
+                      textColorMode: 'light' as const,
+                      accent: '#06b6d4'
+                    },
+                    {
+                      id: 'aurora',
+                      name: 'Aurora Night',
+                      desc: 'Dark space with ambient cosmic glow',
+                      bgColor: '#080c14',
+                      pattern: 'aurora',
+                      gridColor: 'rgba(168, 85, 247, 0.25)',
+                      textColorMode: 'light' as const,
+                      accent: '#a855f7'
+                    },
+                    {
+                      id: 'dots',
+                      name: 'Matrix Dot Grid',
+                      desc: 'Modern tech geometric dots',
+                      bgColor: '#ffffff',
+                      pattern: 'dots',
+                      gridColor: 'rgba(56, 189, 248, 0.2)',
+                      textColorMode: 'dark' as const,
+                      accent: '#0284c7'
+                    },
+                    {
+                      id: 'minimal',
+                      name: 'Clean Minimal',
+                      desc: 'Pure crisp solid background',
+                      bgColor: '#f8fafc',
+                      pattern: 'minimal',
+                      gridColor: 'transparent',
+                      textColorMode: 'dark' as const,
+                      accent: '#0284c7'
+                    }
+                  ].map((preset) => {
+                    const isSelected = (formData.theme?.preset === preset.id);
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            theme: {
+                              ...formData.theme,
+                              preset: preset.id,
+                              backgroundColor: preset.bgColor,
+                              patternType: preset.pattern,
+                              gridColor: preset.gridColor,
+                              textColorMode: preset.textColorMode,
+                              accentColor: preset.accent,
+                              gridSize: 34,
+                              patternOpacity: 100
+                            }
+                          });
+                        }}
+                        className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-sky-950/80 border-sky-500 shadow-md ring-1 ring-sky-500'
+                            : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="w-3.5 h-3.5 rounded-full border border-slate-700 shadow-2xs" style={{ backgroundColor: preset.bgColor }} />
+                          {isSelected && <Check className="w-3.5 h-3.5 text-sky-400" />}
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-white block">{preset.name}</span>
+                          <span className="text-[10px] text-slate-400 block mt-0.5 line-clamp-1">{preset.desc}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Detailed Theme Customizer Form */}
+              <div className="p-5 rounded-xl bg-slate-950 border border-slate-800 space-y-5">
+                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  Custom Colors & Background Patterns
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Background Color Picker */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Background Color
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={formData.theme?.backgroundColor || '#ffffff'}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            theme: { ...formData.theme, backgroundColor: e.target.value }
+                          })
+                        }
+                        className="w-10 h-9 rounded-lg border border-slate-700 bg-slate-900 cursor-pointer p-0.5"
+                      />
+                      <input
+                        type="text"
+                        value={formData.theme?.backgroundColor || '#ffffff'}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            theme: { ...formData.theme, backgroundColor: e.target.value }
+                          })
+                        }
+                        placeholder="#ffffff"
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white uppercase font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Accent Brand Color */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Accent Color
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={formData.theme?.accentColor || '#0284c7'}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            theme: { ...formData.theme, accentColor: e.target.value }
+                          })
+                        }
+                        className="w-10 h-9 rounded-lg border border-slate-700 bg-slate-900 cursor-pointer p-0.5"
+                      />
+                      <input
+                        type="text"
+                        value={formData.theme?.accentColor || '#0284c7'}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            theme: { ...formData.theme, accentColor: e.target.value }
+                          })
+                        }
+                        placeholder="#0284c7"
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white uppercase font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Text Color / Canvas Mode (Light / Dark Mode) */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Text & Component Color Mode
+                    </label>
+                    <select
+                      value={formData.theme?.textColorMode || 'dark'}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          theme: {
+                            ...formData.theme,
+                            textColorMode: e.target.value as 'dark' | 'light'
+                          }
+                        })
+                      }
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white"
+                    >
+                      <option value="dark">Dark Text Mode (for light/white backgrounds)</option>
+                      <option value="light">Light Text / Dark Mode (for black/dark navy backgrounds)</option>
+                    </select>
+                  </div>
+
+                  {/* Pattern Type */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Background Pattern Style
+                    </label>
+                    <select
+                      value={formData.theme?.patternType || 'blueprint'}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          theme: { ...formData.theme, patternType: e.target.value }
+                        })
+                      }
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white"
+                    >
+                      <option value="blueprint">Blueprint Technical Grid</option>
+                      <option value="cyber">Cyber Matrix Digital Grid</option>
+                      <option value="dots">Modern Dot Matrix Pattern</option>
+                      <option value="aurora">Cosmic Aurora Ambient Mesh</option>
+                      <option value="spotlight">Focused Radial Spotlight</option>
+                      <option value="obsidian">Obsidian Subtle Cyber</option>
+                      <option value="minimal">Minimalist (Solid Color, No Grid)</option>
+                    </select>
+                  </div>
+
+                  {/* Grid Lines Color */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Grid Lines / Pattern Color
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.theme?.gridColor || 'rgba(56, 189, 248, 0.12)'}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          theme: { ...formData.theme, gridColor: e.target.value }
+                        })
+                      }
+                      placeholder="rgba(56, 189, 248, 0.12)"
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white font-mono"
+                    />
+                  </div>
+
+                  {/* Grid Size Slider */}
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-xs font-semibold text-slate-300">
+                        Grid Size
+                      </label>
+                      <span className="text-[10px] text-sky-400 font-mono">
+                        {formData.theme?.gridSize || 34}px
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={16}
+                      max={64}
+                      value={formData.theme?.gridSize || 34}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          theme: { ...formData.theme, gridSize: Number(e.target.value) }
+                        })
+                      }
+                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Real-Time Live Preview Canvas Container */}
+                <div className="pt-2">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                    Live Background Canvas & UI Card Preview:
+                  </span>
+                  <div
+                    className="w-full h-44 rounded-xl border border-slate-700/60 p-4 flex flex-col justify-between relative overflow-hidden transition-all duration-300 shadow-inner"
+                    style={{
+                      backgroundColor: formData.theme?.backgroundColor || '#ffffff',
+                      backgroundImage:
+                        formData.theme?.patternType === 'minimal'
+                          ? 'none'
+                          : formData.theme?.patternType === 'dots'
+                          ? `radial-gradient(${formData.theme?.gridColor || 'rgba(56, 189, 248, 0.2)'} 1.5px, transparent 1.5px)`
+                          : `linear-gradient(to right, ${formData.theme?.gridColor || 'rgba(56, 189, 248, 0.12)'} 1px, transparent 1px), linear-gradient(to bottom, ${formData.theme?.gridColor || 'rgba(56, 189, 248, 0.12)'} 1px, transparent 1px)`,
+                      backgroundSize: `${formData.theme?.gridSize || 34}px ${formData.theme?.gridSize || 34}px`,
+                      color: formData.theme?.textColorMode === 'light' ? '#f8fafc' : '#0f172a'
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-md bg-sky-600 flex items-center justify-center text-white text-[10px] font-bold">
+                          {formData.logoBadgeText || 'R999'}
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold leading-tight">
+                            {formData.navbar?.brandText || formData.name || 'Root'}
+                          </div>
+                          <div className="text-[9px] opacity-70 leading-tight">
+                            {formData.logoSubtitle || 'Software & Web Developer'}
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold border"
+                        style={{
+                          borderColor: formData.theme?.accentColor || '#0284c7',
+                          color: formData.theme?.accentColor || '#0284c7'
+                        }}
+                      >
+                        Theme Active
+                      </span>
+                    </div>
+
+                    <div className="text-center my-auto">
+                      <h4 className="text-base font-extrabold tracking-tight">
+                        {formData.name || 'Al Amin Islam'}
+                      </h4>
+                      <p className="text-xs opacity-75 mt-0.5 line-clamp-1">
+                        {formData.bio || 'Frontend Web Developer & Competitive Programmer'}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] opacity-70 border-t pt-2"
+                      style={{ borderColor: formData.theme?.textColorMode === 'light' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}
+                    >
+                      <span>{formData.footer?.copyrightText?.replace(/\{year\}/g, '2026') || '© 2026 Built with Next.js & Tailwind CSS'}</span>
+                      <span className="font-semibold text-sky-500">
+                        {formData.footer?.links?.[0]?.label || 'Developed by Al Amin Islam'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
