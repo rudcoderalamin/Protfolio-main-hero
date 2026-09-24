@@ -12,6 +12,7 @@ import { ResumeModal } from './components/ResumeModal';
 import { ContactModal } from './components/ContactModal';
 import { DetailModal } from './components/DetailModal';
 import { WhatsAppWidget } from './components/WhatsAppWidget';
+import { ScrollToTop } from './components/ScrollToTop';
 import { AdminDashboard } from './components/AdminDashboard';
 import { RgbEdgeBeams } from './components/RgbEdgeBeams';
 import { ProfilePhoto, DEFAULT_PROFILE_PHOTOS, FooterLinkItem } from './data/portfolioData';
@@ -343,6 +344,9 @@ export default function App() {
         }}
         portfolioData={portfolioData}
       />
+
+      {/* Floating Scroll to Top Button (matches neon theme) */}
+      <ScrollToTop portfolioData={portfolioData} />
 
       {/* WhatsApp Floating Chat Widget */}
       <WhatsAppWidget portfolioData={portfolioData} />
