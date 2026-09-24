@@ -56,7 +56,8 @@ import {
   savePortfolioToServer,
   fetchMessagesFromServer,
   isQuotaExceeded,
-  compressImageFile
+  compressImageFile,
+  updateBrowserFavicon
 } from '../utils/portfolioStorage';
 import { AdminMessagesTab } from './AdminMessagesTab';
 import { THEME_PRESETS, colorToHex, generateBackgroundStyles } from '../utils/themeEngine';
@@ -73,6 +74,7 @@ type TabType =
   | 'messages'
   | 'general'
   | 'photos'
+  | 'favicon'
   | 'stats'
   | 'socials'
   | 'projects'
@@ -288,6 +290,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       };
       setFormData(updated);
       onUpdatePortfolioData(updated);
+      updateBrowserFavicon(base64Url);
       setSaveSuccessMessage('Favicon icon updated successfully! Browser tab icon updated.');
       setTimeout(() => setSaveSuccessMessage(''), 3000);
       if (faviconFileInputRef.current) faviconFileInputRef.current.value = '';
@@ -663,6 +666,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               },
               { id: 'general', label: 'Profile & Bio', icon: Type },
               { id: 'photos', label: `Photos (${photosList.length})`, icon: ImageIcon },
+              { id: 'favicon', label: 'Favicon & Tab Icon (ফেভিকন)', icon: Globe },
               { id: 'stats', label: 'Stats & Buttons', icon: Sliders },
               { id: 'socials', label: 'Social & Profiles', icon: Share2 },
               { id: 'projects', label: `Projects (${formData.projects?.length || 0})`, icon: FolderGit2 },
@@ -1566,6 +1570,254 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2.5: BROWSER TAB FAVICON MANAGER (User-Requested Dedicated Section) */}
+          {activeTab === 'favicon' && (
+            <div className="space-y-6">
+              <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-sky-400" />
+                    <span>Browser Tab Favicon & Title Icon (ব্রাউজার ট্যাব ফেভিকন আইকন)</span>
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    ওয়েবসাইট ব্রাউজার ট্যাবের টাইটেলের বামে প্রদর্শিত আইকন পরিবর্তন ও পরিচালনা করুন। ছবি আপলোড করলেই তাৎক্ষণিকভাবে ব্রাউজার ট্যাবের আইকন পরিবর্তন হয়ে যাবে।
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSaveData}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold cursor-pointer transition-colors shadow-sm"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save Favicon</span>
+                </button>
+              </div>
+
+              {/* Main Favicon Upload & Management Card */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Column: Upload from Device & URL Controls */}
+                <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-5">
+                  <div className="border-b border-slate-800 pb-3">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Upload className="w-4 h-4 text-sky-400" />
+                      <span>Upload New Favicon Photo (নতুন ফেভিকন ফটো আপলোড)</span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      কম্পিউটার বা মোবাইল থেকে আপনার যেকোনো ছবি বা লোগো নির্বাচন করুন। সিস্টেম স্বয়ংক্রিয়ভাবে এটিকে হাই-রেজুলেশন অপ্টিমাইজড ফেভিকনে রূপান্তর করবে।
+                    </p>
+                  </div>
+
+                  {/* Device File Upload Big Action Button */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-2">
+                      Option 1: Upload Photo from Computer / Phone (ডিভাইস থেকে ছবি আপলোড)
+                    </label>
+                    <input
+                      ref={faviconFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFaviconFileUpload}
+                      className="hidden"
+                    />
+                    <div
+                      onClick={() => faviconFileInputRef.current?.click()}
+                      className="group border-2 border-dashed border-sky-500/40 hover:border-sky-400 bg-sky-950/20 hover:bg-sky-950/40 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200"
+                    >
+                      <div className="w-14 h-14 rounded-2xl bg-sky-600/20 group-hover:bg-sky-600/30 text-sky-400 flex items-center justify-center mb-3 transition-colors shadow-inner">
+                        <Upload className="w-6 h-6 animate-pulse" />
+                      </div>
+                      <span className="text-sm font-bold text-white group-hover:text-sky-300 transition-colors">
+                        Click to Choose Photo from Device
+                      </span>
+                      <span className="text-xs text-sky-400/90 font-medium mt-1">
+                        কম্পিউটার বা ফোন থেকে ছবি সিলেক্ট করুন
+                      </span>
+                      <span className="text-[11px] text-slate-400 mt-2 bg-slate-900/80 px-3 py-1 rounded-full border border-slate-800">
+                        Supports PNG, JPG, JPEG, SVG, WebP, ICO • Auto-compressed
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Direct URL Input */}
+                  <div className="space-y-2 pt-2 border-t border-slate-800/80">
+                    <label className="block text-xs font-semibold text-slate-300">
+                      Option 2: Direct Image URL (অথবা ছবির লিঙ্ক দিন)
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="url"
+                        value={formData.faviconUrl ?? ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const updated = { ...formData, faviconUrl: val };
+                          setFormData(updated);
+                          onUpdatePortfolioData(updated);
+                          if (val) updateBrowserFavicon(val);
+                        }}
+                        placeholder="/Profile-Photo.png or https://example.com/favicon.png"
+                        className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500 font-mono"
+                      />
+                      {formData.faviconUrl && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = { ...formData, faviconUrl: '' };
+                            setFormData(updated);
+                            onUpdatePortfolioData(updated);
+                            updateBrowserFavicon('/Profile-Photo.png');
+                          }}
+                          className="px-2.5 py-2 text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg shrink-0 transition-colors"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 1-Click Preset Shortcuts */}
+                  <div className="pt-2 border-t border-slate-800/80 space-y-2">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Quick Shortcuts (দ্রুত নির্বাচন):
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {photosList.length > 0 && photosList[0].url && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = { ...formData, faviconUrl: photosList[0].url };
+                            setFormData(updated);
+                            onUpdatePortfolioData(updated);
+                            updateBrowserFavicon(photosList[0].url);
+                            setSaveSuccessMessage('Set main profile photo as favicon!');
+                            setTimeout(() => setSaveSuccessMessage(''), 3000);
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-sky-500/60 text-xs text-sky-300 font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+                          <span>Use Active Profile Photo</span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = { ...formData, faviconUrl: '/Profile-Photo.png' };
+                          setFormData(updated);
+                          onUpdatePortfolioData(updated);
+                          updateBrowserFavicon('/Profile-Photo.png');
+                          setSaveSuccessMessage('Reset favicon to default!');
+                          setTimeout(() => setSaveSuccessMessage(''), 3000);
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-slate-300 font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Reset to Default (/Profile-Photo.png)</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Live Browser Tab Mockup & Simulation */}
+                <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 sm:p-6 flex flex-col justify-between space-y-5">
+                  <div className="space-y-1 border-b border-slate-800 pb-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-sky-400" />
+                        <span>Live Browser Tab Simulation (ব্রাউজারে যেমন দেখাবে)</span>
+                      </h3>
+                      <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 font-semibold flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        Active in Tab
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400">
+                      এটি গুগল ক্রোম বা ফায়ারফক্স ব্রাউজারে আপনার পোর্টফোলিও সাইট খোলার পর ট্যাবের বাস্তব রূপ:
+                    </p>
+                  </div>
+
+                  {/* Browser Chrome Window Mockup */}
+                  <div className="rounded-xl overflow-hidden border border-slate-700/80 shadow-2xl bg-slate-900">
+                    {/* Window Title Bar & Tabs Strip */}
+                    <div className="bg-slate-950 px-3 pt-3 flex items-center gap-2 border-b border-slate-800">
+                      <div className="flex items-center gap-1.5 mr-2">
+                        <div className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                      </div>
+
+                      {/* The Simulated Active Browser Tab */}
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-t-xl bg-slate-900 border-t border-l border-r border-slate-700 text-xs text-white max-w-[280px] shadow-sm">
+                        <img
+                          src={formData.faviconUrl || '/Profile-Photo.png'}
+                          alt="Favicon"
+                          className="w-4 h-4 rounded-full object-cover shrink-0 border border-slate-700 shadow-sm"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/Profile-Photo.png';
+                          }}
+                        />
+                        <span className="truncate font-semibold text-[11px] text-slate-200">
+                          {formData.name || 'Al Amin Islam'} | Fullstack Developer
+                        </span>
+                        <X className="w-3 h-3 text-slate-500 hover:text-white shrink-0 ml-auto cursor-pointer" />
+                      </div>
+                      <div className="w-6 h-6 rounded-md hover:bg-slate-800 text-slate-500 flex items-center justify-center text-xs">
+                        +
+                      </div>
+                    </div>
+
+                    {/* Address / URL Bar */}
+                    <div className="bg-slate-900 px-4 py-2 border-b border-slate-800 flex items-center gap-3">
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                        <ChevronRight className="w-3.5 h-3.5" />
+                        <RotateCcw className="w-3 h-3" />
+                      </div>
+                      <div className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1 flex items-center gap-2 text-[11px] text-slate-400 font-mono">
+                        <Lock className="w-3 h-3 text-emerald-400 shrink-0" />
+                        <span className="text-slate-300">https://</span>
+                        <span className="text-white font-medium truncate">alaminislam.dev</span>
+                      </div>
+                    </div>
+
+                    {/* Webpage Content Preview Header */}
+                    <div className="p-4 bg-slate-950/60 flex items-center gap-4">
+                      <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-slate-700 shrink-0 bg-slate-900">
+                        <img
+                          src={formData.faviconUrl || '/Profile-Photo.png'}
+                          alt="Favicon Large"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/Profile-Photo.png';
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-white">
+                          Current Active Favicon:
+                        </div>
+                        <div className="text-[11px] text-sky-400 font-mono truncate max-w-[260px]">
+                          {formData.faviconUrl ? (formData.faviconUrl.startsWith('data:') ? 'Custom Uploaded Base64 Photo' : formData.faviconUrl) : 'Default Portrait (/Profile-Photo.png)'}
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">
+                          Resolution: Auto-rendered 16x16 / 32x32 / 64x64 Retina
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-sky-950/30 border border-sky-900/40 text-xs text-sky-200/90 space-y-1">
+                    <p className="font-semibold text-sky-300 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+                      <span>রিয়েল-টাইম লাইভ সিঙ্ক তথ্য:</span>
+                    </p>
+                    <p className="text-[11px] text-sky-200/80 leading-relaxed">
+                      আপনি যখনই ডিভাইস থেকে কোনো ফটো আপলোড করবেন, সিস্টেম সাথে সাথে আপনার ব্রাউজারের আসল ট্যাবের আইকন পরিবর্তন করে দেবে এবং ডেটাবেজে সেভ করে রাখবে। কোনো রিলোড ছাড়াই ভিজিটররা নতুন আইকন দেখতে পাবেন।
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

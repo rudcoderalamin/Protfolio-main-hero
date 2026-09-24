@@ -868,3 +868,33 @@ export const importPortfolioJson = async (
     photos: photosList
   };
 };
+
+/**
+ * Dynamically updates the browser's favicon links in real-time,
+ * removing existing ones to force instant browser cache refresh.
+ */
+export const updateBrowserFavicon = (faviconUrl: string) => {
+  if (!faviconUrl || typeof document === 'undefined') return;
+  try {
+    const existing = document.querySelectorAll("link[rel*='icon']");
+    existing.forEach((el) => el.remove());
+
+    const icon = document.createElement('link');
+    icon.rel = 'icon';
+    icon.type = faviconUrl.startsWith('data:image/svg') ? 'image/svg+xml' : 'image/png';
+    icon.href = faviconUrl;
+    document.head.appendChild(icon);
+
+    const shortcut = document.createElement('link');
+    shortcut.rel = 'shortcut icon';
+    shortcut.href = faviconUrl;
+    document.head.appendChild(shortcut);
+
+    const apple = document.createElement('link');
+    apple.rel = 'apple-touch-icon';
+    apple.href = faviconUrl;
+    document.head.appendChild(apple);
+  } catch (err) {
+    console.warn('Could not update favicon dynamically:', err);
+  }
+};

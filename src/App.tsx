@@ -26,7 +26,8 @@ import {
   saveStoredPhotos,
   fetchPortfolioFromServer,
   savePortfolioToServer,
-  subscribeToGlobalPortfolio
+  subscribeToGlobalPortfolio,
+  updateBrowserFavicon
 } from './utils/portfolioStorage';
 
 const getInitialRoute = (): 'portfolio' | 'admin' => {
@@ -190,21 +191,7 @@ export default function App() {
   // Dynamically update browser tab Favicon Icon in real-time
   useEffect(() => {
     const faviconUrl = portfolioData.faviconUrl || '/Profile-Photo.png';
-    if (!faviconUrl) return;
-
-    // Update or create link tags for favicon
-    let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
-    if (!link) {
-      link = document.createElement('link');
-      link.rel = 'shortcut icon';
-      document.head.appendChild(link);
-    }
-    link.href = faviconUrl;
-
-    const allIcons = document.querySelectorAll("link[rel='icon'], link[rel='shortcut icon']");
-    allIcons.forEach((el) => {
-      (el as HTMLLinkElement).href = faviconUrl;
-    });
+    updateBrowserFavicon(faviconUrl);
   }, [portfolioData.faviconUrl]);
 
   const activePhoto: ProfilePhoto = (photos.length > 0 && photos[currentPhotoIndex])
