@@ -41,7 +41,9 @@ import {
   Palette,
   ArrowUp,
   ArrowDown,
-  X
+  X,
+  Circle,
+  Square
 } from 'lucide-react';
 import { ProfilePhoto, PhotoRotationConfig } from '../data/portfolioData';
 import {
@@ -57,7 +59,8 @@ import {
   fetchMessagesFromServer,
   isQuotaExceeded,
   compressImageFile,
-  updateBrowserFavicon
+  updateBrowserFavicon,
+  createCircularFavicon
 } from '../utils/portfolioStorage';
 import { AdminMessagesTab } from './AdminMessagesTab';
 import { THEME_PRESETS, colorToHex, generateBackgroundStyles } from '../utils/themeEngine';
@@ -284,19 +287,58 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     try {
       const base64Url = await compressImageFile(file, 256, 0.9);
+      let finalFavicon = base64Url;
+      const shouldBeCircle = formData.faviconCircle !== false;
+      if (shouldBeCircle) {
+        finalFavicon = await createCircularFavicon(base64Url);
+      }
       const updated = {
         ...formData,
-        faviconUrl: base64Url
+        faviconUrl: finalFavicon,
+        faviconOriginalUrl: base64Url,
+        faviconCircle: shouldBeCircle
       };
       setFormData(updated);
       onUpdatePortfolioData(updated);
-      updateBrowserFavicon(base64Url);
+      updateBrowserFavicon(finalFavicon);
       setSaveSuccessMessage('Favicon icon updated successfully! Browser tab icon updated.');
       setTimeout(() => setSaveSuccessMessage(''), 3000);
       if (faviconFileInputRef.current) faviconFileInputRef.current.value = '';
     } catch (err) {
       alert('Error reading favicon file.');
     }
+  };
+
+  // Convert current favicon into circular icon
+  const handleMakeFaviconCircle = async () => {
+    const src = formData.faviconOriginalUrl || formData.faviconUrl || '/Profile-Photo.png';
+    const circleUrl = await createCircularFavicon(src);
+    const updated = {
+      ...formData,
+      faviconUrl: circleUrl,
+      faviconOriginalUrl: src,
+      faviconCircle: true
+    };
+    setFormData(updated);
+    onUpdatePortfolioData(updated);
+    updateBrowserFavicon(circleUrl);
+    setSaveSuccessMessage('Favicon successfully converted to circle (গোল বৃত্তাকার)!');
+    setTimeout(() => setSaveSuccessMessage(''), 3000);
+  };
+
+  // Revert favicon to original square uncropped shape
+  const handleMakeFaviconSquare = () => {
+    const original = formData.faviconOriginalUrl || formData.faviconUrl || '/Profile-Photo.png';
+    const updated = {
+      ...formData,
+      faviconUrl: original,
+      faviconCircle: false
+    };
+    setFormData(updated);
+    onUpdatePortfolioData(updated);
+    updateBrowserFavicon(original);
+    setSaveSuccessMessage('Favicon shape set to original square (চারকোনা)!');
+    setTimeout(() => setSaveSuccessMessage(''), 3000);
   };
 
   // Remove Logo Photo & Revert to Inner Text Monogram
@@ -668,7 +710,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <option value="messages">✉️ Inquiries & Messages</option>
                 <option value="general">👤 Profile & Bio</option>
                 <option value="photos">🖼️ Photos ({photosList.length})</option>
-                <option value="favicon">🌐 Favicon & Tab Icon (ফেভিকন)</option>
+                <option value="favicon">🌐 Title Bar & Favicon (টাইটেল ও ফেভিকন)</option>
                 <option value="stats">📊 Stats & Buttons</option>
                 <option value="socials">🔗 Social & Profiles</option>
                 <option value="projects">💼 Projects ({formData.projects?.length || 0})</option>
@@ -695,7 +737,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               },
               { id: 'general', label: 'Profile & Bio', icon: Type },
               { id: 'photos', label: `Photos (${photosList.length})`, icon: ImageIcon },
-              { id: 'favicon', label: 'Favicon & Tab Icon (ফেভিকন)', icon: Globe },
+              { id: 'favicon', label: 'Title Bar & Favicon (টাইটেল ও ফেভিকন)', icon: Globe },
               { id: 'stats', label: 'Stats & Buttons', icon: Sliders },
               { id: 'socials', label: 'Social & Profiles', icon: Share2 },
               { id: 'projects', label: `Projects (${formData.projects?.length || 0})`, icon: FolderGit2 },
@@ -789,6 +831,42 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-sky-500"
                     placeholder="Al Amin Islam"
                   />
+                </div>
+
+                <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-3.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Globe className="w-3.5 h-3.5 text-sky-400" />
+                      <label className="block text-xs font-semibold text-slate-200">
+                        Browser Tab Title (ব্রাউজার টাইটেল বারের নাম)
+                      </label>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('favicon')}
+                      className="text-[10px] text-sky-400 hover:text-sky-300 underline cursor-pointer"
+                    >
+                      Favicon & Tab Settings →
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={formData.browserTitle ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const updated = { ...formData, browserTitle: val };
+                      setFormData(updated);
+                      onUpdatePortfolioData(updated);
+                      if (typeof document !== 'undefined') {
+                        document.title = val || `${formData.name || 'Al Amin Islam'} | Fullstack Web Developer`;
+                      }
+                    }}
+                    placeholder="Al Amin Islam | Fullstack Web Developer"
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
+                  />
+                  <p className="text-[10px] text-slate-400">
+                    ব্রাউজার ট্যাবে এবং গুগল সার্চ রেজাল্টে যে নাম দেখাবে।
+                  </p>
                 </div>
 
                 <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-3.5 space-y-2.5">
@@ -1605,17 +1683,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
           )}
 
-          {/* TAB 2.5: BROWSER TAB FAVICON MANAGER (User-Requested Dedicated Section) */}
+          {/* TAB 2.5: BROWSER TAB TITLE & FAVICON MANAGER (User-Requested Dedicated Section) */}
           {activeTab === 'favicon' && (
             <div className="space-y-6">
               <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-bold text-white flex items-center gap-2">
                     <Globe className="w-5 h-5 text-sky-400" />
-                    <span>Browser Tab Favicon & Title Icon (ব্রাউজার ট্যাব ফেভিকন আইকন)</span>
+                    <span>Browser Tab Title Bar & Favicon (টাইটেল বার ও ফেভিকন)</span>
                   </h2>
                   <p className="text-xs text-slate-400">
-                    ওয়েবসাইট ব্রাউজার ট্যাবের টাইটেলের বামে প্রদর্শিত আইকন পরিবর্তন ও পরিচালনা করুন। ছবি আপলোড করলেই তাৎক্ষণিকভাবে ব্রাউজার ট্যাবের আইকন পরিবর্তন হয়ে যাবে।
+                    ওয়েবসাইট ব্রাউজার ট্যাবের নাম (Title) এবং বামে প্রদর্শিত ফেভিকন আইকন (গোল বা চারকোনা) পরিচালনা করুন। এখানে পরিবর্তন করলেই সাথে সাথে ব্রাউজারে লাইভ আপডেট হবে।
                   </p>
                 </div>
                 <button
@@ -1624,28 +1702,186 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold cursor-pointer transition-colors shadow-sm"
                 >
                   <Save className="w-3.5 h-3.5" />
-                  <span>Save Favicon</span>
+                  <span>Save Changes</span>
                 </button>
               </div>
 
-              {/* Main Favicon Upload & Management Card */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Left Column: Upload from Device & URL Controls */}
-                <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-5">
-                  <div className="border-b border-slate-800 pb-3">
+              {/* 1. SECTION: BROWSER TAB TITLE BAR NAME */}
+              <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                  <div>
                     <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                      <Upload className="w-4 h-4 text-sky-400" />
-                      <span>Upload New Favicon Photo (নতুন ফেভিকন ফটো আপলোড)</span>
+                      <Type className="w-4 h-4 text-sky-400" />
+                      <span>Browser Title Bar Name (ব্রাউজার ট্যাব ও টাইটেল বারের নাম)</span>
                     </h3>
-                    <p className="text-xs text-slate-400 mt-1">
-                      কম্পিউটার বা মোবাইল থেকে আপনার যেকোনো ছবি বা লোগো নির্বাচন করুন। সিস্টেম স্বয়ংক্রিয়ভাবে এটিকে হাই-রেজুলেশন অপ্টিমাইজড ফেভিকনে রূপান্তর করবে।
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      ব্যবহারকারী ব্রাউজারে সাইট ওপেন করলে ট্যাবের ওপর এই নামটি প্রদর্শিত হবে।
+                    </p>
+                  </div>
+                  <span className="text-[11px] font-mono px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-sky-300 shrink-0 self-start sm:self-auto">
+                    {(formData.browserTitle || `${formData.name || 'Al Amin Islam'} | Fullstack Web Developer`).length} characters
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={formData.browserTitle ?? ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const updated = { ...formData, browserTitle: val };
+                        setFormData(updated);
+                        onUpdatePortfolioData(updated);
+                        if (typeof document !== 'undefined') {
+                          document.title = val || `${formData.name || 'Al Amin Islam'} | Fullstack Web Developer`;
+                        }
+                      }}
+                      placeholder="Al Amin Islam | Fullstack Web Developer"
+                      className="w-full px-4 py-3 bg-slate-900 border border-slate-800 focus:border-sky-500 rounded-xl text-sm text-white font-medium focus:outline-none transition-colors shadow-inner"
+                    />
+                    {formData.browserTitle && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const defaultTitle = `${formData.name || 'Al Amin Islam'} | Fullstack Web Developer`;
+                          const updated = { ...formData, browserTitle: defaultTitle };
+                          setFormData(updated);
+                          onUpdatePortfolioData(updated);
+                          if (typeof document !== 'undefined') {
+                            document.title = defaultTitle;
+                          }
+                        }}
+                        className="px-3 py-3 text-xs text-slate-400 hover:text-white bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded-xl shrink-0 transition-colors"
+                        title="Reset to default title"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    💡 <span className="text-slate-300 font-medium">লাইভ সিঙ্ক:</span> এখানে নাম পরিবর্তন করলেই সরাসরি আপনার ব্রাউজার ট্যাবের টাইটেলটি তাৎক্ষণিকভাবে বদলে যাবে।
+                  </p>
+                </div>
+
+                {/* Quick 1-Click Title Format Presets */}
+                <div className="pt-2 border-t border-slate-800/80 space-y-2">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                    Quick Title Presets (এক ক্লিকে টাইটেল সেট করুন):
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      `${formData.name || 'Al Amin Islam'} | Fullstack Web Developer`,
+                      `${formData.name || 'Al Amin Islam'} — Portfolio & Software Engineer`,
+                      `${formData.name || 'Al Amin Islam'} 🚀 Competitive Programmer`,
+                      `${formData.name || 'Al Amin Islam'} | React & Next.js Specialist`,
+                      `${formData.name || 'Al Amin Islam'} | Official Portfolio`
+                    ].map((presetTitle, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          const updated = { ...formData, browserTitle: presetTitle };
+                          setFormData(updated);
+                          onUpdatePortfolioData(updated);
+                          if (typeof document !== 'undefined') {
+                            document.title = presetTitle;
+                          }
+                          setSaveSuccessMessage('Title bar name updated!');
+                          setTimeout(() => setSaveSuccessMessage(''), 2500);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
+                          formData.browserTitle === presetTitle
+                            ? 'bg-sky-600 text-white border-sky-500 shadow-sm'
+                            : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300 hover:text-white hover:border-slate-700'
+                        }`}
+                      >
+                        {presetTitle}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. SECTION: FAVICON PHOTO & CIRCLE SHAPE SYSTEM */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Column: Favicon Shape Controls & Upload */}
+                <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-5">
+                  <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        <Upload className="w-4 h-4 text-sky-400" />
+                        <span>Favicon Icon & Circle Shape (ফেভিকন আইকন ও গোল সিস্টেম)</span>
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1">
+                        আইকনটি গোল (বৃত্তাকার) অথবা চারকোনা (আসল আকার) হিসেবে প্রদর্শন করুন।
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Circle vs Square Shape Switcher */}
+                  <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-3">
+                    <label className="block text-xs font-bold text-white flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+                        <span>Favicon Icon Shape (আইকনের আকার / শেইপ)</span>
+                      </span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${
+                        formData.faviconCircle !== false
+                          ? 'bg-sky-950 text-sky-300 border-sky-800'
+                          : 'bg-slate-800 text-slate-400 border-slate-700'
+                      }`}>
+                        {formData.faviconCircle !== false ? 'Active: Circle (বৃত্তাকার)' : 'Active: Square (চারকোনা)'}
+                      </span>
+                    </label>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={handleMakeFaviconCircle}
+                        className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all cursor-pointer ${
+                          formData.faviconCircle !== false
+                            ? 'bg-sky-950/60 border-sky-500 text-white shadow-lg ring-1 ring-sky-500/50'
+                            : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-full border-2 border-sky-400 flex items-center justify-center bg-sky-500/20 text-sky-300">
+                          <Circle className="w-5 h-5 fill-sky-400/30" />
+                        </div>
+                        <div className="text-center">
+                          <span className="text-xs font-bold block">Circle (গোল বৃত্তাকার)</span>
+                          <span className="text-[10px] text-sky-400/90 font-normal">Smooth transparent corners</span>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleMakeFaviconSquare}
+                        className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all cursor-pointer ${
+                          formData.faviconCircle === false
+                            ? 'bg-sky-950/60 border-sky-500 text-white shadow-lg ring-1 ring-sky-500/50'
+                            : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-lg border-2 border-slate-400 flex items-center justify-center bg-slate-800/40 text-slate-300">
+                          <Square className="w-5 h-5" />
+                        </div>
+                        <div className="text-center">
+                          <span className="text-xs font-bold block">Square (চারকোনা আকার)</span>
+                          <span className="text-[10px] text-slate-400 font-normal">Original uncropped image</span>
+                        </div>
+                      </button>
+                    </div>
+
+                    <p className="text-[11px] text-slate-400">
+                      ✨ <strong className="text-slate-300">Circle মোড:</strong> আপনার ছবিকে স্বয়ংক্রিয়ভাবে একটি নিখুঁত গোল বৃত্তে কেটে চারপাশের কোণগুলো ট্রান্সপারেন্ট করে দেয়, যাতে ব্রাউজার ট্যাবে ছবি সুন্দর গোল আইকন হিসেবে ভেসে ওঠে।
                     </p>
                   </div>
 
                   {/* Device File Upload Big Action Button */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-2">
-                      Option 1: Upload Photo from Computer / Phone (ডিভাইস থেকে ছবি আপলোড)
+                      Upload Photo from Computer / Phone (ডিভাইস থেকে নতুন ছবি আপলোড)
                     </label>
                     <input
                       ref={faviconFileInputRef}
@@ -1656,19 +1892,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     />
                     <div
                       onClick={() => faviconFileInputRef.current?.click()}
-                      className="group border-2 border-dashed border-sky-500/40 hover:border-sky-400 bg-sky-950/20 hover:bg-sky-950/40 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200"
+                      className="group border-2 border-dashed border-sky-500/40 hover:border-sky-400 bg-sky-950/20 hover:bg-sky-950/40 rounded-2xl p-5 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200"
                     >
-                      <div className="w-14 h-14 rounded-2xl bg-sky-600/20 group-hover:bg-sky-600/30 text-sky-400 flex items-center justify-center mb-3 transition-colors shadow-inner">
-                        <Upload className="w-6 h-6 animate-pulse" />
+                      <div className="w-12 h-12 rounded-2xl bg-sky-600/20 group-hover:bg-sky-600/30 text-sky-400 flex items-center justify-center mb-2.5 transition-colors shadow-inner">
+                        <Upload className="w-5 h-5 animate-pulse" />
                       </div>
                       <span className="text-sm font-bold text-white group-hover:text-sky-300 transition-colors">
                         Click to Choose Photo from Device
                       </span>
                       <span className="text-xs text-sky-400/90 font-medium mt-1">
-                        কম্পিউটার বা ফোন থেকে ছবি সিলেক্ট করুন
+                        কম্পিউটার বা মোবাইল থেকে ছবি সিলেক্ট করুন {formData.faviconCircle !== false ? '(স্বয়ংক্রিয়ভাবে গোল হবে)' : ''}
                       </span>
-                      <span className="text-[11px] text-slate-400 mt-2 bg-slate-900/80 px-3 py-1 rounded-full border border-slate-800">
-                        Supports PNG, JPG, JPEG, SVG, WebP, ICO • Auto-compressed
+                      <span className="text-[10px] text-slate-400 mt-2 bg-slate-900/80 px-3 py-1 rounded-full border border-slate-800">
+                        Supports PNG, JPG, JPEG, SVG, WebP • Auto-compressed
                       </span>
                     </div>
                   </div>
@@ -1676,7 +1912,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   {/* Direct URL Input */}
                   <div className="space-y-2 pt-2 border-t border-slate-800/80">
                     <label className="block text-xs font-semibold text-slate-300">
-                      Option 2: Direct Image URL (অথবা ছবির লিঙ্ক দিন)
+                      Direct Image URL (অথবা সরাসরি ছবির লিঙ্ক দিন)
                     </label>
                     <div className="flex items-center gap-2">
                       <input
@@ -1684,7 +1920,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         value={formData.faviconUrl ?? ''}
                         onChange={(e) => {
                           const val = e.target.value;
-                          const updated = { ...formData, faviconUrl: val };
+                          const updated = { ...formData, faviconUrl: val, faviconOriginalUrl: val };
                           setFormData(updated);
                           onUpdatePortfolioData(updated);
                           if (val) updateBrowserFavicon(val);
@@ -1696,7 +1932,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <button
                           type="button"
                           onClick={() => {
-                            const updated = { ...formData, faviconUrl: '' };
+                            const updated = { ...formData, faviconUrl: '', faviconOriginalUrl: '' };
                             setFormData(updated);
                             onUpdatePortfolioData(updated);
                             updateBrowserFavicon('/Profile-Photo.png');
@@ -1718,12 +1954,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       {photosList.length > 0 && photosList[0].url && (
                         <button
                           type="button"
-                          onClick={() => {
-                            const updated = { ...formData, faviconUrl: photosList[0].url };
+                          onClick={async () => {
+                            const rawUrl = photosList[0].url;
+                            let finalUrl = rawUrl;
+                            if (formData.faviconCircle !== false) {
+                              finalUrl = await createCircularFavicon(rawUrl);
+                            }
+                            const updated = {
+                              ...formData,
+                              faviconUrl: finalUrl,
+                              faviconOriginalUrl: rawUrl
+                            };
                             setFormData(updated);
                             onUpdatePortfolioData(updated);
-                            updateBrowserFavicon(photosList[0].url);
-                            setSaveSuccessMessage('Set main profile photo as favicon!');
+                            updateBrowserFavicon(finalUrl);
+                            setSaveSuccessMessage('Set active profile photo as favicon!');
                             setTimeout(() => setSaveSuccessMessage(''), 3000);
                           }}
                           className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-sky-500/60 text-xs text-sky-300 font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
@@ -1734,12 +1979,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       )}
                       <button
                         type="button"
-                        onClick={() => {
-                          const updated = { ...formData, faviconUrl: '/Profile-Photo.png' };
+                        onClick={async () => {
+                          const rawUrl = '/Profile-Photo.png';
+                          let finalUrl = rawUrl;
+                          if (formData.faviconCircle !== false) {
+                            finalUrl = await createCircularFavicon(rawUrl);
+                          }
+                          const updated = {
+                            ...formData,
+                            faviconUrl: finalUrl,
+                            faviconOriginalUrl: rawUrl
+                          };
                           setFormData(updated);
                           onUpdatePortfolioData(updated);
-                          updateBrowserFavicon('/Profile-Photo.png');
-                          setSaveSuccessMessage('Reset favicon to default!');
+                          updateBrowserFavicon(finalUrl);
+                          setSaveSuccessMessage('Reset favicon to default photo!');
                           setTimeout(() => setSaveSuccessMessage(''), 3000);
                         }}
                         className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-slate-300 font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
@@ -1761,11 +2015,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </h3>
                       <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 font-semibold flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        Active in Tab
+                        Live in Browser Tab
                       </span>
                     </div>
                     <p className="text-xs text-slate-400">
-                      এটি গুগল ক্রোম বা ফায়ারফক্স ব্রাউজারে আপনার পোর্টফোলিও সাইট খোলার পর ট্যাবের বাস্তব রূপ:
+                      গুগল ক্রোম বা ফায়ারফক্স ব্রাউজারে টাইটেল ও গোল আইকনটির আসল প্রিভিউ:
                     </p>
                   </div>
 
@@ -1780,17 +2034,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </div>
 
                       {/* The Simulated Active Browser Tab */}
-                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-t-xl bg-slate-900 border-t border-l border-r border-slate-700 text-xs text-white max-w-[280px] shadow-sm">
+                      <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-t-xl bg-slate-900 border-t border-l border-r border-slate-700 text-xs text-white max-w-[320px] shadow-sm">
                         <img
                           src={formData.faviconUrl || '/Profile-Photo.png'}
                           alt="Favicon"
-                          className="w-4 h-4 rounded-full object-cover shrink-0 border border-slate-700 shadow-sm"
+                          className={`w-4 h-4 object-cover shrink-0 border border-slate-700 shadow-sm ${
+                            formData.faviconCircle !== false ? 'rounded-full' : 'rounded-sm'
+                          }`}
                           onError={(e) => {
                             (e.target as HTMLImageElement).src = '/Profile-Photo.png';
                           }}
                         />
                         <span className="truncate font-semibold text-[11px] text-slate-200">
-                          {formData.name || 'Al Amin Islam'} | Fullstack Developer
+                          {formData.browserTitle || `${formData.name || 'Al Amin Islam'} | Fullstack Web Developer`}
                         </span>
                         <X className="w-3 h-3 text-slate-500 hover:text-white shrink-0 ml-auto cursor-pointer" />
                       </div>
@@ -1815,7 +2071,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                     {/* Webpage Content Preview Header */}
                     <div className="p-4 bg-slate-950/60 flex items-center gap-4">
-                      <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-slate-700 shrink-0 bg-slate-900">
+                      <div className={`relative w-14 h-14 overflow-hidden border-2 border-sky-500/60 shrink-0 bg-slate-900 shadow-md ${
+                        formData.faviconCircle !== false ? 'rounded-full' : 'rounded-xl'
+                      }`}>
                         <img
                           src={formData.faviconUrl || '/Profile-Photo.png'}
                           alt="Favicon Large"
@@ -1825,15 +2083,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           }}
                         />
                       </div>
-                      <div>
-                        <div className="text-xs font-bold text-white">
-                          Current Active Favicon:
+                      <div className="space-y-0.5">
+                        <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <span>Current Tab Title & Shape:</span>
+                          <span className={`text-[10px] px-2 py-0.2 rounded-full font-medium ${
+                            formData.faviconCircle !== false ? 'bg-sky-950 text-sky-300 border border-sky-800' : 'bg-slate-800 text-slate-300'
+                          }`}>
+                            {formData.faviconCircle !== false ? 'Circle (গোল)' : 'Square (চারকোনা)'}
+                          </span>
                         </div>
-                        <div className="text-[11px] text-sky-400 font-mono truncate max-w-[260px]">
-                          {formData.faviconUrl ? (formData.faviconUrl.startsWith('data:') ? 'Custom Uploaded Base64 Photo' : formData.faviconUrl) : 'Default Portrait (/Profile-Photo.png)'}
+                        <div className="text-[11px] text-sky-400 font-medium truncate max-w-[260px]">
+                          {formData.browserTitle || `${formData.name || 'Al Amin Islam'} | Fullstack Web Developer`}
                         </div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">
-                          Resolution: Auto-rendered 16x16 / 32x32 / 64x64 Retina
+                        <div className="text-[10px] text-slate-400">
+                          Auto-rendered in browser tab at 16x16 / 32x32 / 64x64 Retina
                         </div>
                       </div>
                     </div>
@@ -1842,10 +2105,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <div className="p-3.5 rounded-xl bg-sky-950/30 border border-sky-900/40 text-xs text-sky-200/90 space-y-1">
                     <p className="font-semibold text-sky-300 flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-                      <span>রিয়েল-টাইম লাইভ সিঙ্ক তথ্য:</span>
+                      <span>লাইভ বাস্তবায়ন ও সুবিধা:</span>
                     </p>
                     <p className="text-[11px] text-sky-200/80 leading-relaxed">
-                      আপনি যখনই ডিভাইস থেকে কোনো ফটো আপলোড করবেন, সিস্টেম সাথে সাথে আপনার ব্রাউজারের আসল ট্যাবের আইকন পরিবর্তন করে দেবে এবং ডেটাবেজে সেভ করে রাখবে। কোনো রিলোড ছাড়াই ভিজিটররা নতুন আইকন দেখতে পাবেন।
+                      ১. <strong>টাইটেল বারের নাম:</strong> উপরে নতুন নাম লিখলে আপনার বর্তমান ব্রাউজারের ট্যাবের নাম সাথে সাথে বদলে যাবে এবং সেভ হয়ে থাকবে।<br />
+                      ২. <strong>গোল ফেভিকন:</strong> "Circle (গোল)" মোড চালু থাকলে ছবি আপলোড করার সাথে সাথে স্বয়ংক্রিয়ভাবে ট্রান্সপারেন্ট কোণ সহ পারফেক্ট গোল ফেভিকন তৈরি হয়ে যাবে।
                     </p>
                   </div>
                 </div>

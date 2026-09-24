@@ -53,6 +53,9 @@ export const mergePortfolioData = (raw: any): PortfolioDataType => {
   const sanitizedLogoBadge = (rawLogoText !== undefined && rawLogoText !== null && rawLogoText !== '') ? rawLogoText : 'root';
   const sanitizedLogoImage = raw.navbar?.logoImageUrl !== undefined ? raw.navbar.logoImageUrl : (raw.logoImageUrl || '');
   const sanitizedFavicon = raw.faviconUrl || PORTFOLIO_DATA.faviconUrl || '/Profile-Photo.png';
+  const sanitizedFaviconOriginal = raw.faviconOriginalUrl || raw.faviconUrl || sanitizedFavicon;
+  const sanitizedFaviconCircle = raw.faviconCircle !== undefined ? Boolean(raw.faviconCircle) : true;
+  const sanitizedBrowserTitle = raw.browserTitle || `${sanitizedName} | Fullstack Web Developer`;
 
   return {
     ...PORTFOLIO_DATA,
@@ -63,6 +66,9 @@ export const mergePortfolioData = (raw: any): PortfolioDataType => {
     logoBadgeText: sanitizedLogoBadge,
     logoImageUrl: sanitizedLogoImage,
     faviconUrl: sanitizedFavicon,
+    faviconOriginalUrl: sanitizedFaviconOriginal,
+    faviconCircle: sanitizedFaviconCircle,
+    browserTitle: sanitizedBrowserTitle,
     socials: sanitizedSocials,
     heroButtons: { ...PORTFOLIO_DATA.heroButtons, ...(raw.heroButtons || {}) },
     heroStats: { ...PORTFOLIO_DATA.heroStats, ...(raw.heroStats || {}) },
@@ -867,6 +873,62 @@ export const importPortfolioJson = async (
     data: mergedData,
     photos: photosList
   };
+};
+
+/**
+ * Dynamically converts any image (URL or Base64) into a perfectly rounded circle favicon
+ * using an off-screen HTML5 Canvas with transparent outside corners.
+ */
+export const createCircularFavicon = (imageUrl: string, size = 128): Promise<string> => {
+  return new Promise((resolve) => {
+    if (!imageUrl || typeof document === 'undefined') return resolve(imageUrl);
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(imageUrl);
+
+        // Clear transparent
+        ctx.clearRect(0, 0, size, size);
+
+        // Create circular clip path
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, (size / 2) - 1, 0, Math.PI * 2, true);
+        ctx.closePath();
+        ctx.clip();
+
+        // Calculate aspect ratio crop (center cropped)
+        const minDim = Math.min(img.width, img.height);
+        const sx = (img.width - minDim) / 2;
+        const sy = (img.height - minDim) / 2;
+
+        ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+        ctx.restore();
+
+        // Subtle clean ring border so the circle clearly stands out in dark and light browser tabs
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, (size / 2) - 2, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        const circleDataUrl = canvas.toDataURL('image/png');
+        resolve(circleDataUrl);
+      } catch (err) {
+        console.warn('Could not crop favicon to circle:', err);
+        resolve(imageUrl);
+      }
+    };
+    img.onerror = () => {
+      resolve(imageUrl);
+    };
+    img.src = imageUrl;
+  });
 };
 
 /**

@@ -188,6 +188,14 @@ export default function App() {
     }
   }, [photos.length, currentPhotoIndex]);
 
+  // Dynamically update browser tab title bar name in real-time
+  useEffect(() => {
+    const titleText = portfolioData.browserTitle || `${portfolioData.name || 'Al Amin Islam'} | ${portfolioData.title || 'Fullstack Web Developer'}`;
+    if (typeof document !== 'undefined') {
+      document.title = titleText;
+    }
+  }, [portfolioData.browserTitle, portfolioData.name, portfolioData.title]);
+
   // Dynamically update browser tab Favicon Icon in real-time
   useEffect(() => {
     const faviconUrl = portfolioData.faviconUrl || '/Profile-Photo.png';
