@@ -13,6 +13,7 @@ import { ContactModal } from './components/ContactModal';
 import { DetailModal } from './components/DetailModal';
 import { WhatsAppWidget } from './components/WhatsAppWidget';
 import { ScrollToTop } from './components/ScrollToTop';
+import { InteractiveBackground } from './components/InteractiveBackground';
 import { AdminDashboard } from './components/AdminDashboard';
 import { RgbEdgeBeams } from './components/RgbEdgeBeams';
 import { ProfilePhoto, DEFAULT_PROFILE_PHOTOS, FooterLinkItem } from './data/portfolioData';
@@ -162,6 +163,50 @@ export default function App() {
     }
   };
 
+  // Automatically cycle through profile photos smoothly every 4-5 seconds
+  useEffect(() => {
+    if (!photos || photos.length <= 1) return;
+    const isAutoRotate = portfolioData.photoRotation?.autoRotate !== false;
+    if (!isAutoRotate) return;
+
+    const intervalSec = (portfolioData.photoRotation?.intervalSeconds && portfolioData.photoRotation.intervalSeconds > 0)
+      ? portfolioData.photoRotation.intervalSeconds
+      : (portfolioData.autoRotateSeconds || 4);
+
+    const timer = setInterval(() => {
+      setCurrentPhotoIndex((prev) => (prev + 1) % photos.length);
+    }, Math.max(2, intervalSec) * 1000);
+
+    return () => clearInterval(timer);
+  }, [photos, portfolioData.photoRotation?.autoRotate, portfolioData.photoRotation?.intervalSeconds, portfolioData.autoRotateSeconds]);
+
+  // Keep index within bounds if photos length changes
+  useEffect(() => {
+    if (photos.length > 0 && currentPhotoIndex >= photos.length) {
+      setCurrentPhotoIndex(0);
+    }
+  }, [photos.length, currentPhotoIndex]);
+
+  // Dynamically update browser tab Favicon Icon in real-time
+  useEffect(() => {
+    const faviconUrl = portfolioData.faviconUrl || '/Profile-Photo.png';
+    if (!faviconUrl) return;
+
+    // Update or create link tags for favicon
+    let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'shortcut icon';
+      document.head.appendChild(link);
+    }
+    link.href = faviconUrl;
+
+    const allIcons = document.querySelectorAll("link[rel='icon'], link[rel='shortcut icon']");
+    allIcons.forEach((el) => {
+      (el as HTMLLinkElement).href = faviconUrl;
+    });
+  }, [portfolioData.faviconUrl]);
+
   const activePhoto: ProfilePhoto = (photos.length > 0 && photos[currentPhotoIndex])
     ? photos[currentPhotoIndex]
     : DEFAULT_PROFILE_PHOTOS[0];
@@ -200,6 +245,11 @@ export default function App() {
     { id: '2', label: 'Facebook', url: 'https://facebook.com', openNewTab: true }
   ];
 
+  const copyrightUrl = portfolioData.footer?.copyrightUrl || '';
+  const statusBadgeUrl = portfolioData.footer?.statusBadgeUrl || '';
+  const poweredByText = portfolioData.footer?.poweredByText || '';
+  const poweredByUrl = portfolioData.footer?.poweredByUrl || '';
+
   return (
     <div
       style={getBackgroundStyles()}
@@ -207,6 +257,9 @@ export default function App() {
         isDark ? 'text-slate-100' : 'text-slate-800'
       }`}
     >
+      {/* Interactive Liquid Water Ripples & RGB Cursor Follower Engine */}
+      <InteractiveBackground theme={portfolioData.theme} />
+
       {/* Device-Responsive 4-Edge & Outermost 2-Lines RGB Blinking & Traveling Laser Beams */}
       {theme.rgbBorderBlink !== false && (
         <RgbEdgeBeams gridSize={theme.gridSize || 34} isDark={isDark} />
@@ -221,7 +274,7 @@ export default function App() {
       />
 
       {/* Hero Section (Center of home page) */}
-      <main className="flex-1 flex flex-col items-center justify-center">
+      <main className="flex-1 flex flex-col items-center justify-center relative z-10">
         <Hero
           onOpenResume={() => setIsResumeOpen(true)}
           onOpenContact={() => setIsContactOpen(true)}
@@ -234,29 +287,57 @@ export default function App() {
         />
       </main>
 
-      {/* Clean User Footer with Dynamic Executable Links & Code */}
-      <footer className={`w-full border-t py-5 px-4 sm:px-6 transition-colors backdrop-blur-md ${
+      {/* Clean User Footer with Dynamic Executable Links & Background Link Routing */}
+      <footer className={`w-full border-t py-5 px-4 sm:px-6 transition-colors backdrop-blur-md relative z-10 ${
         isDark
           ? 'border-slate-800/80 bg-slate-950/85 text-slate-400'
           : 'border-slate-100 bg-white/80 text-slate-500'
       }`}>
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between text-xs gap-4">
-          {/* Left: Copyright or Custom Executable HTML */}
+          {/* Left: Copyright or Custom Executable HTML with Background Link support */}
           <div className="flex flex-col sm:flex-row items-center gap-2 text-center sm:text-left">
             {customFooterHtml ? (
               <div
                 dangerouslySetInnerHTML={{ __html: customFooterHtml }}
                 className="footer-custom-html-container inline-block"
               />
+            ) : copyrightUrl ? (
+              <a
+                href={copyrightUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline transition-colors cursor-pointer text-inherit"
+                title={`Open ${copyrightUrl} in a new tab`}
+                id="footer-copyright-link"
+              >
+                <span>{formattedFooterText}</span>
+              </a>
             ) : (
-              <div
-                dangerouslySetInnerHTML={{ __html: formattedFooterText }}
-                className="footer-copyright-text-container"
-              />
+              <span>{formattedFooterText}</span>
+            )}
+
+            {poweredByText && (
+              <>
+                <span className="hidden sm:inline opacity-40">•</span>
+                {poweredByUrl ? (
+                  <a
+                    href={poweredByUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline transition-colors cursor-pointer text-inherit opacity-90 hover:opacity-100"
+                    title={`Open ${poweredByUrl} in a new tab`}
+                    id="footer-powered-by-link"
+                  >
+                    <span>{poweredByText}</span>
+                  </a>
+                ) : (
+                  <span className="opacity-90">{poweredByText}</span>
+                )}
+              </>
             )}
           </div>
 
-          {/* Right: Custom Added Links (Facebook, Developed by, etc.) & Navigation */}
+          {/* Right: Custom Added Links & Navigation with background links */}
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
             {/* User Custom Footer Links */}
             {footerLinks.map((link: FooterLinkItem, idx: number) => (
@@ -301,14 +382,34 @@ export default function App() {
               {portfolioData.heroButtons?.contactText || 'Contact'}
             </button>
             <span>•</span>
-            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
-              isDark
-                ? 'bg-emerald-950/60 text-emerald-300 border-emerald-800/80'
-                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-            }`}>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>{portfolioData.footer?.statusBadge || 'Available for Hire'}</span>
-            </span>
+
+            {/* Status Badge with optional background link */}
+            {statusBadgeUrl ? (
+              <a
+                href={statusBadgeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium border hover:scale-105 transition-all cursor-pointer ${
+                  isDark
+                    ? 'bg-emerald-950/60 text-emerald-300 border-emerald-800/80 hover:border-emerald-500'
+                    : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:border-emerald-400'
+                }`}
+                title={`Open ${statusBadgeUrl} in a new tab`}
+                id="footer-status-badge-link"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>{portfolioData.footer?.statusBadge || 'Available for Hire'}</span>
+              </a>
+            ) : (
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
+                isDark
+                  ? 'bg-emerald-950/60 text-emerald-300 border-emerald-800/80'
+                  : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              }`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>{portfolioData.footer?.statusBadge || 'Available for Hire'}</span>
+              </span>
+            )}
           </div>
         </div>
       </footer>

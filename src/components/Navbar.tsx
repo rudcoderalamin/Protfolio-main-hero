@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Menu, X } from 'lucide-react';
+import { Calendar, Menu, X, ExternalLink } from 'lucide-react';
 import { PortfolioDataType } from '../utils/portfolioStorage';
 
 interface NavbarProps {
@@ -21,6 +21,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const rawInitials = portfolioData?.navbar?.logoBadgeText || portfolioData?.logoBadgeText || portfolioData?.brandInitials || 'root';
   const brandInitials = rawInitials || 'root';
   const brandSubtitle = portfolioData?.navbar?.brandSubtitle || portfolioData?.logoSubtitle || portfolioData?.title || 'Fullstack Developer';
+  const brandSubtitleUrl = portfolioData?.navbar?.brandSubtitleUrl || '';
   const logoImageUrl = portfolioData?.navbar?.logoImageUrl || portfolioData?.logoImageUrl;
   const statusDotText = portfolioData?.navbar?.statusDotText || 'Active & Available';
   const bookCallText = portfolioData?.navbar?.bookCallBtnText || portfolioData?.heroButtons?.bookCallText || 'Book a Call';
@@ -42,55 +43,74 @@ export const Navbar: React.FC<NavbarProps> = ({
         : 'bg-white/85 border-b border-slate-100 text-slate-800 shadow-xs'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-        {/* Left: Brand Monogram / Name with Live Rotating Neon Light Effects */}
-        <button
-          onClick={() => onSelectSection('home')}
-          className="flex items-center gap-3 group focus:outline-none cursor-pointer select-none"
-          id="nav-brand-logo-btn"
-          aria-label={`${brandName} Home`}
-        >
-          {/* Rotating Multi-Color Neon Border Logo Badge */}
-          <div className="h-10 sm:h-11 min-w-10 sm:min-w-11 px-2 neon-rotating-logo-box group-hover:scale-105 transition-transform duration-300 shrink-0">
-            <div className={`neon-logo-inner overflow-hidden ${logoImageUrl ? 'p-1' : 'px-2'}`}>
-              {logoImageUrl ? (
-                <img
-                  src={logoImageUrl}
-                  alt={brandName}
-                  className="w-full h-full object-cover rounded-[10px]"
-                />
-              ) : (
-                <span className={`neon-logo-letters font-black uppercase ${
-                  brandInitials.length > 4
-                    ? 'text-[10px] sm:text-xs tracking-tight'
-                    : brandInitials.length > 2
-                    ? 'text-xs sm:text-sm tracking-normal'
-                    : 'text-sm sm:text-base tracking-wider'
-                }`}>
-                  {brandInitials}
-                </span>
-              )}
-            </div>
-          </div>
+        {/* Left: Brand Monogram & Pure Black Name (No neon, No lighting) */}
+        <div className="flex items-center gap-3 select-none">
+          {/* Pure Black Sleek Logo Badge (Zero neon light) */}
+          <button
+            onClick={() => onSelectSection('home')}
+            className="h-10 sm:h-11 min-w-10 sm:min-w-11 px-2.5 rounded-xl bg-black text-white flex items-center justify-center font-bold shadow-sm transition-transform duration-200 hover:scale-105 cursor-pointer shrink-0 border border-slate-900 focus:outline-none"
+            title={`${brandName} Home`}
+            aria-label={`${brandName} Home`}
+            id="nav-brand-logo-btn"
+          >
+            {logoImageUrl ? (
+              <img
+                src={logoImageUrl}
+                alt={brandName}
+                className="w-full h-full object-cover rounded-lg"
+              />
+            ) : (
+              <span className={`font-black uppercase text-white ${
+                brandInitials.length > 4
+                  ? 'text-[10px] sm:text-xs tracking-tight'
+                  : brandInitials.length > 2
+                  ? 'text-xs sm:text-sm tracking-normal'
+                  : 'text-sm sm:text-base tracking-wider'
+              }`}>
+                {brandInitials}
+              </span>
+            )}
+          </button>
 
-          {/* Glowing Multi-Color Live Neon Name & Title */}
+          {/* Brand Name (Pure Black Color, No Lighting, No Neon) & Subtitle with background link */}
           <div className="text-left block min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className="neon-live-text text-sm sm:text-base font-extrabold tracking-tight leading-tight truncate">
+            <button
+              onClick={() => onSelectSection('home')}
+              className="text-left focus:outline-none cursor-pointer block group"
+              aria-label={brandName}
+            >
+              <span
+                className="text-black font-extrabold text-sm sm:text-base tracking-tight leading-tight truncate block group-hover:opacity-90"
+                style={{ color: '#000000' }}
+              >
                 {brandName}
               </span>
-              <span
-                className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping shrink-0"
-                title={statusDotText}
-              />
-            </div>
-            <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-medium leading-tight mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 animate-pulse shadow-xs shadow-emerald-400" />
-              <span className={`truncate font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                {brandSubtitle}
-              </span>
-            </div>
+            </button>
+
+            {/* Subtitle / Powered By Tagline with optional background link opening in new tab */}
+            {brandSubtitleUrl ? (
+              <a
+                href={brandSubtitleUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-medium leading-tight mt-0.5 text-slate-700 hover:text-black hover:underline transition-colors cursor-pointer group"
+                title={`Open ${brandSubtitleUrl} in a new tab`}
+                id="navbar-subtitle-link"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                <span className="truncate max-w-[140px] sm:max-w-[200px]">{brandSubtitle}</span>
+                <ExternalLink className="w-2.5 h-2.5 opacity-60 group-hover:opacity-100 shrink-0" />
+              </a>
+            ) : (
+              <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-medium leading-tight mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                <span className={`truncate ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                  {brandSubtitle}
+                </span>
+              </div>
+            )}
           </div>
-        </button>
+        </div>
 
         {/* Center: Desktop Navigation Links */}
         <nav className="hidden md:flex items-center gap-1 lg:gap-2">

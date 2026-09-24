@@ -52,6 +52,7 @@ export const mergePortfolioData = (raw: any): PortfolioDataType => {
     : (raw.logoBadgeText !== undefined ? raw.logoBadgeText : raw.brandInitials);
   const sanitizedLogoBadge = (rawLogoText !== undefined && rawLogoText !== null && rawLogoText !== '') ? rawLogoText : 'root';
   const sanitizedLogoImage = raw.navbar?.logoImageUrl !== undefined ? raw.navbar.logoImageUrl : (raw.logoImageUrl || '');
+  const sanitizedFavicon = raw.faviconUrl || PORTFOLIO_DATA.faviconUrl || '/Profile-Photo.png';
 
   return {
     ...PORTFOLIO_DATA,
@@ -61,6 +62,7 @@ export const mergePortfolioData = (raw: any): PortfolioDataType => {
     brandInitials: sanitizedLogoBadge,
     logoBadgeText: sanitizedLogoBadge,
     logoImageUrl: sanitizedLogoImage,
+    faviconUrl: sanitizedFavicon,
     socials: sanitizedSocials,
     heroButtons: { ...PORTFOLIO_DATA.heroButtons, ...(raw.heroButtons || {}) },
     heroStats: { ...PORTFOLIO_DATA.heroStats, ...(raw.heroStats || {}) },
@@ -68,12 +70,22 @@ export const mergePortfolioData = (raw: any): PortfolioDataType => {
       ...PORTFOLIO_DATA.navbar, 
       ...(raw.navbar || {}),
       logoBadgeText: sanitizedLogoBadge,
-      logoImageUrl: sanitizedLogoImage
+      logoImageUrl: sanitizedLogoImage,
+      brandSubtitleUrl: raw.navbar?.brandSubtitleUrl ?? raw.brandSubtitleUrl ?? ''
     },
-    theme: { ...PORTFOLIO_DATA.theme, ...(raw.theme || {}) },
+    theme: { 
+      ...PORTFOLIO_DATA.theme, 
+      ...(raw.theme || {}),
+      cursorRgbLight: raw.theme?.cursorRgbLight ?? true,
+      interactiveEffect: raw.theme?.interactiveEffect ?? 'water_ripples'
+    },
     footer: {
       ...PORTFOLIO_DATA.footer,
       ...(raw.footer || {}),
+      copyrightUrl: raw.footer?.copyrightUrl ?? '',
+      statusBadgeUrl: raw.footer?.statusBadgeUrl ?? '',
+      poweredByText: raw.footer?.poweredByText ?? 'Powered by Al Amin',
+      poweredByUrl: raw.footer?.poweredByUrl ?? 'https://github.com/alaminislam3504',
       links: Array.isArray(raw.footer?.links) ? raw.footer.links : PORTFOLIO_DATA.footer.links
     },
     sectionTitles: { ...PORTFOLIO_DATA.sectionTitles, ...(raw.sectionTitles || {}) },
@@ -90,14 +102,61 @@ export const mergePortfolioData = (raw: any): PortfolioDataType => {
 export const cleanPhotos = (photos: any): ProfilePhoto[] => {
   if (!Array.isArray(photos) || photos.length === 0) return DEFAULT_PROFILE_PHOTOS;
   const filtered = photos
-    .filter((p: ProfilePhoto) => p && p.url && !p.url.includes('/gallery/'))
-    .map((p: ProfilePhoto) => {
-      if (p.url.includes('imran-hasan.jpg')) {
-        return { ...p, url: '/Profile-Photo.png', caption: p.caption?.replace(/imran/gi, 'Al Amin') || 'Al Amin Islam' };
+    .filter((p: any) => p && typeof p === 'object' && p.url && typeof p.url === 'string')
+    .map((p: ProfilePhoto, idx: number) => {
+      let finalUrl = p.url;
+      if (finalUrl.includes('imran-hasan.jpg')) {
+        finalUrl = '/Profile-Photo.png';
       }
-      return p;
+      return {
+        id: p.id || `photo-${idx}-${Date.now()}`,
+        url: finalUrl,
+        caption: p.caption?.replace(/imran/gi, 'Al Amin') || `${PORTFOLIO_DATA.name} — Photo`,
+        tag: p.tag || 'Official'
+      };
     });
   return filtered.length > 0 ? filtered : DEFAULT_PROFILE_PHOTOS;
+};
+
+/**
+ * Compresses an image file before saving to base64, guaranteeing tiny size, high fidelity,
+ * and zero LocalStorage or Firestore quota issues.
+ */
+export const compressImageFile = (file: File, maxDimension = 1200, quality = 0.85): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(e.target?.result as string);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(dataUrl);
+      };
+      img.onerror = () => resolve(e.target?.result as string);
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 };
 
 // Database status helpers

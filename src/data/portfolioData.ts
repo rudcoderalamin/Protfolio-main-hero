@@ -74,6 +74,8 @@ export interface ThemeConfig {
   backgroundOverlayOpacity?: number;
   rgbBorderBlink?: boolean; // Controls device-responsive outermost edge RGB blinking & traveling lines
   rgbProfileRing?: boolean; // Controls neon RGB color ring around the profile photo
+  cursorRgbLight?: boolean; // Controls cursor-following RGB ambient glow / laser light
+  interactiveEffect?: 'none' | 'cursor_rgb' | 'water_ripples' | 'neon_particles' | 'cosmic_aurora'; // Interactive background theme
 }
 
 export const DEFAULT_PROFILE_PHOTOS: ProfilePhoto[] = [
@@ -99,6 +101,7 @@ export const PORTFOLIO_DATA = {
   logoSubtitle: "Fullstack Developer",
   logoBadgeText: "root",
   logoImageUrl: "",
+  faviconUrl: "/Profile-Photo.png",
   greetingPrefix: "Hi, I'm",
   greetingEmoji: "👋",
   title: "Fullstack Web Developer",
@@ -161,6 +164,7 @@ export const PORTFOLIO_DATA = {
   navbar: {
     brandText: "Al Amin Islam",
     brandSubtitle: "Fullstack Developer",
+    brandSubtitleUrl: "",
     logoBadgeText: "root",
     logoImageUrl: "",
     showStatusDot: true,
@@ -185,13 +189,19 @@ export const PORTFOLIO_DATA = {
     textColorMode: "dark", // 'dark' = dark text on light bg, 'light' = white/bright text on dark bg
     accentColor: "#0284c7",
     rgbBorderBlink: true,
-    rgbProfileRing: false
+    rgbProfileRing: false,
+    cursorRgbLight: true,
+    interactiveEffect: "water_ripples"
   } as ThemeConfig,
 
   // Footer Texts, Executable Code & Custom Links
   footer: {
     copyrightText: "© {year} Al Amin Islam. Built with Next.js & Tailwind CSS.",
+    copyrightUrl: "",
     statusBadge: "Available for Hire",
+    statusBadgeUrl: "",
+    poweredByText: "Powered by Al Amin",
+    poweredByUrl: "https://github.com/alaminislam3504",
     customHtml: "", // Allows writing custom HTML or links to execute in footer
     links: [
       {

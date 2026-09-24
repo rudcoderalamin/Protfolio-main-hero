@@ -54,7 +54,8 @@ import {
   importPortfolioJson,
   savePortfolioToServer,
   fetchMessagesFromServer,
-  isQuotaExceeded
+  isQuotaExceeded,
+  compressImageFile
 } from '../utils/portfolioStorage';
 import { AdminMessagesTab } from './AdminMessagesTab';
 import { THEME_PRESETS, colorToHex, generateBackgroundStyles } from '../utils/themeEngine';
@@ -147,6 +148,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [newPhotoTag, setNewPhotoTag] = useState('Portrait');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logoFileInputRef = useRef<HTMLInputElement>(null);
+  const faviconFileInputRef = useRef<HTMLInputElement>(null);
   const importFileRef = useRef<HTMLInputElement>(null);
 
   // Security Form State
@@ -221,25 +223,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onUpdatePortfolioData(updated);
   };
 
-  // Photo Upload Handler (Local file to Base64)
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Photo Upload Handler (Local file to Compressed Base64)
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check size limit (max 4MB for localStorage)
-    if (file.size > 4 * 1024 * 1024) {
-      alert('Image is too large! Please choose an image under 4MB.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64Url = event.target?.result as string;
+    try {
+      // Compress image for ultra-fast storage and optimal cloud sync
+      const base64Url = await compressImageFile(file, 1200, 0.85);
       const newPhoto: ProfilePhoto = {
         id: `photo-${Date.now()}`,
         url: base64Url,
-        caption: newPhotoCaption.trim() || `${formData.name} — New Photo`,
-        tag: newPhotoTag || 'Gallery'
+        caption: newPhotoCaption.trim() || `${formData.name} — Photo ${photosList.length + 1}`,
+        tag: newPhotoTag || 'Official'
       };
       const updated = [newPhoto, ...photosList];
       setPhotosList(updated);
@@ -248,23 +244,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       if (fileInputRef.current) fileInputRef.current.value = '';
       setSaveSuccessMessage('Photo uploaded and added successfully!');
       setTimeout(() => setSaveSuccessMessage(''), 3000);
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      alert('Error reading photo image file.');
+    }
   };
 
-  // Logo Photo Upload Handler (Local file from Device to Base64)
-  const handleLogoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Logo Photo Upload Handler (Local file from Device to Compressed Base64)
+  const handleLogoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Logo image is too large! Please choose an image under 5MB.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64Url = event.target?.result as string;
+    try {
+      const base64Url = await compressImageFile(file, 400, 0.9);
       const updated = {
         ...formData,
         logoImageUrl: base64Url,
@@ -278,8 +269,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setSaveSuccessMessage('Logo photo uploaded successfully from device!');
       setTimeout(() => setSaveSuccessMessage(''), 3000);
       if (logoFileInputRef.current) logoFileInputRef.current.value = '';
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      alert('Error reading logo file.');
+    }
+  };
+
+  // Favicon Upload Handler (Local file from Device to Compressed Base64)
+  const handleFaviconFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const base64Url = await compressImageFile(file, 256, 0.9);
+      const updated = {
+        ...formData,
+        faviconUrl: base64Url
+      };
+      setFormData(updated);
+      onUpdatePortfolioData(updated);
+      setSaveSuccessMessage('Favicon icon updated successfully! Browser tab icon updated.');
+      setTimeout(() => setSaveSuccessMessage(''), 3000);
+      if (faviconFileInputRef.current) faviconFileInputRef.current.value = '';
+    } catch (err) {
+      alert('Error reading favicon file.');
+    }
   };
 
   // Remove Logo Photo & Revert to Inner Text Monogram
@@ -3952,6 +3965,115 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </button>
               </div>
 
+              {/* WEBSITE BROWSER TAB FAVICON MANAGER (User-Requested) */}
+              <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-sky-400" />
+                      <h3 className="text-sm font-bold text-white">
+                        Browser Tab Favicon Icon (ব্রাউজার ট্যাব ফেভিকন আইকন)
+                      </h3>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      ব্রাউজারের ট্যাবের টাইটেলের পাশে যে ফেভিকন আইকন থাকে তা পরিবর্তন করুন। ডিভাইস থেকে ছবি আপলোড করতে পারবেন অথবা সরাসরি ছবির লিঙ্ক দিতে পারবেন।
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] px-2.5 py-1 rounded-full bg-sky-950/80 border border-sky-800/60 text-sky-300 font-semibold flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
+                      Active Favicon
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                  {/* Left: Input controls */}
+                  <div className="space-y-4">
+                    {/* Option 1: Direct Image URL */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1">
+                        Favicon Photo URL (ফেভিকন ছবির লিঙ্ক)
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="url"
+                          value={formData.faviconUrl ?? ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const updated = { ...formData, faviconUrl: val };
+                            setFormData(updated);
+                            onUpdatePortfolioData(updated);
+                          }}
+                          placeholder="/Profile-Photo.png or https://..."
+                          className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
+                        />
+                        {formData.faviconUrl && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = { ...formData, faviconUrl: '/Profile-Photo.png' };
+                              setFormData(updated);
+                              onUpdatePortfolioData(updated);
+                            }}
+                            className="px-2 py-1 text-[10px] text-slate-400 hover:text-white bg-slate-800 rounded shrink-0"
+                            title="Reset to default favicon"
+                          >
+                            Reset
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Option 2: Device File Upload */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1">
+                        Or Upload Favicon Photo from Device (ডিভাইস থেকে আপলোড করুন)
+                      </label>
+                      <input
+                        ref={faviconFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFaviconFileUpload}
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => faviconFileInputRef.current?.click()}
+                        className="w-full px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 rounded-xl text-xs font-medium text-white flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                      >
+                        <Upload className="w-3.5 h-3.5 text-sky-400" />
+                        <span>Choose Photo from Device / কম্পিউটার বা ফোন থেকে ছবি সিলেক্ট করুন</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Right: Live Browser Tab Simulation Preview */}
+                  <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                      Live Browser Tab Preview (ব্রাউজার ট্যাবে যেমন দেখাবে):
+                    </span>
+                    <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
+                      <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-t-lg bg-slate-900 border border-b-0 border-slate-700 text-xs text-slate-200 max-w-[260px]">
+                        <img
+                          src={formData.faviconUrl || '/Profile-Photo.png'}
+                          alt="Favicon"
+                          className="w-4 h-4 rounded-full object-cover shrink-0 border border-slate-700"
+                        />
+                        <span className="truncate font-medium text-[11px]">
+                          {formData.name || 'Al Amin Islam'} | Fullstack Developer
+                        </span>
+                        <X className="w-3 h-3 text-slate-500 shrink-0 ml-auto" />
+                      </div>
+                      <div className="h-2 bg-slate-900 border-t border-slate-700 rounded-b-md" />
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-2">
+                      কোনো ফটো আপলোড বা ইউআরএল সেট করলেই তাৎক্ষণিকভাবে ব্রাউজার ট্যাবের আইকন পরিবর্তন হয়ে যাবে।
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* BRAND LOGO, MONOGRAM & PHOTO UPLOAD SECTION */}
               <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-5 space-y-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
@@ -4233,7 +4355,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                         <div>
                           <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                            Logo Subtitle / Tagline
+                            Logo Subtitle / Tagline (লোগোর সাবটাইটেল / Powered by টেক্সট)
                           </label>
                           <input
                             type="text"
@@ -4246,9 +4368,49 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 navbar: { ...formData.navbar, brandSubtitle: val }
                               });
                             }}
-                            placeholder="Fullstack Developer"
+                            placeholder="Fullstack Developer or Powered by SITA"
                             className="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-sky-500"
                           />
+                        </div>
+
+                        <div className="sm:col-span-2">
+                          <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                            Subtitle / Powered by Link URL (নতুন ট্যাব খোলার জন্য ব্যাকগ্রাউন্ড লিংক)
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="url"
+                              value={formData.navbar?.brandSubtitleUrl ?? (formData.brandSubtitleUrl ?? '')}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setFormData({
+                                  ...formData,
+                                  brandSubtitleUrl: val,
+                                  navbar: { ...formData.navbar, brandSubtitleUrl: val }
+                                });
+                              }}
+                              placeholder="https://example.com or https://sita.com"
+                              className="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-sky-500 font-mono"
+                            />
+                            {(formData.navbar?.brandSubtitleUrl || formData.brandSubtitleUrl) && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setFormData({
+                                    ...formData,
+                                    brandSubtitleUrl: '',
+                                    navbar: { ...formData.navbar, brandSubtitleUrl: '' }
+                                  });
+                                }}
+                                className="px-2 py-1 text-[10px] text-slate-400 hover:text-white bg-slate-800 rounded shrink-0"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-slate-400 mt-1 block">
+                            এখানে লিংক দিলে ইউজার সাইটে সাবটাইটেল/পাওয়ারড বাই টেক্সটে ক্লিক করলে নতুন ট্যাবে লিঙ্কটি খুলে যাবে।
+                          </span>
                         </div>
                       </div>
 
