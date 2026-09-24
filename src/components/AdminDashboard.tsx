@@ -653,9 +653,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {/* Left Sidebar Tabs */}
         <aside className="w-full md:w-64 shrink-0">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-2 sticky top-20 space-y-1">
-            <div className="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-              Management Sections
+            <div className="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+              <span>Management Sections</span>
+              <span className="text-[10px] text-sky-400 font-mono hidden md:inline">16 Tabs</span>
             </div>
+
+            {/* Mobile Tab Select Dropdown (Quick Jump on Mobile / Small screens) */}
+            <div className="md:hidden px-1 pb-2">
+              <select
+                value={activeTab}
+                onChange={(e) => setActiveTab(e.target.value as TabType)}
+                className="w-full px-3 py-2 bg-slate-950 border border-sky-500/50 rounded-xl text-xs text-white font-semibold focus:outline-none focus:border-sky-400 cursor-pointer shadow-sm"
+              >
+                <option value="messages">✉️ Inquiries & Messages</option>
+                <option value="general">👤 Profile & Bio</option>
+                <option value="photos">🖼️ Photos ({photosList.length})</option>
+                <option value="favicon">🌐 Favicon & Tab Icon (ফেভিকন)</option>
+                <option value="stats">📊 Stats & Buttons</option>
+                <option value="socials">🔗 Social & Profiles</option>
+                <option value="projects">💼 Projects ({formData.projects?.length || 0})</option>
+                <option value="skills">⚡ Skills & Stack</option>
+                <option value="experience">🏢 Experience</option>
+                <option value="achievements">🏆 Achievements</option>
+                <option value="education">🎓 Education</option>
+                <option value="section_headers">📝 Section Titles & Subtitles</option>
+                <option value="modal_texts">💬 Modals & WhatsApp Chat</option>
+                <option value="navbar_footer">🧭 Logo, Navbar & Footer</option>
+                <option value="theme">🎨 Theme & Background</option>
+                <option value="security">🔒 Security & Backup</option>
+              </select>
+            </div>
+
+            <div className="hidden md:block space-y-1">
 
             {[
               {
@@ -706,6 +735,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </button>
               );
             })}
+            </div>
           </div>
         </aside>
 
