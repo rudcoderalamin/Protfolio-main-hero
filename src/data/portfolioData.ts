@@ -190,7 +190,7 @@ export const PORTFOLIO_DATA = {
     accentColor: "#0284c7",
     rgbBorderBlink: true,
     rgbProfileRing: false,
-    cursorRgbLight: true,
+    cursorRgbLight: false,
     interactiveEffect: "water_ripples"
   } as ThemeConfig,
 

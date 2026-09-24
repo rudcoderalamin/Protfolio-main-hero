@@ -40,7 +40,8 @@ import {
   Copy,
   Palette,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  X
 } from 'lucide-react';
 import { ProfilePhoto, PhotoRotationConfig } from '../data/portfolioData';
 import {
@@ -4380,25 +4381,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           <div className="flex items-center gap-2">
                             <input
                               type="url"
-                              value={formData.navbar?.brandSubtitleUrl ?? (formData.brandSubtitleUrl ?? '')}
+                              value={formData.navbar?.brandSubtitleUrl ?? ''}
                               onChange={(e) => {
                                 const val = e.target.value;
                                 setFormData({
                                   ...formData,
-                                  brandSubtitleUrl: val,
                                   navbar: { ...formData.navbar, brandSubtitleUrl: val }
                                 });
                               }}
                               placeholder="https://example.com or https://sita.com"
                               className="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-sky-500 font-mono"
                             />
-                            {(formData.navbar?.brandSubtitleUrl || formData.brandSubtitleUrl) && (
+                            {Boolean(formData.navbar?.brandSubtitleUrl) && (
                               <button
                                 type="button"
                                 onClick={() => {
                                   setFormData({
                                     ...formData,
-                                    brandSubtitleUrl: '',
                                     navbar: { ...formData.navbar, brandSubtitleUrl: '' }
                                   });
                                 }}

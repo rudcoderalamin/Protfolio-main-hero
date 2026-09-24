@@ -28,10 +28,8 @@ interface Particle {
 
 export const InteractiveBackground: React.FC<InteractiveBackgroundProps> = ({ theme }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const cursorLightRef = useRef<HTMLDivElement | null>(null);
 
   const interactiveEffect = theme?.interactiveEffect ?? 'water_ripples';
-  const showCursorRgb = theme?.cursorRgbLight !== false;
   const isDark = theme?.textColorMode === 'light';
 
   // Refs for tracking mouse with smooth interpolation (lerp)
@@ -40,37 +38,65 @@ export const InteractiveBackground: React.FC<InteractiveBackgroundProps> = ({ th
   const particlesRef = useRef<Particle[]>([]);
   const lastRippleTime = useRef<number>(0);
 
-  // Mouse move listener
+  // Mouse / Pointer listeners for water drops
   useEffect(() => {
+    const spawnRipple = (x: number, y: number, isClick = false) => {
+      if (interactiveEffect === 'none') return;
+
+      const rippleColor = isDark
+        ? 'rgba(56, 189, 248, '
+        : 'rgba(2, 132, 199, ';
+
+      // Primary water droplet ripple
+      ripplesRef.current.push({
+        x,
+        y,
+        radius: 2,
+        maxRadius: isClick ? (Math.random() * 35 + 75) : (Math.random() * 30 + 55),
+        opacity: isClick ? (isDark ? 0.6 : 0.45) : (isDark ? 0.4 : 0.3),
+        speed: isClick ? (Math.random() * 1.5 + 2.2) : (Math.random() * 1.0 + 1.6),
+        color: rippleColor
+      });
+
+      // Echo ripple for clicks / taps
+      if (isClick) {
+        setTimeout(() => {
+          ripplesRef.current.push({
+            x,
+            y,
+            radius: 2,
+            maxRadius: Math.random() * 25 + 50,
+            opacity: isDark ? 0.45 : 0.35,
+            speed: 1.8,
+            color: rippleColor
+          });
+        }, 120);
+      }
+
+      // Limit maximum ripples to prevent performance degradation
+      if (ripplesRef.current.length > 40) {
+        ripplesRef.current.shift();
+      }
+    };
+
     const handlePointerMove = (e: PointerEvent | MouseEvent) => {
       mousePos.current.targetX = e.clientX;
       mousePos.current.targetY = e.clientY;
       mousePos.current.active = true;
 
-      // Spawn water ripple if effect is water_ripples
+      // Spawn water drops on move throttled to 70ms
       if (interactiveEffect === 'water_ripples') {
         const now = performance.now();
-        // Throttle ripple spawn to every 65ms
-        if (now - lastRippleTime.current > 65) {
+        if (now - lastRippleTime.current > 70) {
           lastRippleTime.current = now;
-          const rippleColor = isDark
-            ? 'rgba(56, 189, 248, '
-            : 'rgba(2, 132, 199, ';
-          ripplesRef.current.push({
-            x: e.clientX,
-            y: e.clientY,
-            radius: 2,
-            maxRadius: Math.random() * 50 + 65,
-            opacity: isDark ? 0.45 : 0.35,
-            speed: Math.random() * 1.5 + 2.0,
-            color: rippleColor
-          });
-
-          // Limit maximum ripples to prevent memory creep
-          if (ripplesRef.current.length > 35) {
-            ripplesRef.current.shift();
-          }
+          spawnRipple(e.clientX, e.clientY, false);
         }
+      }
+    };
+
+    const handlePointerDown = (e: PointerEvent | MouseEvent) => {
+      if (interactiveEffect === 'water_ripples') {
+        spawnRipple(e.clientX, e.clientY, true);
       }
     };
 
@@ -79,10 +105,12 @@ export const InteractiveBackground: React.FC<InteractiveBackgroundProps> = ({ th
     };
 
     window.addEventListener('pointermove', handlePointerMove, { passive: true });
+    window.addEventListener('pointerdown', handlePointerDown, { passive: true });
     window.addEventListener('mouseleave', handlePointerLeave);
 
     return () => {
       window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('mouseleave', handlePointerLeave);
     };
   }, [interactiveEffect, isDark]);
@@ -106,10 +134,10 @@ export const InteractiveBackground: React.FC<InteractiveBackgroundProps> = ({ th
       initParticles();
     };
 
-    // Initialize particles for neon_particles effect
+    // Initialize particles for optional neon_particles effect
     const initParticles = () => {
       if (interactiveEffect !== 'neon_particles') return;
-      const count = Math.min(65, Math.floor((width * height) / 22000));
+      const count = Math.min(60, Math.floor((width * height) / 24000));
       const p: Particle[] = [];
       const colors = isDark
         ? ['#00f0ff', '#38bdf8', '#818cf8', '#c084fc', '#f472b6']
@@ -145,33 +173,42 @@ export const InteractiveBackground: React.FC<InteractiveBackgroundProps> = ({ th
       mousePos.current.x += (mousePos.current.targetX - mousePos.current.x) * 0.15;
       mousePos.current.y += (mousePos.current.targetY - mousePos.current.y) * 0.15;
 
-      // 1. WATER RIPPLES EFFECT
+      // 1. WATER DROPS / RIPPLES EFFECT (Clean, natural water physics)
       if (interactiveEffect === 'water_ripples') {
         const ripples = ripplesRef.current;
         for (let i = ripples.length - 1; i >= 0; i--) {
           const r = ripples[i];
           r.radius += r.speed;
-          r.opacity -= 0.008;
+          r.opacity -= 0.0075;
 
           if (r.opacity <= 0 || r.radius >= r.maxRadius) {
             ripples.splice(i, 1);
             continue;
           }
 
-          // Outer wave ring
+          // Outer water drop ring
           ctx.beginPath();
           ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
           ctx.strokeStyle = `${r.color}${Math.max(0, r.opacity).toFixed(3)})`;
-          ctx.lineWidth = 1.8;
+          ctx.lineWidth = 1.6;
           ctx.stroke();
 
-          // Inner caustic reflection ring
-          if (r.radius > 8) {
+          // Inner caustic echo ring
+          if (r.radius > 6) {
             ctx.beginPath();
-            ctx.arc(r.x, r.y, r.radius * 0.65, 0, Math.PI * 2);
-            ctx.strokeStyle = `${r.color}${(Math.max(0, r.opacity) * 0.5).toFixed(3)})`;
-            ctx.lineWidth = 1;
+            ctx.arc(r.x, r.y, r.radius * 0.68, 0, Math.PI * 2);
+            ctx.strokeStyle = `${r.color}${(Math.max(0, r.opacity) * 0.45).toFixed(3)})`;
+            ctx.lineWidth = 1.0;
             ctx.stroke();
+          }
+
+          // Small center water drop splash point at impact
+          if (r.radius < 12) {
+            const dropAlpha = (1 - r.radius / 12) * r.opacity;
+            ctx.beginPath();
+            ctx.arc(r.x, r.y, 1.8, 0, Math.PI * 2);
+            ctx.fillStyle = `${r.color}${dropAlpha.toFixed(3)})`;
+            ctx.fill();
           }
         }
       }
@@ -190,7 +227,6 @@ export const InteractiveBackground: React.FC<InteractiveBackgroundProps> = ({ th
           if (p.x < 0 || p.x > width) p.vx *= -1;
           if (p.y < 0 || p.y > height) p.vy *= -1;
 
-          // Push particles away from cursor
           if (mousePos.current.active) {
             const dx = mx - p.x;
             const dy = my - p.y;
@@ -203,16 +239,11 @@ export const InteractiveBackground: React.FC<InteractiveBackgroundProps> = ({ th
             }
           }
 
-          // Draw node
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
           ctx.fillStyle = p.color;
-          ctx.shadowBlur = 8;
-          ctx.shadowColor = p.color;
           ctx.fill();
-          ctx.shadowBlur = 0;
 
-          // Connect nearby nodes
           for (let j = i + 1; j < pList.length; j++) {
             const p2 = pList[j];
             const dxx = p.x - p2.x;
@@ -264,59 +295,11 @@ export const InteractiveBackground: React.FC<InteractiveBackgroundProps> = ({ th
     };
   }, [interactiveEffect, isDark]);
 
-  // Smooth RGB Cursor Follower Glow element
-  useEffect(() => {
-    if (!showCursorRgb && interactiveEffect !== 'cursor_rgb') return;
-
-    let animFrame: number;
-    let currX = -500;
-    let currY = -500;
-    let hue = 0;
-
-    const animateLight = () => {
-      currX += (mousePos.current.targetX - currX) * 0.12;
-      currY += (mousePos.current.targetY - currY) * 0.12;
-      hue = (hue + 1) % 360;
-
-      if (cursorLightRef.current) {
-        if (mousePos.current.active) {
-          cursorLightRef.current.style.opacity = '1';
-          cursorLightRef.current.style.transform = `translate3d(${currX - 160}px, ${currY - 160}px, 0)`;
-          cursorLightRef.current.style.filter = `hue-rotate(${hue}deg)`;
-        } else {
-          cursorLightRef.current.style.opacity = '0';
-        }
-      }
-
-      animFrame = requestAnimationFrame(animateLight);
-    };
-
-    animFrame = requestAnimationFrame(animateLight);
-
-    return () => {
-      cancelAnimationFrame(animFrame);
-    };
-  }, [showCursorRgb, interactiveEffect]);
-
   return (
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
-      {/* HTML5 Physics Canvas for Water Ripples & Particles */}
+      {/* HTML5 Physics Canvas for Pure Water Drop Ripples (Zero Cursor Shadow) */}
       {interactiveEffect !== 'none' && (
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
-      )}
-
-      {/* Floating RGB Ambient Cursor Spotlight / Laser Light */}
-      {(showCursorRgb || interactiveEffect === 'cursor_rgb') && (
-        <div
-          ref={cursorLightRef}
-          className="absolute top-0 left-0 w-[320px] h-[320px] rounded-full pointer-events-none opacity-0 transition-opacity duration-300 will-change-transform"
-          style={{
-            background: isDark
-              ? 'radial-gradient(circle closest-side, rgba(0, 240, 255, 0.22) 0%, rgba(168, 85, 247, 0.18) 45%, rgba(236, 72, 153, 0.12) 70%, transparent 100%)'
-              : 'radial-gradient(circle closest-side, rgba(2, 132, 199, 0.18) 0%, rgba(147, 51, 234, 0.14) 45%, rgba(219, 39, 119, 0.09) 70%, transparent 100%)',
-            mixBlendMode: isDark ? 'screen' : 'multiply',
-          }}
-        />
       )}
     </div>
   );
