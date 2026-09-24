@@ -14,7 +14,7 @@ import { DetailModal } from './components/DetailModal';
 import { WhatsAppWidget } from './components/WhatsAppWidget';
 import { AdminDashboard } from './components/AdminDashboard';
 import { RgbEdgeBeams } from './components/RgbEdgeBeams';
-import { ProfilePhoto } from './data/portfolioData';
+import { ProfilePhoto, DEFAULT_PROFILE_PHOTOS, FooterLinkItem } from './data/portfolioData';
 import { generateBackgroundStyles } from './utils/themeEngine';
 import {
   PortfolioDataType,
@@ -115,180 +115,90 @@ export default function App() {
     // Gentle background check every 60 seconds as a safety net (avoids consuming Firestore quota)
     const pollInterval = setInterval(syncData, 60000);
 
-    // Re-check when window is focused or becomes visible (e.g. user switches tabs from admin to main site)
-    const onFocus = () => syncData();
-    const onVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        syncData();
-      }
-    };
-
-    // Listen to local cross-tab events on same browser
-    const onStorage = (e: StorageEvent) => {
-      if (
-        e.key === 'alamin_portfolio_data' ||
-        e.key === 'alamin_portfolio_photos' ||
-        e.key === 'alamin_portfolio_data_v2' ||
-        e.key === 'alamin_portfolio_photos_v2'
-      ) {
-        syncData();
-      }
-    };
-
-    const onCustomUpdate = () => syncData();
-
-    window.addEventListener('focus', onFocus);
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    window.addEventListener('storage', onStorage);
-    window.addEventListener('portfolio_updated', onCustomUpdate);
-
     return () => {
       unsubscribeFirestore();
       clearInterval(pollInterval);
-      window.removeEventListener('focus', onFocus);
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-      window.removeEventListener('storage', onStorage);
-      window.removeEventListener('portfolio_updated', onCustomUpdate);
     };
   }, []);
 
-  // 1. Advance photo index on every web reload ("web reload dilei photo gulo change hote thakbe")
-  useEffect(() => {
-    try {
-      const storedPhotos = getStoredPhotos();
-      const savedIndexStr = localStorage.getItem('alamin_active_photo_index');
-      let nextIndex = 0;
-      if (savedIndexStr !== null && storedPhotos.length > 0) {
-        const savedIndex = parseInt(savedIndexStr, 10);
-        if (!isNaN(savedIndex)) {
-          // Increment index by 1 on every page reload
-          nextIndex = (savedIndex + 1) % storedPhotos.length;
-        } else {
-          nextIndex = Math.floor(Math.random() * storedPhotos.length);
-        }
-      } else if (storedPhotos.length > 0) {
-        nextIndex = Math.floor(Math.random() * storedPhotos.length);
-      }
-      localStorage.setItem('alamin_active_photo_index', nextIndex.toString());
-      setCurrentPhotoIndex(nextIndex);
-    } catch (err) {
-      console.warn('Could not update active photo index:', err);
-      setCurrentPhotoIndex(0);
-    }
-  }, []);
-
-  // 2. Automatically rotate profile photo (customizable interval & toggleable in Admin Dashboard)
-  useEffect(() => {
-    if (photos.length <= 1) return;
-    const isAutoRotateEnabled = portfolioData.photoRotation?.autoRotate !== false;
-    if (!isAutoRotateEnabled) return;
-
-    const intervalSeconds = portfolioData.photoRotation?.intervalSeconds || portfolioData.autoRotateSeconds || 5;
-    const timer = setInterval(() => {
-      setCurrentPhotoIndex((prev) => {
-        const next = (prev + 1) % photos.length;
-        try {
-          localStorage.setItem('alamin_active_photo_index', next.toString());
-        } catch (err) {
-          // ignore
-        }
-        return next;
-      });
-    }, Math.max(1, intervalSeconds) * 1000);
-
-    return () => clearInterval(timer);
-  }, [photos.length, portfolioData.photoRotation?.autoRotate, portfolioData.photoRotation?.intervalSeconds, portfolioData.autoRotateSeconds]);
-
   const navigateToRoute = (route: 'portfolio' | 'admin') => {
+    setCurrentRoute(route);
     if (route === 'admin') {
-      window.history.pushState({}, '', '/admin');
-      setCurrentRoute('admin');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.history.pushState(null, '', '/admin');
     } else {
-      window.history.pushState({}, '', '/');
-      setCurrentRoute('portfolio');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.history.pushState(null, '', '/');
     }
   };
 
-  const handleUpdatePortfolioData = (newData: PortfolioDataType) => {
+  const handleUpdatePortfolioData = async (newData: PortfolioDataType) => {
     setPortfolioData(newData);
     saveStoredPortfolioData(newData);
+    // Broadcast to Firestore Cloud & Server
+    await savePortfolioToServer(newData, photos);
   };
 
-  const handleUpdatePhotos = (newPhotos: ProfilePhoto[]) => {
+  const handleUpdatePhotos = async (newPhotos: ProfilePhoto[]) => {
     setPhotos(newPhotos);
     saveStoredPhotos(newPhotos);
-    if (currentPhotoIndex >= newPhotos.length) {
-      const safeIdx = Math.max(0, newPhotos.length - 1);
-      setCurrentPhotoIndex(safeIdx);
-      localStorage.setItem('alamin_active_photo_index', safeIdx.toString());
-    }
+    // Broadcast to Firestore Cloud & Server
+    await savePortfolioToServer(portfolioData, newPhotos);
   };
 
-  // Manual cycle when user clicks the reload button on Hero
-  const handleNextPhoto = () => {
-    if (photos.length === 0) return;
-    setCurrentPhotoIndex((prev) => {
-      const next = (prev + 1) % photos.length;
-      localStorage.setItem('alamin_active_photo_index', next.toString());
-      return next;
-    });
-  };
-
-  const handleSectionSelect = (
-    section: 'home' | 'experience' | 'skills' | 'projects' | 'achievements' | 'education'
-  ) => {
+  const handleSectionSelect = (section: 'home' | 'experience' | 'skills' | 'projects' | 'achievements' | 'education') => {
     setSelectedSection(section);
     if (section === 'home') {
+      setDetailModalSection(null);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       setDetailModalSection(section);
     }
   };
 
-  const activePhoto = photos[currentPhotoIndex] || photos[0];
+  // Profile photo cycle
+  const handleNextPhoto = () => {
+    if (photos.length > 0) {
+      setCurrentPhotoIndex((prev) => (prev + 1) % photos.length);
+    }
+  };
 
-  // If on /admin route, display Admin Dashboard
+  const activePhoto: ProfilePhoto = (photos.length > 0 && photos[currentPhotoIndex])
+    ? photos[currentPhotoIndex]
+    : DEFAULT_PROFILE_PHOTOS[0];
+
+  // Active theme calculations
+  const theme = portfolioData.theme || {};
+  const isDark = theme.textColorMode === 'light';
+
+  // Compute live dynamic styles based on admin theme parameters
+  const getBackgroundStyles = () => {
+    return generateBackgroundStyles(theme);
+  };
+
+  // If currently on /admin route, render the full-featured Admin Panel
   if (currentRoute === 'admin') {
     return (
       <AdminDashboard
         portfolioData={portfolioData}
-        photos={photos}
         onUpdatePortfolioData={handleUpdatePortfolioData}
+        photos={photos}
         onUpdatePhotos={handleUpdatePhotos}
         onNavigateHome={() => navigateToRoute('portfolio')}
       />
     );
   }
 
-  // Format footer copyright text
-  const currentYear = new Date().getFullYear().toString();
-  const rawFooterText = portfolioData.footer?.copyrightText || `© {year} ${portfolioData.name}. Built with Next.js & Tailwind CSS.`;
-  const formattedFooterText = rawFooterText.replace(/\{year\}/g, currentYear);
+  // Footer data resolution with fallback defaults
+  const customFooterHtml = portfolioData.footer?.customHtml || '';
+  const copyrightText = portfolioData.footer?.copyrightText || '© {year} {name}. All rights reserved.';
+  const formattedFooterText = copyrightText
+    .replace('{year}', new Date().getFullYear().toString())
+    .replace('{name}', portfolioData.name || 'Al Amin Islam');
 
-  // Dynamic Theme & Background Calculation
-  const theme = portfolioData.theme || {
-    preset: 'blueprint',
-    backgroundColor: '#ffffff',
-    patternType: 'blueprint',
-    gridColor: '#38bdf8',
-    gridSize: 34,
-    patternOpacity: 18,
-    textColorMode: 'dark',
-    accentColor: '#0284c7'
-  };
+  const footerLinks: FooterLinkItem[] = portfolioData.footer?.links || [
+    { id: '1', label: 'Developed by Al Amin', url: 'https://github.com/alaminislam3504', openNewTab: true },
+    { id: '2', label: 'Facebook', url: 'https://facebook.com', openNewTab: true }
+  ];
 
-  const isDark = theme.textColorMode === 'light';
-
-  const getBackgroundStyles = (): React.CSSProperties => {
-    return generateBackgroundStyles(portfolioData.theme);
-  };
-
-  const footerLinks = portfolioData.footer?.links || [];
-  const customFooterHtml = portfolioData.footer?.customHtml;
-
-  // Public Home Portfolio View
   return (
     <div
       style={getBackgroundStyles()}
@@ -348,7 +258,7 @@ export default function App() {
           {/* Right: Custom Added Links (Facebook, Developed by, etc.) & Navigation */}
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
             {/* User Custom Footer Links */}
-            {footerLinks.map((link, idx) => (
+            {footerLinks.map((link: FooterLinkItem, idx: number) => (
               <React.Fragment key={link.id || idx}>
                 <a
                   href={link.url}
