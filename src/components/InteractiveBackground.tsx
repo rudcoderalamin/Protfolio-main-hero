@@ -79,7 +79,25 @@ export const InteractiveBackground: React.FC<InteractiveBackgroundProps> = ({ th
       }
     };
 
+    const isInsideHero = (clientX: number, clientY: number): boolean => {
+      const heroEl = document.getElementById('hero-section');
+      if (!heroEl) return false;
+      const rect = heroEl.getBoundingClientRect();
+      return (
+        clientX >= rect.left &&
+        clientX <= rect.right &&
+        clientY >= rect.top &&
+        clientY <= rect.bottom
+      );
+    };
+
     const handlePointerMove = (e: PointerEvent | MouseEvent) => {
+      // Restrict mouse tracking and water ripple drops strictly to the hero section
+      if (!isInsideHero(e.clientX, e.clientY)) {
+        mousePos.current.active = false;
+        return;
+      }
+
       mousePos.current.targetX = e.clientX;
       mousePos.current.targetY = e.clientY;
       mousePos.current.active = true;
@@ -95,6 +113,7 @@ export const InteractiveBackground: React.FC<InteractiveBackgroundProps> = ({ th
     };
 
     const handlePointerDown = (e: PointerEvent | MouseEvent) => {
+      if (!isInsideHero(e.clientX, e.clientY)) return;
       if (interactiveEffect === 'water_ripples') {
         spawnRipple(e.clientX, e.clientY, true);
       }

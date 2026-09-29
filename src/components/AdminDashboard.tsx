@@ -43,9 +43,11 @@ import {
   ArrowDown,
   X,
   Circle,
-  Square
+  Square,
+  Crop,
+  User
 } from 'lucide-react';
-import { ProfilePhoto, PhotoRotationConfig } from '../data/portfolioData';
+import { ProfilePhoto, PhotoRotationConfig, ServiceItem, AboutConfig } from '../data/portfolioData';
 import {
   PortfolioDataType,
   getAdminPassword,
@@ -64,6 +66,7 @@ import {
 } from '../utils/portfolioStorage';
 import { AdminMessagesTab } from './AdminMessagesTab';
 import { THEME_PRESETS, colorToHex, generateBackgroundStyles } from '../utils/themeEngine';
+import { CircularFaviconCropperModal } from './CircularFaviconCropperModal';
 
 interface AdminDashboardProps {
   portfolioData: PortfolioDataType;
@@ -76,6 +79,8 @@ interface AdminDashboardProps {
 type TabType =
   | 'messages'
   | 'general'
+  | 'about'
+  | 'services'
   | 'photos'
   | 'favicon'
   | 'stats'
@@ -156,6 +161,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const logoFileInputRef = useRef<HTMLInputElement>(null);
   const faviconFileInputRef = useRef<HTMLInputElement>(null);
   const importFileRef = useRef<HTMLInputElement>(null);
+
+  // Circular Favicon Cropper Modal State (react-easy-crop)
+  const [isFaviconCropperOpen, setIsFaviconCropperOpen] = useState<boolean>(false);
+  const [faviconCropImageSrc, setFaviconCropImageSrc] = useState<string>('');
 
   // Security Form State
   const [currentPasswordInput, setCurrentPasswordInput] = useState('');
@@ -280,33 +289,42 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  // Favicon Upload Handler (Local file from Device to Compressed Base64)
+  // Favicon Upload Handler: picks file and opens Circular Cropper modal
   const handleFaviconFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
-      const base64Url = await compressImageFile(file, 256, 0.9);
-      let finalFavicon = base64Url;
-      const shouldBeCircle = formData.faviconCircle !== false;
-      if (shouldBeCircle) {
-        finalFavicon = await createCircularFavicon(base64Url);
-      }
-      const updated = {
-        ...formData,
-        faviconUrl: finalFavicon,
-        faviconOriginalUrl: base64Url,
-        faviconCircle: shouldBeCircle
-      };
-      setFormData(updated);
-      onUpdatePortfolioData(updated);
-      updateBrowserFavicon(finalFavicon);
-      setSaveSuccessMessage('Favicon icon updated successfully! Browser tab icon updated.');
-      setTimeout(() => setSaveSuccessMessage(''), 3000);
+      // Compress with high resolution for crisp cropping
+      const base64Url = await compressImageFile(file, 1024, 0.95);
+      setFaviconCropImageSrc(base64Url);
+      setIsFaviconCropperOpen(true);
       if (faviconFileInputRef.current) faviconFileInputRef.current.value = '';
     } catch (err) {
       alert('Error reading favicon file.');
     }
+  };
+
+  // Open Visual Cropper on current active favicon or photo
+  const handleOpenFaviconVisualCropper = () => {
+    const current = formData.faviconOriginalUrl || formData.faviconUrl || photosList[0]?.url || '/Profile-Photo.png';
+    setFaviconCropImageSrc(current);
+    setIsFaviconCropperOpen(true);
+  };
+
+  // Callback when user confirms visual crop in CircularFaviconCropperModal
+  const handleFaviconCropComplete = (croppedDataUrl: string, originalSrc: string) => {
+    const updated = {
+      ...formData,
+      faviconUrl: croppedDataUrl,
+      faviconOriginalUrl: originalSrc,
+      faviconCircle: true
+    };
+    setFormData(updated);
+    onUpdatePortfolioData(updated);
+    updateBrowserFavicon(croppedDataUrl);
+    setSaveSuccessMessage('Circular Favicon cropped and updated successfully! Browser tab icon updated.');
+    setTimeout(() => setSaveSuccessMessage(''), 3000);
   };
 
   // Convert current favicon into circular icon
@@ -697,7 +715,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-2 sticky top-20 space-y-1">
             <div className="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
               <span>Management Sections</span>
-              <span className="text-[10px] text-sky-400 font-mono hidden md:inline">16 Tabs</span>
+              <span className="text-[10px] text-sky-400 font-mono hidden md:inline">18 Tabs</span>
             </div>
 
             {/* Mobile Tab Select Dropdown (Quick Jump on Mobile / Small screens) */}
@@ -709,6 +727,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               >
                 <option value="messages">✉️ Inquiries & Messages</option>
                 <option value="general">👤 Profile & Bio</option>
+                <option value="about">🧑‍💻 About Me (পরিচয় ও কাজের ধরণ)</option>
+                <option value="services">🛠️ Services ({formData.services?.length || 0})</option>
                 <option value="photos">🖼️ Photos ({photosList.length})</option>
                 <option value="favicon">🌐 Title Bar & Favicon (টাইটেল ও ফেভিকন)</option>
                 <option value="stats">📊 Stats & Buttons</option>
@@ -736,6 +756,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 badge: unreadMessagesCount
               },
               { id: 'general', label: 'Profile & Bio', icon: Type },
+              { id: 'about', label: 'About Me (পরিচয় ও কাজের ধরণ)', icon: User },
+              { id: 'services', label: `Services (${formData.services?.length || 0})`, icon: Briefcase },
               { id: 'photos', label: `Photos (${photosList.length})`, icon: ImageIcon },
               { id: 'favicon', label: 'Title Bar & Favicon (টাইটেল ও ফেভিকন)', icon: Globe },
               { id: 'stats', label: 'Stats & Buttons', icon: Sliders },
@@ -1242,7 +1264,518 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
           )}
 
-          {/* TAB 2: PHOTOS MANAGEMENT */}
+          {/* TAB 1.5: ABOUT ME SECTION (পরিচয়, শিক্ষাগত যোগ্যতা ও কাজের ধরণ) */}
+          {activeTab === 'about' && (
+            <div className="space-y-6">
+              <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <User className="w-5 h-5 text-sky-400" />
+                    <span>About Me (নিজের পরিচয়, শিক্ষাগত ব্যাকগ্রাউন্ড ও কাজের ধরণ)</span>
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    Customize your personal introduction, educational qualification summary, work philosophy, and core highlights.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSaveData}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold cursor-pointer transition-colors shadow-sm"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save Changes</span>
+                </button>
+              </div>
+
+              {/* Greeting */}
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+                <label className="block text-xs font-semibold text-slate-300">
+                  Greeting / Headline
+                </label>
+                <input
+                  type="text"
+                  value={formData.about?.greeting ?? "Hi, I'm Al Amin Islam"}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      about: {
+                        greeting: e.target.value,
+                        bioSummary: formData.about?.bioSummary || '',
+                        educationalBackground: formData.about?.educationalBackground || '',
+                        workPhilosophy: formData.about?.workPhilosophy || '',
+                        highlights: formData.about?.highlights || []
+                      }
+                    })
+                  }
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
+                  placeholder="Hi, I'm Al Amin Islam"
+                />
+              </div>
+
+              {/* 1. Who I Am (নিজের পরিচয়) */}
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-sky-400 uppercase tracking-wider flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    <span>1. Who I Am / Identity & Bio (নিজের পরিচয়)</span>
+                  </label>
+                  {formData.about?.bioSummary && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          about: {
+                            greeting: formData.about?.greeting || '',
+                            bioSummary: '',
+                            educationalBackground: formData.about?.educationalBackground || '',
+                            workPhilosophy: formData.about?.workPhilosophy || '',
+                            highlights: formData.about?.highlights || []
+                          }
+                        })
+                      }
+                      className="text-[10px] text-slate-400 hover:text-white"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <textarea
+                  rows={4}
+                  value={formData.about?.bioSummary ?? ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      about: {
+                        greeting: formData.about?.greeting || '',
+                        bioSummary: e.target.value,
+                        educationalBackground: formData.about?.educationalBackground || '',
+                        workPhilosophy: formData.about?.workPhilosophy || '',
+                        highlights: formData.about?.highlights || []
+                      }
+                    })
+                  }
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500 resize-none leading-relaxed"
+                  placeholder="Describe your background, core tech stack, passion, and engineering approach..."
+                />
+              </div>
+
+              {/* 2. Educational Qualification (শিক্ষাগত যোগ্যতা) */}
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                    <GraduationCap className="w-4 h-4" />
+                    <span>2. Education & Academic Background (শিক্ষাগত যোগ্যতা)</span>
+                  </label>
+                  {formData.about?.educationalBackground && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          about: {
+                            greeting: formData.about?.greeting || '',
+                            bioSummary: formData.about?.bioSummary || '',
+                            educationalBackground: '',
+                            workPhilosophy: formData.about?.workPhilosophy || '',
+                            highlights: formData.about?.highlights || []
+                          }
+                        })
+                      }
+                      className="text-[10px] text-slate-400 hover:text-white"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <textarea
+                  rows={4}
+                  value={formData.about?.educationalBackground ?? ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      about: {
+                        greeting: formData.about?.greeting || '',
+                        bioSummary: formData.about?.bioSummary || '',
+                        educationalBackground: e.target.value,
+                        workPhilosophy: formData.about?.workPhilosophy || '',
+                        highlights: formData.about?.highlights || []
+                      }
+                    })
+                  }
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500 resize-none leading-relaxed"
+                  placeholder="Diploma in Computer Science & Technology, polytechnic institutions, academic training, and algorithmic foundations..."
+                />
+              </div>
+
+              {/* 3. Work Style & Philosophy (কাজের ধরণ) */}
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    <span>3. Work Style & Engineering Philosophy (কাজের ধরণ)</span>
+                  </label>
+                  {formData.about?.workPhilosophy && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          about: {
+                            greeting: formData.about?.greeting || '',
+                            bioSummary: formData.about?.bioSummary || '',
+                            educationalBackground: formData.about?.educationalBackground || '',
+                            workPhilosophy: '',
+                            highlights: formData.about?.highlights || []
+                          }
+                        })
+                      }
+                      className="text-[10px] text-slate-400 hover:text-white"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <textarea
+                  rows={4}
+                  value={formData.about?.workPhilosophy ?? ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      about: {
+                        greeting: formData.about?.greeting || '',
+                        bioSummary: formData.about?.bioSummary || '',
+                        educationalBackground: formData.about?.educationalBackground || '',
+                        workPhilosophy: e.target.value,
+                        highlights: formData.about?.highlights || []
+                      }
+                    })
+                  }
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500 resize-none leading-relaxed"
+                  placeholder="Detail your work ethic, agile methodology, test-driven approach, clean code architecture, and delivery speed..."
+                />
+              </div>
+
+              {/* 4. Core Competencies & Principles (Highlights) */}
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                    <Check className="w-4 h-4" />
+                    <span>4. Core Competencies & Highlights (চারটি প্রধান পয়েন্ট)</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cur = formData.about?.highlights || [];
+                      setFormData({
+                        ...formData,
+                        about: {
+                          greeting: formData.about?.greeting || '',
+                          bioSummary: formData.about?.bioSummary || '',
+                          educationalBackground: formData.about?.educationalBackground || '',
+                          workPhilosophy: formData.about?.workPhilosophy || '',
+                          highlights: [...cur, 'New core competency or architectural skill']
+                        }
+                      });
+                    }}
+                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-sky-300 rounded-lg text-xs font-medium flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Highlight</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {(formData.about?.highlights || []).map((highlight: string, hIdx: number) => (
+                    <div key={hIdx} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={highlight}
+                        onChange={(e) => {
+                          const updated = [...(formData.about?.highlights || [])];
+                          updated[hIdx] = e.target.value;
+                          setFormData({
+                            ...formData,
+                            about: {
+                              greeting: formData.about?.greeting || '',
+                              bioSummary: formData.about?.bioSummary || '',
+                              educationalBackground: formData.about?.educationalBackground || '',
+                              workPhilosophy: formData.about?.workPhilosophy || '',
+                              highlights: updated
+                            }
+                          });
+                        }}
+                        className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-sky-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = (formData.about?.highlights || []).filter((_: string, i: number) => i !== hIdx);
+                          setFormData({
+                            ...formData,
+                            about: {
+                              greeting: formData.about?.greeting || '',
+                              bioSummary: formData.about?.bioSummary || '',
+                              educationalBackground: formData.about?.educationalBackground || '',
+                              workPhilosophy: formData.about?.workPhilosophy || '',
+                              highlights: updated
+                            }
+                          });
+                        }}
+                        className="p-1.5 rounded-lg bg-rose-950/40 border border-rose-800/50 text-rose-400 hover:bg-rose-900/60 transition-colors cursor-pointer"
+                        title="Delete highlight"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 1.6: SERVICES SECTION (ওয়েব, ফুল স্ট্যাক, UI/UX, গ্রাফিক্স, অ্যান্ড্রয়েড) */}
+          {activeTab === 'services' && (
+            <div className="space-y-6">
+              <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <Briefcase className="w-5 h-5 text-sky-400" />
+                    <span>Services & Solutions ({formData.services?.length || 0})</span>
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    Add, edit, reorder or remove your engineering services: Web Development, Full Stack Web, UI/UX Design, Graphics Design, and Android Apps.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newSvc: ServiceItem = {
+                        id: `svc-${Date.now()}`,
+                        title: 'New Service Offering',
+                        description: 'Detailed description of the service and deliverable architecture.',
+                        icon: 'web',
+                        tags: ['Custom Architecture', 'Performance', 'Responsive']
+                      };
+                      const updated = [newSvc, ...(formData.services || [])];
+                      setFormData({ ...formData, services: updated });
+                    }}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Blank Service</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveData}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold cursor-pointer transition-colors shadow-sm"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Save Changes</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Services List */}
+              <div className="space-y-4">
+                {(!formData.services || formData.services.length === 0) ? (
+                  <div className="p-8 rounded-xl bg-slate-950 border border-slate-800 text-center text-xs text-slate-400 space-y-3">
+                    <p>No services found in portfolio.</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const defaults: ServiceItem[] = [
+                          {
+                            id: 'svc-web',
+                            title: 'Web Development',
+                            description: 'Modern, fast, and responsive web applications built with clean code and high performance.',
+                            icon: 'web',
+                            tags: ['React & Next.js', 'Tailwind CSS', 'Responsive Layouts']
+                          },
+                          {
+                            id: 'svc-fullstack',
+                            title: 'Full Stack Web Development',
+                            description: 'End-to-end fullstack systems combining robust backend APIs with reactive frontend user interfaces.',
+                            icon: 'fullstack',
+                            tags: ['REST & GraphQL', 'PostgreSQL & MongoDB', 'Real-time WebSockets']
+                          },
+                          {
+                            id: 'svc-uiux',
+                            title: 'UI/UX Design',
+                            description: 'Intuitive, user-centered interface designs crafted with Figma and modern aesthetic principles.',
+                            icon: 'uiux',
+                            tags: ['Figma Prototypes', 'Design Systems', 'Micro-interactions']
+                          },
+                          {
+                            id: 'svc-graphics',
+                            title: 'Graphics Design',
+                            description: 'Striking visual assets, brand identities, marketing banners, and bespoke vector illustrations.',
+                            icon: 'graphics',
+                            tags: ['Brand Identity', 'Marketing Banners', 'Vector Illustration']
+                          },
+                          {
+                            id: 'svc-android',
+                            title: 'Android App Development',
+                            description: 'Native and cross-platform Android mobile applications with fluent animations and offline caching.',
+                            icon: 'android',
+                            tags: ['Kotlin & Compose', 'Material Design 3', 'Offline SQLite Sync']
+                          }
+                        ];
+                        setFormData({ ...formData, services: defaults });
+                      }}
+                      className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold cursor-pointer"
+                    >
+                      Load Standard 5 Services (Web, Full Stack, UI/UX, Graphics, Android)
+                    </button>
+                  </div>
+                ) : (
+                  formData.services.map((svc: ServiceItem, sIdx: number) => (
+                    <div key={svc.id || sIdx} className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-4">
+                      {/* Top Bar: Title, Category Icon, Reorder, Delete */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-1">
+                          <input
+                            type="text"
+                            value={svc.title}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = (formData.services || []).map((item: ServiceItem, i: number) =>
+                                i === sIdx ? { ...item, title: val } : item
+                              );
+                              setFormData({ ...formData, services: updated });
+                            }}
+                            placeholder="Service Title (e.g. Web Development)"
+                            className="text-sm font-bold text-white bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 focus:border-sky-500 focus:outline-none flex-1"
+                          />
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          {/* Service Category / Icon selector */}
+                          <select
+                            value={svc.icon || 'web'}
+                            onChange={(e) => {
+                              const val = e.target.value as 'web' | 'fullstack' | 'uiux' | 'graphics' | 'android';
+                              const updated = (formData.services || []).map((item: ServiceItem, i: number) =>
+                                i === sIdx ? { ...item, icon: val } : item
+                              );
+                              setFormData({ ...formData, services: updated });
+                            }}
+                            className="px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-sky-400 font-semibold focus:outline-none focus:border-sky-500"
+                          >
+                            <option value="web">🌐 Web Development</option>
+                            <option value="fullstack">⚡ Full Stack Web</option>
+                            <option value="uiux">🎨 UI/UX Design</option>
+                            <option value="graphics">✒️ Graphics Design</option>
+                            <option value="android">📱 Android App</option>
+                          </select>
+
+                          {/* Reorder controls */}
+                          <button
+                            type="button"
+                            disabled={sIdx === 0}
+                            onClick={() => {
+                              if (sIdx === 0) return;
+                              const updated = [...(formData.services || [])];
+                              const temp = updated[sIdx - 1];
+                              updated[sIdx - 1] = updated[sIdx];
+                              updated[sIdx] = temp;
+                              setFormData({ ...formData, services: updated });
+                            }}
+                            className="p-1 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                            title="Move Up"
+                          >
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={sIdx === (formData.services || []).length - 1}
+                            onClick={() => {
+                              if (sIdx === (formData.services || []).length - 1) return;
+                              const updated = [...(formData.services || [])];
+                              const temp = updated[sIdx + 1];
+                              updated[sIdx + 1] = updated[sIdx];
+                              updated[sIdx] = temp;
+                              setFormData({ ...formData, services: updated });
+                            }}
+                            className="p-1 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                            title="Move Down"
+                          >
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = (formData.services || []).filter((_: ServiceItem, i: number) => i !== sIdx);
+                              setFormData({ ...formData, services: updated });
+                            }}
+                            className="p-1 text-rose-400 hover:text-rose-300 cursor-pointer ml-1"
+                            title="Delete service"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Description */}
+                      <div>
+                        <label className="block text-[11px] text-slate-400 mb-1">Service Description</label>
+                        <textarea
+                          rows={2}
+                          value={svc.description}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const updated = (formData.services || []).map((item: ServiceItem, i: number) =>
+                              i === sIdx ? { ...item, description: val } : item
+                            );
+                            setFormData({ ...formData, services: updated });
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 resize-none focus:outline-none focus:border-sky-500"
+                          placeholder="Description of this service..."
+                        />
+                      </div>
+
+                      {/* Tags / Deliverables (comma separated or editable pills) */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-[11px] text-slate-400">Features / Tags (comma separated)</label>
+                          {svc.tags && svc.tags.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = (formData.services || []).map((item: ServiceItem, i: number) =>
+                                  i === sIdx ? { ...item, tags: [] } : item
+                                );
+                                setFormData({ ...formData, services: updated });
+                              }}
+                              className="text-[10px] text-slate-400 hover:text-white"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          value={svc.tags ? svc.tags.join(', ') : ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const updatedTags = val.length > 0 ? val.split(',').map((t: string) => t.trim()).filter(Boolean) : [];
+                            const updated = (formData.services || []).map((item: ServiceItem, i: number) =>
+                              i === sIdx ? { ...item, tags: updatedTags } : item
+                            );
+                            setFormData({ ...formData, services: updated });
+                          }}
+                          placeholder="e.g. React & Next.js, Tailwind CSS, Mobile Responsive"
+                          className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-sky-500"
+                        />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
           {activeTab === 'photos' && (
             <div className="space-y-6">
               <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
@@ -1683,6 +2216,380 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
           )}
 
+          {/* TAB 1.5: ABOUT ME CONFIGURATION */}
+          {activeTab === 'about' && (
+            <div className="space-y-6">
+              <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-white">About Me Configuration (নিজের পরিচয় ও কাজের ধরণ)</h2>
+                  <p className="text-xs text-slate-400">Configure personal introduction, education overview, work style, and core principles</p>
+                </div>
+                <button
+                  onClick={handleSaveData}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save Changes</span>
+                </button>
+              </div>
+
+              {/* Greeting / Headline */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Section Greeting / Headline
+                </label>
+                <input
+                  type="text"
+                  value={formData.about?.greeting ?? ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      about: { ...formData.about, greeting: e.target.value } as any
+                    })
+                  }
+                  placeholder="Hi, I'm Al Amin Islam"
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              {/* Pillar 1: Who I Am (নিজের পরিচয়) */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Who I Am / Bio Summary (নিজের পরিচয়)
+                </label>
+                <textarea
+                  rows={3}
+                  value={formData.about?.bioSummary ?? ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      about: { ...formData.about, bioSummary: e.target.value } as any
+                    })
+                  }
+                  placeholder="A passionate Fullstack Web Developer and dedicated Competitive Programmer..."
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500 resize-none leading-relaxed"
+                />
+              </div>
+
+              {/* Pillar 2: Educational Background (শিক্ষাগত যোগ্যতা) */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Educational Qualification Overview (শিক্ষাগত যোগ্যতা)
+                </label>
+                <textarea
+                  rows={3}
+                  value={formData.about?.educationalBackground ?? ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      about: { ...formData.about, educationalBackground: e.target.value } as any
+                    })
+                  }
+                  placeholder="Diploma in Computer Science & Technology from Tangail Polytechnic Institute..."
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500 resize-none leading-relaxed"
+                />
+              </div>
+
+              {/* Pillar 3: Work Style & Philosophy (কাজের ধরণ) */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Working Style & Philosophy (কাজের ধরণ)
+                </label>
+                <textarea
+                  rows={3}
+                  value={formData.about?.workPhilosophy ?? ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      about: { ...formData.about, workPhilosophy: e.target.value } as any
+                    })
+                  }
+                  placeholder="I believe in clean, modular code, agile iterations, and performance-first architecture..."
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500 resize-none leading-relaxed"
+                />
+              </div>
+
+              {/* Core Principles & Highlights */}
+              <div className="space-y-3 pt-2 border-t border-slate-800">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Core Principles & Highlights</h3>
+                    <p className="text-xs text-slate-400">Bulleted points displayed in the bottom highlight banner of About Me</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentHighlights = formData.about?.highlights || [];
+                      setFormData({
+                        ...formData,
+                        about: {
+                          ...formData.about,
+                          highlights: [...currentHighlights, 'New Principle or Competency']
+                        } as any
+                      });
+                    }}
+                    className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Highlight</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {(formData.about?.highlights || []).map((highlight, hIdx) => (
+                    <div key={hIdx} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={highlight}
+                        onChange={(e) => {
+                          const updated = [...(formData.about?.highlights || [])];
+                          updated[hIdx] = e.target.value;
+                          setFormData({
+                            ...formData,
+                            about: { ...formData.about, highlights: updated } as any
+                          });
+                        }}
+                        className="flex-1 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-sky-500"
+                      />
+                      <button
+                        type="button"
+                        disabled={hIdx === 0}
+                        onClick={() => {
+                          if (hIdx === 0) return;
+                          const updated = [...(formData.about?.highlights || [])];
+                          const temp = updated[hIdx - 1];
+                          updated[hIdx - 1] = updated[hIdx];
+                          updated[hIdx] = temp;
+                          setFormData({
+                            ...formData,
+                            about: { ...formData.about, highlights: updated } as any
+                          });
+                        }}
+                        className="p-1 text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
+                        title="Move Up"
+                      >
+                        <ArrowUp className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={hIdx === (formData.about?.highlights || []).length - 1}
+                        onClick={() => {
+                          if (hIdx === (formData.about?.highlights || []).length - 1) return;
+                          const updated = [...(formData.about?.highlights || [])];
+                          const temp = updated[hIdx + 1];
+                          updated[hIdx + 1] = updated[hIdx];
+                          updated[hIdx] = temp;
+                          setFormData({
+                            ...formData,
+                            about: { ...formData.about, highlights: updated } as any
+                          });
+                        }}
+                        className="p-1 text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
+                        title="Move Down"
+                      >
+                        <ArrowDown className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = (formData.about?.highlights || []).filter((_, i) => i !== hIdx);
+                          setFormData({
+                            ...formData,
+                            about: { ...formData.about, highlights: updated } as any
+                          });
+                        }}
+                        className="p-1 text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 rounded transition-colors cursor-pointer"
+                        title="Remove Highlight"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 1.7: SERVICES CONFIGURATION */}
+          {activeTab === 'services' && (
+            <div className="space-y-6">
+              <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-white">Services Offered ({formData.services?.length || 0})</h2>
+                  <p className="text-xs text-slate-400">Add, edit, reorder or remove services (Web, Fullstack, UI/UX, Graphics, Android, etc.)</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newService = {
+                        id: `srv-${Date.now()}`,
+                        title: '',
+                        description: '',
+                        icon: 'web' as const,
+                        tags: []
+                      };
+                      const updated = [...(formData.services || []), newService];
+                      setFormData({ ...formData, services: updated });
+                    }}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Blank Service</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newService = {
+                        id: `srv-${Date.now()}`,
+                        title: 'API & Microservices Architecture',
+                        description: 'High-speed RESTful and GraphQL backend microservices with Redis caching and Docker containerization.',
+                        icon: 'fullstack' as const,
+                        tags: ['Node.js', 'Express', 'Redis', 'Docker', 'REST API']
+                      };
+                      const updated = [...(formData.services || []), newService];
+                      setFormData({ ...formData, services: updated });
+                    }}
+                    className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add With Template</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Service Cards */}
+              <div className="space-y-4">
+                {(!formData.services || formData.services.length === 0) ? (
+                  <div className="p-8 rounded-xl bg-slate-950 border border-slate-800 text-center text-xs text-slate-400">
+                    No services configured yet. Click &quot;Add Blank Service&quot; to insert one.
+                  </div>
+                ) : (
+                  formData.services.map((service, sIdx) => (
+                    <div key={service.id || sIdx} className="p-4 sm:p-5 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-1">
+                          <input
+                            type="text"
+                            value={service.title}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = (formData.services || []).map((item, i) =>
+                                i === sIdx ? { ...item, title: val } : item
+                              );
+                              setFormData({ ...formData, services: updated });
+                            }}
+                            placeholder="Service Title (e.g. Web Development)"
+                            className="text-sm font-bold text-white bg-slate-900 border border-slate-800 rounded px-2.5 py-1.5 focus:border-sky-500 focus:outline-none flex-1"
+                          />
+                          <select
+                            value={service.icon}
+                            onChange={(e) => {
+                              const val = e.target.value as any;
+                              const updated = (formData.services || []).map((item, i) =>
+                                i === sIdx ? { ...item, icon: val } : item
+                              );
+                              setFormData({ ...formData, services: updated });
+                            }}
+                            className="bg-slate-900 border border-slate-800 rounded px-2 py-1.5 text-xs text-sky-400 focus:outline-none focus:border-sky-500"
+                          >
+                            <option value="fullstack">Icon: Full-Stack Layers</option>
+                            <option value="web">Icon: Web Globe</option>
+                            <option value="uiux">Icon: UI/UX Palette</option>
+                            <option value="graphics">Icon: Graphics Pen Tool</option>
+                            <option value="android">Icon: Android Mobile</option>
+                          </select>
+                        </div>
+
+                        {/* Reorder and Delete */}
+                        <div className="flex items-center gap-1 self-end sm:self-auto">
+                          <button
+                            type="button"
+                            disabled={sIdx === 0}
+                            onClick={() => {
+                              if (sIdx === 0) return;
+                              const updated = [...(formData.services || [])];
+                              const temp = updated[sIdx - 1];
+                              updated[sIdx - 1] = updated[sIdx];
+                              updated[sIdx] = temp;
+                              setFormData({ ...formData, services: updated });
+                            }}
+                            className="p-1 text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
+                            title="Move Up"
+                          >
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={sIdx === (formData.services || []).length - 1}
+                            onClick={() => {
+                              if (sIdx === (formData.services || []).length - 1) return;
+                              const updated = [...(formData.services || [])];
+                              const temp = updated[sIdx + 1];
+                              updated[sIdx + 1] = updated[sIdx];
+                              updated[sIdx] = temp;
+                              setFormData({ ...formData, services: updated });
+                            }}
+                            className="p-1 text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
+                            title="Move Down"
+                          >
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = (formData.services || []).filter((_, i) => i !== sIdx);
+                              setFormData({ ...formData, services: updated });
+                            }}
+                            className="p-1 text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 rounded transition-colors cursor-pointer ml-1"
+                            title="Delete Service"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] text-slate-400 mb-1">Description</label>
+                        <textarea
+                          rows={2}
+                          value={service.description}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const updated = (formData.services || []).map((item, i) =>
+                              i === sIdx ? { ...item, description: val } : item
+                            );
+                            setFormData({ ...formData, services: updated });
+                          }}
+                          placeholder="Description of the service deliverables and technologies..."
+                          className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 resize-none focus:outline-none focus:border-sky-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] text-slate-400 mb-1">Tags (Comma-separated)</label>
+                        <input
+                          type="text"
+                          value={service.tags ? service.tags.join(', ') : ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const tagsArr = val ? val.split(',').map((t) => t.trim()).filter(Boolean) : [];
+                            const updated = (formData.services || []).map((item, i) =>
+                              i === sIdx ? { ...item, tags: tagsArr } : item
+                            );
+                            setFormData({ ...formData, services: updated });
+                          }}
+                          placeholder="React.js, Node.js, Express, MongoDB..."
+                          className="w-full px-2.5 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white focus:outline-none focus:border-sky-500"
+                        />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
           {/* TAB 2.5: BROWSER TAB TITLE & FAVICON MANAGER (User-Requested Dedicated Section) */}
           {activeTab === 'favicon' && (
             <div className="space-y-6">
@@ -1816,6 +2723,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <p className="text-xs text-slate-400 mt-1">
                         আইকনটি গোল (বৃত্তাকার) অথবা চারকোনা (আসল আকার) হিসেবে প্রদর্শন করুন।
                       </p>
+                    </div>
+                  </div>
+
+                  {/* Interactive Visual Circular Cropper (react-easy-crop) Box */}
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-sky-950/70 via-slate-900 to-sky-900/40 border border-sky-500/40 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-sky-500/20 text-sky-400 border border-sky-500/40 flex items-center justify-center shrink-0 shadow-inner">
+                          <Crop className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                            <span>Visual Circular Cropper (ভিজ্যুয়াল বৃত্তাকার ক্রপার)</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-950 border border-sky-700 text-sky-300 font-mono">
+                              react-easy-crop
+                            </span>
+                          </h4>
+                          <p className="text-[11px] text-slate-300 mt-0.5">
+                            ছবি ড্র্যাগ, জুম ও রোটেট করে ফেভিকনের জন্য নিখুঁত বৃত্তাকার অংশ সিলেক্ট করুন।
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleOpenFaviconVisualCropper}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-sky-500/25 transition-all cursor-pointer shrink-0"
+                      >
+                        <Crop className="w-4 h-4" />
+                        <span>Launch Visual Cropper (ক্রপার খুলুন)</span>
+                      </button>
                     </div>
                   </div>
 
@@ -2070,35 +3007,46 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
 
                     {/* Webpage Content Preview Header */}
-                    <div className="p-4 bg-slate-950/60 flex items-center gap-4">
-                      <div className={`relative w-14 h-14 overflow-hidden border-2 border-sky-500/60 shrink-0 bg-slate-900 shadow-md ${
-                        formData.faviconCircle !== false ? 'rounded-full' : 'rounded-xl'
-                      }`}>
-                        <img
-                          src={formData.faviconUrl || '/Profile-Photo.png'}
-                          alt="Favicon Large"
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/Profile-Photo.png';
-                          }}
-                        />
+                    <div className="p-4 bg-slate-950/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-4">
+                        <div className={`relative w-14 h-14 overflow-hidden border-2 border-sky-500/60 shrink-0 bg-slate-900 shadow-md ${
+                          formData.faviconCircle !== false ? 'rounded-full' : 'rounded-xl'
+                        }`}>
+                          <img
+                            src={formData.faviconUrl || '/Profile-Photo.png'}
+                            alt="Favicon Large"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/Profile-Photo.png';
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-0.5">
+                          <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                            <span>Current Tab Title & Shape:</span>
+                            <span className={`text-[10px] px-2 py-0.2 rounded-full font-medium ${
+                              formData.faviconCircle !== false ? 'bg-sky-950 text-sky-300 border border-sky-800' : 'bg-slate-800 text-slate-300'
+                            }`}>
+                              {formData.faviconCircle !== false ? 'Circle (গোল)' : 'Square (চারকোনা)'}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-sky-400 font-medium truncate max-w-[240px]">
+                            {formData.browserTitle || `${formData.name || 'Al Amin Islam'} | Fullstack Web Developer`}
+                          </div>
+                          <div className="text-[10px] text-slate-400">
+                            Auto-rendered in browser tab at 16x16 / 32x32 / 64x64 Retina
+                          </div>
+                        </div>
                       </div>
-                      <div className="space-y-0.5">
-                        <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                          <span>Current Tab Title & Shape:</span>
-                          <span className={`text-[10px] px-2 py-0.2 rounded-full font-medium ${
-                            formData.faviconCircle !== false ? 'bg-sky-950 text-sky-300 border border-sky-800' : 'bg-slate-800 text-slate-300'
-                          }`}>
-                            {formData.faviconCircle !== false ? 'Circle (গোল)' : 'Square (চারকোনা)'}
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-sky-400 font-medium truncate max-w-[260px]">
-                          {formData.browserTitle || `${formData.name || 'Al Amin Islam'} | Fullstack Web Developer`}
-                        </div>
-                        <div className="text-[10px] text-slate-400">
-                          Auto-rendered in browser tab at 16x16 / 32x32 / 64x64 Retina
-                        </div>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={handleOpenFaviconVisualCropper}
+                        className="self-start sm:self-auto px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-sky-600 hover:text-white border border-slate-700 hover:border-sky-500 text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                        title="Adjust circular crop area using react-easy-crop"
+                      >
+                        <Crop className="w-3.5 h-3.5 text-sky-400" />
+                        <span>Crop Area</span>
+                      </button>
                     </div>
                   </div>
 
@@ -2672,10 +3620,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         id: `proj-${Date.now()}`,
                         title: '',
                         description: '',
-                        tech: [],
+                        tech: [] as string[],
                         metrics: '',
                         github: '',
-                        live: ''
+                        live: '',
+                        imageUrl: '',
+                        category: 'fullstack'
                       };
                       const updated = [newProj, ...(formData.projects || [])];
                       setFormData({ ...formData, projects: updated });
@@ -2695,7 +3645,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         tech: ['React', 'Node.js', 'Tailwind CSS'],
                         metrics: 'Improved workflow efficiency.',
                         github: 'https://github.com/alaminislam',
-                        live: 'https://alamin-islam-portfolio.vercel.app'
+                        live: 'https://alamin-islam-portfolio.vercel.app',
+                        imageUrl: '',
+                        category: 'fullstack'
                       };
                       const updated = [newProj, ...(formData.projects || [])];
                       setFormData({ ...formData, projects: updated });
@@ -2957,6 +3909,81 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             placeholder="https://github.com/..."
                             className="w-full px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white focus:outline-none focus:border-sky-500"
                           />
+                        </div>
+                      </div>
+
+                      {/* App Picture Upload & Category Selection */}
+                      <div className="pt-2 border-t border-slate-900 grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                        <div className="sm:col-span-3">
+                          <label className="block text-[10px] text-slate-400 mb-0.5">Project Category</label>
+                          <select
+                            value={proj.category || 'fullstack'}
+                            onChange={(e) => {
+                              const val = e.target.value as any;
+                              const updated = (formData.projects || []).map((item, i) =>
+                                i === pIdx ? { ...item, category: val } : item
+                              );
+                              setFormData({ ...formData, projects: updated });
+                            }}
+                            className="w-full px-2 py-1.5 bg-slate-900 border border-slate-800 rounded text-xs text-white focus:outline-none focus:border-sky-500"
+                          >
+                            <option value="fullstack">Fullstack Web</option>
+                            <option value="web">Frontend Web</option>
+                            <option value="android">Android Mobile App</option>
+                            <option value="uiux">UI/UX Design</option>
+                          </select>
+                        </div>
+
+                        <div className="sm:col-span-6">
+                          <label className="block text-[10px] text-slate-400 mb-0.5">App Picture / Screenshot URL</label>
+                          <input
+                            type="url"
+                            value={proj.imageUrl || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = (formData.projects || []).map((item, i) =>
+                                i === pIdx ? { ...item, imageUrl: val } : item
+                              );
+                              setFormData({ ...formData, projects: updated });
+                            }}
+                            placeholder="https://images.unsplash.com/... or upload below"
+                            className="w-full px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white focus:outline-none focus:border-sky-500"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-3 flex items-center gap-2 pt-3 sm:pt-0">
+                          <label className="flex-1 py-1.5 px-2.5 rounded-lg bg-sky-600/20 hover:bg-sky-600/30 border border-sky-500/40 text-sky-400 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-colors">
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>Upload Pic</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                try {
+                                  const compressed = await compressImageFile(file, 900, 0.8);
+                                  const updated = (formData.projects || []).map((item, i) =>
+                                    i === pIdx ? { ...item, imageUrl: compressed } : item
+                                  );
+                                  setFormData({ ...formData, projects: updated });
+                                } catch (err) {
+                                  console.error('Failed to compress project image:', err);
+                                }
+                              }}
+                            />
+                          </label>
+
+                          {proj.imageUrl && (
+                            <div className="relative w-8 h-8 rounded-md overflow-hidden border border-slate-700 shrink-0">
+                              <img
+                                src={proj.imageUrl}
+                                alt="preview"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -3520,7 +4547,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         title: '',
                         organization: '',
                         year: '',
-                        description: ''
+                        description: '',
+                        badge: 'Honors'
                       };
                       const updated = [newAch, ...(formData.achievements || [])];
                       setFormData({ ...formData, achievements: updated });
@@ -3538,7 +4566,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         title: 'Honor / Competition Title',
                         organization: 'Organization / Platform',
                         year: new Date().getFullYear().toString(),
-                        description: 'Details about the accomplishment or rating rank.'
+                        description: 'Details about the accomplishment or rating rank.',
+                        badge: 'Award Winner'
                       };
                       const updated = [newAch, ...(formData.achievements || [])];
                       setFormData({ ...formData, achievements: updated });
@@ -5002,6 +6031,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     />
                   </div>
                   <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Nav Item: About Me</label>
+                    <input
+                      type="text"
+                      value={formData.navbar?.navAbout ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          navbar: { ...formData.navbar, navAbout: e.target.value }
+                        })
+                      }
+                      placeholder="About Me"
+                      className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
                     <label className="block text-[10px] text-slate-400 mb-1">Nav Item: Skills</label>
                     <input
                       type="text"
@@ -5013,6 +6057,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         })
                       }
                       placeholder="Skills"
+                      className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Nav Item: Services</label>
+                    <input
+                      type="text"
+                      value={formData.navbar?.navServices ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          navbar: { ...formData.navbar, navServices: e.target.value }
+                        })
+                      }
+                      placeholder="Services"
                       className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
                     />
                   </div>
@@ -5047,6 +6106,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     />
                   </div>
                   <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Nav Item: Education</label>
+                    <input
+                      type="text"
+                      value={formData.navbar?.navEducation ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          navbar: { ...formData.navbar, navEducation: e.target.value }
+                        })
+                      }
+                      placeholder="Education"
+                      className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
+                    />
+                  </div>
+                  <div>
                     <label className="block text-[10px] text-slate-400 mb-1">Nav Item: Achievements</label>
                     <input
                       type="text"
@@ -5062,17 +6136,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-slate-400 mb-1">Nav Item: Education</label>
+                    <label className="block text-[10px] text-slate-400 mb-1">Nav Item: Contact</label>
                     <input
                       type="text"
-                      value={formData.navbar?.navEducation ?? ''}
+                      value={formData.navbar?.navContact ?? ''}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          navbar: { ...formData.navbar, navEducation: e.target.value }
+                          navbar: { ...formData.navbar, navContact: e.target.value }
                         })
                       }
-                      placeholder="Education"
+                      placeholder="Contact"
                       className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
                     />
                   </div>
@@ -6170,6 +7244,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;`;
           )}
         </main>
       </div>
+
+      {/* Visual Circular Favicon Cropper Modal (react-easy-crop) */}
+      <CircularFaviconCropperModal
+        isOpen={isFaviconCropperOpen}
+        imageSrc={faviconCropImageSrc}
+        onClose={() => setIsFaviconCropperOpen(false)}
+        onCropCompleteSave={handleFaviconCropComplete}
+        titleBarText={formData.browserTitle || `${formData.name || 'Al Amin Islam'} | Fullstack Web Developer`}
+      />
     </div>
   );
 };

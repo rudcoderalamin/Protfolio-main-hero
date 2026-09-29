@@ -6,6 +6,24 @@ export interface Project {
   metrics?: string;
   github?: string;
   live?: string;
+  imageUrl?: string;
+  category?: string;
+}
+
+export interface ServiceItem {
+  id: string;
+  title: string;
+  description: string;
+  icon: 'web' | 'fullstack' | 'uiux' | 'graphics' | 'android';
+  tags: string[];
+}
+
+export interface AboutConfig {
+  greeting: string;
+  bioSummary: string;
+  educationalBackground: string;
+  workPhilosophy: string;
+  highlights: string[];
 }
 
 export interface Achievement {
@@ -14,6 +32,7 @@ export interface Achievement {
   organization: string;
   year: string;
   description: string;
+  badge?: string;
 }
 
 export interface SkillCategory {
@@ -173,13 +192,69 @@ export const PORTFOLIO_DATA = {
     showStatusDot: true,
     statusDotText: "Active & Available",
     navHome: "Home",
+    navAbout: "About Me",
     navSkills: "Skills",
+    navServices: "Services",
     navProjects: "Projects",
     navExperience: "Experience",
-    navAchievements: "Awards",
     navEducation: "Education",
+    navAchievements: "Achievements",
+    navContact: "Contact",
     bookCallBtnText: "Book a Call"
   },
+
+  // About Me Section Configuration
+  about: {
+    greeting: "Hi, I'm Al Amin Islam",
+    bioSummary: "A passionate Fullstack Web Developer and dedicated Competitive Programmer based in Dhaka, Bangladesh. I bridge elegant frontend craftsmanship with performant, secure backend architectures, transforming complex ideas into intuitive digital experiences.",
+    educationalBackground: "Diploma in Computer Science & Technology from Tangail Polytechnic Institute (2021-2025). Rooted in strong algorithmic foundations, data structures, and modern software engineering paradigms.",
+    workPhilosophy: "I believe in clean, modular code, agile iterations, and performance-first architecture. My approach is centered around empathetic user experience, test-driven reliability, proactive communication, and rapid turnaround without sacrificing scalability.",
+    highlights: [
+      "End-to-End Product Architecture (React/Next.js & Node.js)",
+      "Problem-Solving Mindset (620+ Algorithmic Challenges Solved)",
+      "Agile & Collaborative Work Style with Clean Code Discipline",
+      "Pixel-Perfect UI/UX Implementation with Modern Design Systems"
+    ]
+  } as AboutConfig,
+
+  // Services Offered Section Configuration
+  services: [
+    {
+      id: "srv-fullstack",
+      title: "Full Stack Web Development",
+      description: "Complete modern web applications built from scratch with Next.js, React, Node.js, Express, and PostgreSQL/MongoDB. Scalable REST APIs, secure auth, and real-time data sync.",
+      icon: "fullstack",
+      tags: ["Next.js", "React", "Node.js", "Express", "PostgreSQL", "MongoDB"]
+    },
+    {
+      id: "srv-web",
+      title: "Web Development",
+      description: "High-performance, responsive, and SEO-optimized frontend websites crafted with modern Tailwind CSS, smooth animations, and clean modular component architecture.",
+      icon: "web",
+      tags: ["React.js", "TypeScript", "Tailwind CSS", "Vite", "Performance"]
+    },
+    {
+      id: "srv-uiux",
+      title: "UI/UX Design",
+      description: "User-centered interface design, wireframing, component design systems, and high-fidelity interactive prototypes in Figma for web and mobile platforms.",
+      icon: "uiux",
+      tags: ["Figma", "Design Systems", "Wireframing", "User Journeys", "Prototypes"]
+    },
+    {
+      id: "srv-graphics",
+      title: "Graphic Design",
+      description: "Visual branding, logos, vector icons, marketing banners, and high-resolution digital assets with impeccable typography, contrast, and modern aesthetics.",
+      icon: "graphics",
+      tags: ["Vector Art", "Brand Identity", "Illustrations", "Banners", "Typography"]
+    },
+    {
+      id: "srv-android",
+      title: "Android App Development",
+      description: "Feature-packed, responsive Android mobile applications engineered with intuitive touch interactions, offline caching, push notifications, and seamless API integration.",
+      icon: "android",
+      tags: ["Android", "React Native", "Mobile UI", "APIs", "Offline Cache"]
+    }
+  ] as ServiceItem[],
 
   // Dynamic Background & Visual Theme Configuration
   theme: {
@@ -348,19 +423,43 @@ export const PORTFOLIO_DATA = {
     { label: "Fullstack Projects Delivered", value: "15+" }
   ],
 
-  // Experience
+  // Experience (Focused on Institutional Accomplishments without company or year names)
   experiences: [
     {
       id: "exp-1",
-      role: "Full-Stack Web Developer",
-      company: "Freelance & Open Source Contributor",
-      period: "2023 - Present",
-      type: "Full-time / Contract",
+      role: "Full-Stack Web Systems & High-Impact Deliverables",
+      company: "",
+      period: "",
+      type: "Institutional Milestones",
       highlights: [
-        "Architecting responsive web applications with Next.js, TypeScript, Node.js, Express, and PostgreSQL/MongoDB.",
-        "Engineered scalable REST APIs and secure authentication pipelines using JWT, OAuth, and Prisma ORM.",
-        "Optimized frontend performance, achieving 95+ Google Lighthouse scores across Core Web Vitals.",
-        "Collaborated on client deliverables delivering telemedicine platforms and smart event systems."
+        "Architected scalable telemedicine platform delivering sub-second API response times and encrypted health record persistence.",
+        "Engineered concurrent event ticketing engine with automated calendar synchronization and zero double-booking concurrency bugs.",
+        "Optimized client-side rendering pipelines achieving 98+ Google Lighthouse performance scores across Core Web Vitals.",
+        "Created production-grade REST APIs with secure JWT authentication, rate limiting, and relational schema validation."
+      ]
+    },
+    {
+      id: "exp-2",
+      role: "Campus Software Solutions & Academic Initiatives",
+      company: "",
+      period: "",
+      type: "Campus Contributions",
+      highlights: [
+        "Spearheaded polytechnic campus student automation tools simplifying internal project submissions, contest archives, and notices.",
+        "Conducted hands-on technical workshops and bootcamps on React, TypeScript, and modern Git collaborative workflows.",
+        "Mentored junior engineering teams in algorithmic problem-solving for regional inter-polytechnic competitions."
+      ]
+    },
+    {
+      id: "exp-3",
+      role: "Algorithmic Problem Solving & Competitive Programming",
+      company: "",
+      period: "",
+      type: "Algorithmic Accomplishments",
+      highlights: [
+        "Solved 620+ algorithmic challenges across CodeChef (2-Star, 1406 rating), Codeforces, and LeetCode.",
+        "Represented institute in national collegiate programming contests (DUET IUPC, ICPC Asia Dhaka Regional).",
+        "Formulated optimal computational solutions utilizing advanced Graph Theory, Dynamic Programming, and Greedy strategies."
       ]
     }
   ],
@@ -390,14 +489,25 @@ export const PORTFOLIO_DATA = {
       ]
     },
     {
-      category: "Problem Solving & Tools",
+      category: "Programming Languages & CS",
       skills: [
-        { name: "C++ / Data Structures", level: "Advanced" },
-        { name: "Algorithms & Math", level: "Advanced" },
-        { name: "Docker", level: "Intermediate" },
+        { name: "C++", level: "Expert" },
+        { name: "JavaScript (ES6+)", level: "Expert" },
+        { name: "TypeScript", level: "Advanced" },
+        { name: "Data Structures", level: "Expert" },
+        { name: "Algorithms", level: "Expert" },
+        { name: "SQL", level: "Advanced" }
+      ]
+    },
+    {
+      category: "Tools, Design & Mobile",
+      skills: [
         { name: "Git / GitHub", level: "Advanced" },
+        { name: "Figma (UI/UX)", level: "Advanced" },
+        { name: "Android App Dev", level: "Intermediate" },
         { name: "Postman", level: "Advanced" },
-        { name: "Vercel / Cloud Run", level: "Advanced" }
+        { name: "Docker", level: "Intermediate" },
+        { name: "Vercel / Cloud", level: "Advanced" }
       ]
     }
   ],
@@ -406,82 +516,141 @@ export const PORTFOLIO_DATA = {
   projects: [
     {
       id: "proj-1",
-      title: "Life Care Plus",
+      title: "Life Care Plus — Telemedicine Platform",
       description: "A comprehensive telemedicine and healthcare management ecosystem with real-time appointment booking, doctor directory, electronic prescriptions, and live tele-consultation.",
       tech: ["Next.js", "Express.js", "Prisma", "PostgreSQL", "Tailwind CSS"],
       metrics: "Reduced patient waiting times by ~30% and simplified appointment workflows.",
       github: "https://github.com/alaminislam",
-      live: "https://alamin-islam-portfolio.vercel.app"
+      live: "https://alamin-islam-portfolio.vercel.app",
+      imageUrl: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&auto=format&fit=crop&q=80",
+      category: "fullstack"
     },
     {
       id: "proj-2",
-      title: "EventSphere",
+      title: "EventSphere — Smart Ticket & Event Booking",
       description: "Smart event management and booking system with multi-tier ticket reservations, interactive schedule planner, automated calendar sync, and organizer dashboard.",
       tech: ["Next.js", "Node.js", "MongoDB", "Tailwind CSS", "JWT"],
       metrics: "Seamless checkout flow supporting concurrent ticketing without duplicate seat claims.",
       github: "https://github.com/alaminislam",
-      live: "https://alamin-islam-portfolio.vercel.app"
+      live: "https://alamin-islam-portfolio.vercel.app",
+      imageUrl: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=80",
+      category: "web"
     },
     {
       id: "proj-3",
-      title: "TouristBook",
+      title: "TouristBook — Tourism & Hotel Booking",
       description: "Tourism discovery and spot reservation platform featuring curated Bangladeshi tour packages, review mechanisms, and secure traveler reservations.",
       tech: ["React.js", "Node.js", "Express", "MongoDB", "Tailwind CSS"],
       metrics: "Interactive destination guides with multi-factor authentication.",
       github: "https://github.com/alaminislam",
-      live: "https://alamin-islam-portfolio.vercel.app"
+      live: "https://alamin-islam-portfolio.vercel.app",
+      imageUrl: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=80",
+      category: "web"
     },
     {
       id: "proj-4",
-      title: "Job-Cast",
+      title: "HealthTrack Mobile — Android Fitness Companion",
+      description: "Android lifestyle and activity tracker app featuring workout routines, daily calorie calculation, biometric stats charts, and instant push notification reminders.",
+      tech: ["Android", "React Native", "TypeScript", "Tailwind", "REST APIs"],
+      metrics: "Smooth 60 FPS mobile transitions and offline-first data caching.",
+      github: "https://github.com/alaminislam",
+      live: "https://alamin-islam-portfolio.vercel.app",
+      imageUrl: "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=800&auto=format&fit=crop&q=80",
+      category: "android"
+    },
+    {
+      id: "proj-5",
+      title: "Job-Cast — Real-time Dev Job Alert Bot",
       description: "Automated WhatsApp and Telegram notification bot dispatching real-time tech job openings filtered by developer stack and experience level.",
       tech: ["Node.js", "Twilio API", "Cron Scheduling", "Express"],
       metrics: "Delivers daily curated job feeds to active software engineers.",
       github: "https://github.com/alaminislam",
-      live: "https://alamin-islam-portfolio.vercel.app"
+      live: "https://alamin-islam-portfolio.vercel.app",
+      imageUrl: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=800&auto=format&fit=crop&q=80",
+      category: "fullstack"
     }
   ],
 
-  // Achievements
+  // Achievements (Awards received from several educational institutions)
   achievements: [
     {
       id: "ach-1",
-      title: "2nd Position - DUET IUPC 2025",
+      title: "2nd Position - National IUPC 2025",
       organization: "Dhaka University of Engineering & Technology (DUET)",
       year: "2025",
-      description: "Secured 2nd position among polytechnic competitive programming teams in a high-intensity 5-hour national contest."
+      description: "Secured 2nd position among polytechnic competitive programming teams nationwide in a rigorous 5-hour on-site programming contest solving algorithmic problems in C++.",
+      badge: "National Silver"
     },
     {
       id: "ach-2",
       title: "ICPC Asia Dhaka Regional Contestant",
-      organization: "International Collegiate Programming Contest",
-      year: "2024 / 2025",
-      description: "Qualified and competed in the prestigious ICPC regional contest solving complex algorithmic challenges under strict time and memory limits."
+      organization: "International Collegiate Programming Contest / Leading University",
+      year: "2024",
+      description: "Successfully qualified for and participated in the world's most prestigious collegiate programming contest solving complex algorithmic challenges under strict time and memory constraints.",
+      badge: "Regional Finalist"
     },
     {
       id: "ach-3",
-      title: "CodeChef 2-Star Competitive Programmer (1406 Max Rating)",
-      organization: "CodeChef",
+      title: "Champion - National Skills & Web Prototyping Competition",
+      organization: "Tangail Polytechnic Institute & Technical Education Board",
       year: "2024",
-      description: "Achieved Division 2 ranking with 620+ total algorithmic problems solved across CodeChef, Codeforces, and LeetCode."
+      description: "Awarded 1st place gold trophy for building and demonstrating a full-stack, responsive web application during a rapid 6-hour hackathon.",
+      badge: "1st Place Gold"
     },
     {
       id: "ach-4",
-      title: "Champion - Institute Level Skill Competition",
-      organization: "Technical Education Board",
+      title: "Inter-Polytechnic Programming Olympiad — Top Solver",
+      organization: "Regional Polytechnic IT Association",
+      year: "2023",
+      description: "Honored with the Top Problem Solver recognition for solving the highest number of contest problems in competitive data structures and algorithms.",
+      badge: "Top Problem Solver"
+    },
+    {
+      id: "ach-5",
+      title: "Academic & Technical Excellence Award",
+      organization: "Institute Academic Council & Directorate of Technical Education",
       year: "2024",
-      description: "Awarded 1st place in web application development and rapid prototyping."
+      description: "Recognized with an Academic Excellence citation for software project innovation, outstanding semester GPA, and peer mentorship in web technology.",
+      badge: "Academic Excellence"
     }
   ],
 
-  // Education
+  // Education (4-5 editable sections for admin)
   education: [
     {
       id: "edu-1",
       degree: "Diploma in Computer Science & Technology",
       institution: "Tangail Polytechnic Institute (TPI)",
       period: "2021 - 2025",
-      details: "Focus on Algorithms, Data Structures, Database Management Systems, Software Engineering, and Object-Oriented Programming."
+      details: "Comprehensive academic training in Algorithms, Data Structures, Database Systems (DBMS), Software Engineering, Computer Networks, and Object-Oriented Programming (OOP)."
+    },
+    {
+      id: "edu-2",
+      degree: "Secondary School Certificate (SSC) — Science",
+      institution: "Technical & Secondary Education Board",
+      period: "2019 - 2021",
+      details: "Rigorous coursework in Higher Mathematics, Physics, Chemistry, and Information & Communication Technology with outstanding academic distinction."
+    },
+    {
+      id: "edu-3",
+      degree: "Full-Stack Web Development Professional Specialization",
+      institution: "Professional Dev Academy & Online Specialization",
+      period: "2023 - 2024",
+      details: "Intensive training in modern MERN & Next.js ecosystem, state management with Redux Toolkit, PostgreSQL with Prisma ORM, RESTful API architecture, and Cloud Deployment."
+    },
+    {
+      id: "edu-4",
+      degree: "Competitive Programming & Algorithmic Problem Solving",
+      institution: "Competitive Programming Platforms & National Bootcamps",
+      period: "2022 - Present",
+      details: "Advanced problem-solving track covering Graph Algorithms, Dynamic Programming, Combinatorics, Number Theory, and time/space complexity optimization."
+    },
+    {
+      id: "edu-5",
+      degree: "UI/UX Design & Mobile App Engineering Workshop",
+      institution: "Design & Software Engineering Training Track",
+      period: "2023 - 2024",
+      details: "Specialized in user journey wireframing, Figma design systems, cross-platform Android mobile layouts, and modern accessibility standards."
     }
   ]
 };

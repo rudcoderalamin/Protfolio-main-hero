@@ -16,6 +16,14 @@ import { ScrollToTop } from './components/ScrollToTop';
 import { InteractiveBackground } from './components/InteractiveBackground';
 import { AdminDashboard } from './components/AdminDashboard';
 import { RgbEdgeBeams } from './components/RgbEdgeBeams';
+import { AboutSection } from './components/AboutSection';
+import { SkillsSection } from './components/SkillsSection';
+import { ServicesSection } from './components/ServicesSection';
+import { ProjectsSection } from './components/ProjectsSection';
+import { ExperienceSection } from './components/ExperienceSection';
+import { EducationSection } from './components/EducationSection';
+import { AchievementsSection } from './components/AchievementsSection';
+import { ContactSection } from './components/ContactSection';
 import { ProfilePhoto, DEFAULT_PROFILE_PHOTOS, FooterLinkItem } from './data/portfolioData';
 import { generateBackgroundStyles } from './utils/themeEngine';
 import {
@@ -59,9 +67,7 @@ export default function App() {
   const [photos, setPhotos] = useState<ProfilePhoto[]>(getStoredPhotos);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
-  const [selectedSection, setSelectedSection] = useState<
-    'home' | 'experience' | 'skills' | 'projects' | 'achievements' | 'education'
-  >('home');
+  const [selectedSection, setSelectedSection] = useState<string>('home');
   const [detailModalSection, setDetailModalSection] = useState<
     'experience' | 'skills' | 'projects' | 'achievements' | 'education' | null
   >(null);
@@ -147,13 +153,18 @@ export default function App() {
     await savePortfolioToServer(portfolioData, newPhotos);
   };
 
-  const handleSectionSelect = (section: 'home' | 'experience' | 'skills' | 'projects' | 'achievements' | 'education') => {
+  const handleSectionSelect = (section: string) => {
     setSelectedSection(section);
     if (section === 'home') {
       setDetailModalSection(null);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      setDetailModalSection(section);
+      const el = document.getElementById(section);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      } else if (['experience', 'skills', 'projects', 'achievements', 'education'].includes(section)) {
+        setDetailModalSection(section as any);
+      }
     }
   };
 
@@ -268,8 +279,9 @@ export default function App() {
         portfolioData={portfolioData}
       />
 
-      {/* Hero Section (Center of home page) */}
-      <main className="flex-1 flex flex-col items-center justify-center relative z-10">
+      {/* Main Content: Hero & Dedicated Sections */}
+      <main className="flex-1 flex flex-col items-center justify-center relative z-10 w-full">
+        {/* 1. Hero Section (Hover effect strictly restricted here) */}
         <Hero
           onOpenResume={() => setIsResumeOpen(true)}
           onOpenContact={() => setIsContactOpen(true)}
@@ -280,6 +292,38 @@ export default function App() {
           onNextPhoto={handleNextPhoto}
           portfolioData={portfolioData}
         />
+
+        {/* 2. About Me Section */}
+        <AboutSection
+          portfolioData={portfolioData}
+          onOpenContact={() => setIsContactOpen(true)}
+          onOpenResume={() => setIsResumeOpen(true)}
+        />
+
+        {/* 3. Skills Section */}
+        <SkillsSection portfolioData={portfolioData} />
+
+        {/* 4. Services Section */}
+        <ServicesSection
+          portfolioData={portfolioData}
+          onOpenContact={() => setIsContactOpen(true)}
+          onOpenBookCall={() => setIsBookCallOpen(true)}
+        />
+
+        {/* 5. Projects Section (With website links & app pictures) */}
+        <ProjectsSection portfolioData={portfolioData} />
+
+        {/* 6. Experience Section (Institutional accomplishments without company or year) */}
+        <ExperienceSection portfolioData={portfolioData} />
+
+        {/* 7. Education Section (4-5 customizable sections) */}
+        <EducationSection portfolioData={portfolioData} />
+
+        {/* 8. Achievements Section (Awards from educational institutions) */}
+        <AchievementsSection portfolioData={portfolioData} />
+
+        {/* 9. Contact Section (Direct message form & info cards) */}
+        <ContactSection portfolioData={portfolioData} />
       </main>
 
       {/* Clean User Footer with Dynamic Executable Links & Background Link Routing */}

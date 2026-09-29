@@ -101,7 +101,13 @@ export const mergePortfolioData = (raw: any): PortfolioDataType => {
     resumeModal: { ...PORTFOLIO_DATA.resumeModal, ...(raw.resumeModal || {}) },
     whatsappWidget: { ...PORTFOLIO_DATA.whatsappWidget, ...(raw.whatsappWidget || {}) },
     photoRotation: { ...PORTFOLIO_DATA.photoRotation, ...(raw.photoRotation || {}) },
-    autoRotateSeconds: raw.photoRotation?.intervalSeconds ?? raw.autoRotateSeconds ?? PORTFOLIO_DATA.autoRotateSeconds
+    autoRotateSeconds: raw.photoRotation?.intervalSeconds ?? raw.autoRotateSeconds ?? PORTFOLIO_DATA.autoRotateSeconds,
+    about: raw.about ? { ...PORTFOLIO_DATA.about, ...raw.about } : PORTFOLIO_DATA.about,
+    services: Array.isArray(raw.services) ? raw.services : PORTFOLIO_DATA.services,
+    education: Array.isArray(raw.education) ? raw.education : PORTFOLIO_DATA.education,
+    achievements: Array.isArray(raw.achievements) ? raw.achievements : PORTFOLIO_DATA.achievements,
+    experiences: Array.isArray(raw.experiences) ? raw.experiences : PORTFOLIO_DATA.experiences,
+    projects: Array.isArray(raw.projects) ? raw.projects : PORTFOLIO_DATA.projects
   };
 };
 
@@ -664,6 +670,8 @@ export const submitContactMessage = async (msg: {
 
   return { success: true };
 };
+
+export const saveMessageToServer = submitContactMessage;
 
 export const fetchMessagesFromServer = async (): Promise<PortfolioMessage[]> => {
   // 1. Try fetching directly from Firestore

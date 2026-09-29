@@ -4,7 +4,7 @@ import { PortfolioDataType } from '../utils/portfolioStorage';
 
 interface NavbarProps {
   onOpenBookCall: () => void;
-  onSelectSection: (section: 'home' | 'experience' | 'skills' | 'projects' | 'achievements' | 'education') => void;
+  onSelectSection: (section: string) => void;
   activeSection: string;
   portfolioData?: PortfolioDataType;
 }
@@ -23,17 +23,18 @@ export const Navbar: React.FC<NavbarProps> = ({
   const brandSubtitle = portfolioData?.navbar?.brandSubtitle || portfolioData?.logoSubtitle || portfolioData?.title || 'Fullstack Developer';
   const brandSubtitleUrl = portfolioData?.navbar?.brandSubtitleUrl || '';
   const logoImageUrl = portfolioData?.navbar?.logoImageUrl || portfolioData?.logoImageUrl;
-  const statusDotText = portfolioData?.navbar?.statusDotText || 'Active & Available';
   const bookCallText = portfolioData?.navbar?.bookCallBtnText || portfolioData?.heroButtons?.bookCallText || 'Book a Call';
   const isDark = portfolioData?.theme?.textColorMode === 'light';
 
-  const navItems: { id: 'home' | 'experience' | 'skills' | 'projects' | 'achievements' | 'education'; label: string }[] = [
-    { id: 'home', label: portfolioData?.navbar?.navHome || 'Home' },
-    { id: 'experience', label: portfolioData?.navbar?.navExperience || 'Experience' },
+  const navItems = [
+    { id: 'about', label: portfolioData?.navbar?.navAbout || 'About Me' },
     { id: 'skills', label: portfolioData?.navbar?.navSkills || 'Skills' },
+    { id: 'services', label: portfolioData?.navbar?.navServices || 'Services' },
     { id: 'projects', label: portfolioData?.navbar?.navProjects || 'Projects' },
-    { id: 'achievements', label: portfolioData?.navbar?.navAchievements || 'Achievements' },
+    { id: 'experience', label: portfolioData?.navbar?.navExperience || 'Experience' },
     { id: 'education', label: portfolioData?.navbar?.navEducation || 'Education' },
+    { id: 'achievements', label: portfolioData?.navbar?.navAchievements || 'Achievements' },
+    { id: 'contact', label: portfolioData?.navbar?.navContact || 'Contact' },
   ];
 
   return (

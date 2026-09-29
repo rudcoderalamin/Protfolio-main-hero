@@ -76,8 +76,9 @@ export const Hero: React.FC<HeroProps> = ({
 
   return (
     <section 
-      className="w-full max-w-4xl mx-auto px-4 py-8 sm:py-12 md:py-16 flex flex-col items-center text-center"
-      id="hero-section-container"
+      className="w-full max-w-4xl mx-auto px-4 py-8 sm:py-12 md:py-16 flex flex-col items-center text-center relative"
+      id="hero-section"
+      data-testid="hero-section-container"
     >
       {/* Profile Photo Stage with smooth 5-second rotation & Manual Reload Button */}
       <div className="relative mb-6" id="hero-profile-stage">
