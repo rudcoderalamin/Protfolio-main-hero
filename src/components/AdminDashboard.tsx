@@ -1277,14 +1277,40 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     Customize your personal introduction, educational qualification summary, work philosophy, and core highlights.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleSaveData}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold cursor-pointer transition-colors shadow-sm"
-                >
-                  <Save className="w-3.5 h-3.5" />
-                  <span>Save Changes</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData({
+                        ...formData,
+                        about: {
+                          greeting: "Hi, I'm Al Amin Islam",
+                          bioSummary: "A passionate Fullstack Web Developer and dedicated Competitive Programmer based in Dhaka, Bangladesh. I bridge elegant frontend craftsmanship with performant, secure backend architectures, transforming complex ideas into intuitive digital experiences.",
+                          educationalBackground: "Diploma in Computer Science & Technology from Tangail Polytechnic Institute (2021-2025). Rooted in strong algorithmic foundations, data structures, and modern software engineering paradigms.",
+                          workPhilosophy: "I believe in clean, modular code, agile iterations, and performance-first architecture. My approach is centered around empathetic user experience, test-driven reliability, proactive communication, and rapid turnaround without sacrificing scalability.",
+                          highlights: [
+                            "End-to-End Product Architecture (React/Next.js & Node.js)",
+                            "Problem-Solving Mindset (620+ Algorithmic Challenges Solved)",
+                            "Agile & Collaborative Work Style with Clean Code Discipline",
+                            "Pixel-Perfect UI/UX Implementation with Modern Design Systems"
+                          ]
+                        }
+                      });
+                    }}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <RotateCw className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Load Template Bio</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveData}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold cursor-pointer transition-colors shadow-sm"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Save Changes</span>
+                  </button>
+                </div>
               </div>
 
               {/* Greeting */}
@@ -1509,6 +1535,56 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       />
                       <button
                         type="button"
+                        disabled={hIdx === 0}
+                        onClick={() => {
+                          if (hIdx === 0) return;
+                          const updated = [...(formData.about?.highlights || [])];
+                          const temp = updated[hIdx - 1];
+                          updated[hIdx - 1] = updated[hIdx];
+                          updated[hIdx] = temp;
+                          setFormData({
+                            ...formData,
+                            about: {
+                              greeting: formData.about?.greeting || '',
+                              bioSummary: formData.about?.bioSummary || '',
+                              educationalBackground: formData.about?.educationalBackground || '',
+                              workPhilosophy: formData.about?.workPhilosophy || '',
+                              highlights: updated
+                            }
+                          });
+                        }}
+                        className="p-1 text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
+                        title="Move Up"
+                      >
+                        <ArrowUp className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={hIdx === (formData.about?.highlights || []).length - 1}
+                        onClick={() => {
+                          if (hIdx === (formData.about?.highlights || []).length - 1) return;
+                          const updated = [...(formData.about?.highlights || [])];
+                          const temp = updated[hIdx + 1];
+                          updated[hIdx + 1] = updated[hIdx];
+                          updated[hIdx] = temp;
+                          setFormData({
+                            ...formData,
+                            about: {
+                              greeting: formData.about?.greeting || '',
+                              bioSummary: formData.about?.bioSummary || '',
+                              educationalBackground: formData.about?.educationalBackground || '',
+                              workPhilosophy: formData.about?.workPhilosophy || '',
+                              highlights: updated
+                            }
+                          });
+                        }}
+                        className="p-1 text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
+                        title="Move Down"
+                      >
+                        <ArrowDown className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => {
                           const updated = (formData.about?.highlights || []).filter((_: string, i: number) => i !== hIdx);
                           setFormData({
@@ -1547,7 +1623,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     Add, edit, reorder or remove your engineering services: Web Development, Full Stack Web, UI/UX Design, Graphics Design, and Android Apps.
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={() => {
@@ -1565,6 +1641,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add Blank Service</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newSvc: ServiceItem = {
+                        id: `svc-${Date.now()}`,
+                        title: 'API & Microservices Architecture',
+                        description: 'High-speed RESTful and GraphQL backend microservices with Redis caching and Docker containerization.',
+                        icon: 'fullstack',
+                        tags: ['Node.js', 'Express', 'Redis', 'Docker', 'REST API']
+                      };
+                      const updated = [newSvc, ...(formData.services || [])];
+                      setFormData({ ...formData, services: updated });
+                    }}
+                    className="px-3 py-1.5 bg-sky-700/80 hover:bg-sky-600 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Template Service</span>
                   </button>
                   <button
                     type="button"
@@ -2212,380 +2306,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     );
                   })}
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 1.5: ABOUT ME CONFIGURATION */}
-          {activeTab === 'about' && (
-            <div className="space-y-6">
-              <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-bold text-white">About Me Configuration (নিজের পরিচয় ও কাজের ধরণ)</h2>
-                  <p className="text-xs text-slate-400">Configure personal introduction, education overview, work style, and core principles</p>
-                </div>
-                <button
-                  onClick={handleSaveData}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-                >
-                  <Save className="w-3.5 h-3.5" />
-                  <span>Save Changes</span>
-                </button>
-              </div>
-
-              {/* Greeting / Headline */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Section Greeting / Headline
-                </label>
-                <input
-                  type="text"
-                  value={formData.about?.greeting ?? ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      about: { ...formData.about, greeting: e.target.value } as any
-                    })
-                  }
-                  placeholder="Hi, I'm Al Amin Islam"
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500"
-                />
-              </div>
-
-              {/* Pillar 1: Who I Am (নিজের পরিচয়) */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Who I Am / Bio Summary (নিজের পরিচয়)
-                </label>
-                <textarea
-                  rows={3}
-                  value={formData.about?.bioSummary ?? ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      about: { ...formData.about, bioSummary: e.target.value } as any
-                    })
-                  }
-                  placeholder="A passionate Fullstack Web Developer and dedicated Competitive Programmer..."
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500 resize-none leading-relaxed"
-                />
-              </div>
-
-              {/* Pillar 2: Educational Background (শিক্ষাগত যোগ্যতা) */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Educational Qualification Overview (শিক্ষাগত যোগ্যতা)
-                </label>
-                <textarea
-                  rows={3}
-                  value={formData.about?.educationalBackground ?? ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      about: { ...formData.about, educationalBackground: e.target.value } as any
-                    })
-                  }
-                  placeholder="Diploma in Computer Science & Technology from Tangail Polytechnic Institute..."
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500 resize-none leading-relaxed"
-                />
-              </div>
-
-              {/* Pillar 3: Work Style & Philosophy (কাজের ধরণ) */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Working Style & Philosophy (কাজের ধরণ)
-                </label>
-                <textarea
-                  rows={3}
-                  value={formData.about?.workPhilosophy ?? ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      about: { ...formData.about, workPhilosophy: e.target.value } as any
-                    })
-                  }
-                  placeholder="I believe in clean, modular code, agile iterations, and performance-first architecture..."
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500 resize-none leading-relaxed"
-                />
-              </div>
-
-              {/* Core Principles & Highlights */}
-              <div className="space-y-3 pt-2 border-t border-slate-800">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-bold text-white">Core Principles & Highlights</h3>
-                    <p className="text-xs text-slate-400">Bulleted points displayed in the bottom highlight banner of About Me</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const currentHighlights = formData.about?.highlights || [];
-                      setFormData({
-                        ...formData,
-                        about: {
-                          ...formData.about,
-                          highlights: [...currentHighlights, 'New Principle or Competency']
-                        } as any
-                      });
-                    }}
-                    className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add Highlight</span>
-                  </button>
-                </div>
-
-                <div className="space-y-2">
-                  {(formData.about?.highlights || []).map((highlight, hIdx) => (
-                    <div key={hIdx} className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={highlight}
-                        onChange={(e) => {
-                          const updated = [...(formData.about?.highlights || [])];
-                          updated[hIdx] = e.target.value;
-                          setFormData({
-                            ...formData,
-                            about: { ...formData.about, highlights: updated } as any
-                          });
-                        }}
-                        className="flex-1 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-sky-500"
-                      />
-                      <button
-                        type="button"
-                        disabled={hIdx === 0}
-                        onClick={() => {
-                          if (hIdx === 0) return;
-                          const updated = [...(formData.about?.highlights || [])];
-                          const temp = updated[hIdx - 1];
-                          updated[hIdx - 1] = updated[hIdx];
-                          updated[hIdx] = temp;
-                          setFormData({
-                            ...formData,
-                            about: { ...formData.about, highlights: updated } as any
-                          });
-                        }}
-                        className="p-1 text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
-                        title="Move Up"
-                      >
-                        <ArrowUp className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        disabled={hIdx === (formData.about?.highlights || []).length - 1}
-                        onClick={() => {
-                          if (hIdx === (formData.about?.highlights || []).length - 1) return;
-                          const updated = [...(formData.about?.highlights || [])];
-                          const temp = updated[hIdx + 1];
-                          updated[hIdx + 1] = updated[hIdx];
-                          updated[hIdx] = temp;
-                          setFormData({
-                            ...formData,
-                            about: { ...formData.about, highlights: updated } as any
-                          });
-                        }}
-                        className="p-1 text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
-                        title="Move Down"
-                      >
-                        <ArrowDown className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const updated = (formData.about?.highlights || []).filter((_, i) => i !== hIdx);
-                          setFormData({
-                            ...formData,
-                            about: { ...formData.about, highlights: updated } as any
-                          });
-                        }}
-                        className="p-1 text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 rounded transition-colors cursor-pointer"
-                        title="Remove Highlight"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 1.7: SERVICES CONFIGURATION */}
-          {activeTab === 'services' && (
-            <div className="space-y-6">
-              <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-bold text-white">Services Offered ({formData.services?.length || 0})</h2>
-                  <p className="text-xs text-slate-400">Add, edit, reorder or remove services (Web, Fullstack, UI/UX, Graphics, Android, etc.)</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newService = {
-                        id: `srv-${Date.now()}`,
-                        title: '',
-                        description: '',
-                        icon: 'web' as const,
-                        tags: []
-                      };
-                      const updated = [...(formData.services || []), newService];
-                      setFormData({ ...formData, services: updated });
-                    }}
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add Blank Service</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newService = {
-                        id: `srv-${Date.now()}`,
-                        title: 'API & Microservices Architecture',
-                        description: 'High-speed RESTful and GraphQL backend microservices with Redis caching and Docker containerization.',
-                        icon: 'fullstack' as const,
-                        tags: ['Node.js', 'Express', 'Redis', 'Docker', 'REST API']
-                      };
-                      const updated = [...(formData.services || []), newService];
-                      setFormData({ ...formData, services: updated });
-                    }}
-                    className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add With Template</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Service Cards */}
-              <div className="space-y-4">
-                {(!formData.services || formData.services.length === 0) ? (
-                  <div className="p-8 rounded-xl bg-slate-950 border border-slate-800 text-center text-xs text-slate-400">
-                    No services configured yet. Click &quot;Add Blank Service&quot; to insert one.
-                  </div>
-                ) : (
-                  formData.services.map((service, sIdx) => (
-                    <div key={service.id || sIdx} className="p-4 sm:p-5 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 flex-1">
-                          <input
-                            type="text"
-                            value={service.title}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              const updated = (formData.services || []).map((item, i) =>
-                                i === sIdx ? { ...item, title: val } : item
-                              );
-                              setFormData({ ...formData, services: updated });
-                            }}
-                            placeholder="Service Title (e.g. Web Development)"
-                            className="text-sm font-bold text-white bg-slate-900 border border-slate-800 rounded px-2.5 py-1.5 focus:border-sky-500 focus:outline-none flex-1"
-                          />
-                          <select
-                            value={service.icon}
-                            onChange={(e) => {
-                              const val = e.target.value as any;
-                              const updated = (formData.services || []).map((item, i) =>
-                                i === sIdx ? { ...item, icon: val } : item
-                              );
-                              setFormData({ ...formData, services: updated });
-                            }}
-                            className="bg-slate-900 border border-slate-800 rounded px-2 py-1.5 text-xs text-sky-400 focus:outline-none focus:border-sky-500"
-                          >
-                            <option value="fullstack">Icon: Full-Stack Layers</option>
-                            <option value="web">Icon: Web Globe</option>
-                            <option value="uiux">Icon: UI/UX Palette</option>
-                            <option value="graphics">Icon: Graphics Pen Tool</option>
-                            <option value="android">Icon: Android Mobile</option>
-                          </select>
-                        </div>
-
-                        {/* Reorder and Delete */}
-                        <div className="flex items-center gap-1 self-end sm:self-auto">
-                          <button
-                            type="button"
-                            disabled={sIdx === 0}
-                            onClick={() => {
-                              if (sIdx === 0) return;
-                              const updated = [...(formData.services || [])];
-                              const temp = updated[sIdx - 1];
-                              updated[sIdx - 1] = updated[sIdx];
-                              updated[sIdx] = temp;
-                              setFormData({ ...formData, services: updated });
-                            }}
-                            className="p-1 text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
-                            title="Move Up"
-                          >
-                            <ArrowUp className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            disabled={sIdx === (formData.services || []).length - 1}
-                            onClick={() => {
-                              if (sIdx === (formData.services || []).length - 1) return;
-                              const updated = [...(formData.services || [])];
-                              const temp = updated[sIdx + 1];
-                              updated[sIdx + 1] = updated[sIdx];
-                              updated[sIdx] = temp;
-                              setFormData({ ...formData, services: updated });
-                            }}
-                            className="p-1 text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
-                            title="Move Down"
-                          >
-                            <ArrowDown className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const updated = (formData.services || []).filter((_, i) => i !== sIdx);
-                              setFormData({ ...formData, services: updated });
-                            }}
-                            className="p-1 text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 rounded transition-colors cursor-pointer ml-1"
-                            title="Delete Service"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] text-slate-400 mb-1">Description</label>
-                        <textarea
-                          rows={2}
-                          value={service.description}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            const updated = (formData.services || []).map((item, i) =>
-                              i === sIdx ? { ...item, description: val } : item
-                            );
-                            setFormData({ ...formData, services: updated });
-                          }}
-                          placeholder="Description of the service deliverables and technologies..."
-                          className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 resize-none focus:outline-none focus:border-sky-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] text-slate-400 mb-1">Tags (Comma-separated)</label>
-                        <input
-                          type="text"
-                          value={service.tags ? service.tags.join(', ') : ''}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            const tagsArr = val ? val.split(',').map((t) => t.trim()).filter(Boolean) : [];
-                            const updated = (formData.services || []).map((item, i) =>
-                              i === sIdx ? { ...item, tags: tagsArr } : item
-                            );
-                            setFormData({ ...formData, services: updated });
-                          }}
-                          placeholder="React.js, Node.js, Express, MongoDB..."
-                          className="w-full px-2.5 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white focus:outline-none focus:border-sky-500"
-                        />
-                      </div>
-                    </div>
-                  ))
-                )}
               </div>
             </div>
           )}
@@ -5029,13 +4749,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
-                  { key: 'experience', label: 'Work Experience Section', defaultTitle: 'Work Experience', defaultSub: 'Proven track record of delivering high-impact software solutions and engineering leadership' },
-                  { key: 'skills', label: 'Skills & Technologies Section', defaultTitle: 'Skills & Technologies', defaultSub: 'A comprehensive overview of my technical expertise, tools, and modern frameworks' },
-                  { key: 'projects', label: 'Featured Projects Section', defaultTitle: 'Featured Projects', defaultSub: 'Showcasing real-world applications with robust architectures, clean design, and measurable impact' },
-                  { key: 'achievements', label: 'Achievements & Competitions Section', defaultTitle: 'Achievements & Competitions', defaultSub: 'Competitive programming triumphs, hackathons, and technical recognition' },
-                  { key: 'education', label: 'Education & Academics Section', defaultTitle: 'Education & Academics', defaultSub: 'Academic background, computer science training, and foundational knowledge' },
-                  { key: 'contact', label: 'Get in Touch Section', defaultTitle: 'Get In Touch', defaultSub: 'Let’s discuss your next project, technical opportunity, or collaboration.' },
-                  { key: 'home', label: 'Hero / Home Section', defaultTitle: 'Al Amin Islam', defaultSub: 'Fullstack Software Engineer & Competitive Programmer' }
+                  { key: 'home', label: 'Hero / Home Section', defaultTitle: 'Al Amin Islam', defaultSub: 'Fullstack Software Engineer & Competitive Programmer' },
+                  { key: 'about', label: 'About Me Section', defaultTitle: 'About Me', defaultSub: 'Get to know my journey, academic credentials, and core development philosophy.' },
+                  { key: 'skills', label: 'Skills & Technologies Section', defaultTitle: 'Technical Skills & Competencies', defaultSub: 'Languages, frameworks, databases & developer tooling' },
+                  { key: 'services', label: 'Services & Solutions Section', defaultTitle: 'Services & Solutions', defaultSub: 'From robust full-stack software and fluid web apps to UI/UX prototypes and native Android applications.' },
+                  { key: 'projects', label: 'Featured Projects Section', defaultTitle: 'Featured Software Projects', defaultSub: 'High-performance web applications built from scratch' },
+                  { key: 'experience', label: 'Work Experience Section', defaultTitle: 'Work Experience & History', defaultSub: 'Professional background & technical deliverables' },
+                  { key: 'education', label: 'Education & Academics Section', defaultTitle: 'Education & Qualifications', defaultSub: 'Formal coursework and foundational computer science' },
+                  { key: 'achievements', label: 'Achievements & Competitions Section', defaultTitle: 'Competitive Programming & Awards', defaultSub: 'Contest honors, ratings, and problem-solving track record' },
+                  { key: 'contact', label: 'Get in Touch Section', defaultTitle: 'Get In Touch', defaultSub: 'Let’s discuss your next project, technical opportunity, or collaboration.' }
                 ].map((sec) => (
                   <div key={sec.key} className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
                     <h3 className="text-xs font-bold text-sky-400 uppercase tracking-wider">{sec.label}</h3>

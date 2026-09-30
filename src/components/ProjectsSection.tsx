@@ -58,10 +58,10 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ portfolioData 
           <span>Featured Portfolio Projects</span>
         </div>
         <h2 className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-          Production Web & Mobile Software
+          {portfolioData.sectionTitles?.projects || 'Production Web & Mobile Software'}
         </h2>
         <p className={`mt-3 text-sm sm:text-base leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-          High-performance web applications and mobile software built with modern engineering stacks.
+          {portfolioData.sectionSubtitles?.projects || 'High-performance web applications and mobile software built with modern engineering stacks.'}
         </p>
       </div>
 

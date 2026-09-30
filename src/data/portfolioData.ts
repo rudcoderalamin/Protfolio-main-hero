@@ -299,22 +299,26 @@ export const PORTFOLIO_DATA = {
 
   // Detailed Modal Section Headers & Subtitles
   sectionTitles: {
-    experience: "Work Experience & History",
+    home: "Al Amin Islam",
+    about: "About Me",
     skills: "Technical Skills & Competencies",
+    services: "Services & Solutions",
     projects: "Featured Software Projects",
-    achievements: "Competitive Programming & Awards",
+    experience: "Work Experience & History",
     education: "Education & Qualifications",
-    contact: "Get In Touch",
-    home: "Al Amin Islam"
+    achievements: "Competitive Programming & Awards",
+    contact: "Get In Touch"
   },
   sectionSubtitles: {
-    experience: "Professional background & technical deliverables",
+    home: "Fullstack Software Engineer & Competitive Programmer",
+    about: "Get to know my journey, academic credentials, and core development philosophy.",
     skills: "Languages, frameworks, databases & developer tooling",
+    services: "From robust full-stack software and fluid web apps to UI/UX prototypes and native Android applications.",
     projects: "High-performance web applications built from scratch",
-    achievements: "Contest honors, ratings, and problem-solving track record",
+    experience: "Professional background & technical deliverables",
     education: "Formal coursework and foundational computer science",
-    contact: "Let’s discuss your next project, technical opportunity, or collaboration.",
-    home: "Fullstack Software Engineer & Competitive Programmer"
+    achievements: "Contest honors, ratings, and problem-solving track record",
+    contact: "Let’s discuss your next project, technical opportunity, or collaboration."
   },
 
   // Contact Modal Texts (Every word/label customizable)

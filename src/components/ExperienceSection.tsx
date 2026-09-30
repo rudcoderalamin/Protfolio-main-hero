@@ -19,10 +19,10 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({ portfolioD
           <span>Institutional Milestones</span>
         </div>
         <h2 className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-          Institutional Achievements & Impact
+          {portfolioData.sectionTitles?.experience || 'Institutional Achievements & Impact'}
         </h2>
         <p className={`mt-3 text-sm sm:text-base leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-          Key technical milestones, software deliveries, and solutions achieved across institutions.
+          {portfolioData.sectionSubtitles?.experience || 'Key technical milestones, software deliveries, and solutions achieved across institutions.'}
         </p>
       </div>
 

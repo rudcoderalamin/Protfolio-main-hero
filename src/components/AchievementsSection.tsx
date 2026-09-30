@@ -27,10 +27,10 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({ portfo
           <span>Honors & Contests</span>
         </div>
         <h2 className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-          Institutional Awards & Recognition
+          {portfolioData.sectionTitles?.achievements || 'Institutional Awards & Recognition'}
         </h2>
         <p className={`mt-3 text-sm sm:text-base leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-          Prestigious competitive programming awards and academic citations earned from universities and polytechnic institutions.
+          {portfolioData.sectionSubtitles?.achievements || 'Prestigious competitive programming awards and academic citations earned from universities and polytechnic institutions.'}
         </p>
       </div>
 

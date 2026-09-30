@@ -50,10 +50,10 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ portfolioData }) =
           <span>Technical Competencies</span>
         </div>
         <h2 className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-          Languages, Frameworks & Developer Tools
+          {portfolioData.sectionTitles?.skills || 'Languages, Frameworks & Developer Tools'}
         </h2>
         <p className={`mt-3 text-sm sm:text-base leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-          Comprehensive technical stack covering modern web architecture, algorithmic computing, and tooling.
+          {portfolioData.sectionSubtitles?.skills || 'Comprehensive technical stack covering modern web architecture, algorithmic computing, and tooling.'}
         </p>
       </div>
 

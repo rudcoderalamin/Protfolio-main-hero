@@ -68,10 +68,10 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
           <span>Services Offered</span>
         </div>
         <h2 className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-          High-Impact Engineering & Creative Services
+          {portfolioData.sectionTitles?.services || 'High-Impact Engineering & Creative Services'}
         </h2>
         <p className={`mt-3 text-sm sm:text-base leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-          From robust full-stack software and fluid web apps to UI/UX prototypes and native Android applications.
+          {portfolioData.sectionSubtitles?.services || 'From robust full-stack software and fluid web apps to UI/UX prototypes and native Android applications.'}
         </p>
       </div>
 
