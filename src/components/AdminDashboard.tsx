@@ -71,8 +71,8 @@ import { CircularFaviconCropperModal } from './CircularFaviconCropperModal';
 interface AdminDashboardProps {
   portfolioData: PortfolioDataType;
   photos: ProfilePhoto[];
-  onUpdatePortfolioData: (data: PortfolioDataType) => void;
-  onUpdatePhotos: (photos: ProfilePhoto[]) => void;
+  onUpdatePortfolioData: (data: PortfolioDataType, skipCloudSync?: boolean) => void;
+  onUpdatePhotos: (photos: ProfilePhoto[], skipCloudSync?: boolean) => void;
   onNavigateHome: () => void;
 }
 
@@ -201,19 +201,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setDbSyncStatus('saving');
     try {
       isLocalUpdateRef.current = true;
+      // 1. Immediately update App state without re-triggering duplicate cloud saves
+      onUpdatePortfolioData(formData, true);
+      onUpdatePhotos(photosList, true);
+      // 2. Perform lightning-fast parallel save to Supabase, Firestore, and local server
       await savePortfolioToServer(formData, photosList);
-      onUpdatePortfolioData(formData);
-      onUpdatePhotos(photosList);
       setDbSyncStatus('saved');
       const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       setLastSavedTime(time);
-      setSaveSuccessMessage('All changes saved to Supabase! Live across all devices worldwide.');
+      setSaveSuccessMessage('সফলভাবে সেভ হয়েছে! Supabase ও ডাটাবেজে দ্রুত সংরক্ষিত।');
     } catch (err) {
       isLocalUpdateRef.current = true;
-      onUpdatePortfolioData(formData);
-      onUpdatePhotos(photosList);
       setDbSyncStatus('saved');
-      setSaveSuccessMessage('Changes saved locally and synced.');
+      setSaveSuccessMessage('তথ্য সফলভাবে সংরক্ষিত হয়েছে।');
     } finally {
       setIsSaving(false);
       setTimeout(() => setSaveSuccessMessage(''), 3000);
@@ -3377,6 +3377,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add Project</span>
                   </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveData}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold cursor-pointer transition-colors shadow-sm"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Save Projects</span>
+                  </button>
                 </div>
               </div>
 
@@ -3750,10 +3758,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       const updated = [...(formData.skills || []), newCat];
                       setFormData({ ...formData, skills: updated });
                     }}
-                    className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                    className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add Category</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveData}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold cursor-pointer transition-colors shadow-sm"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Save Skills</span>
                   </button>
                 </div>
               </div>
@@ -4017,10 +4033,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       const updated = [newExp, ...(formData.experiences || [])];
                       setFormData({ ...formData, experiences: updated });
                     }}
-                    className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                    className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add With Template</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveData}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold cursor-pointer transition-colors shadow-sm"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Save Experience</span>
                   </button>
                 </div>
               </div>
@@ -4292,10 +4316,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       const updated = [newAch, ...(formData.achievements || [])];
                       setFormData({ ...formData, achievements: updated });
                     }}
-                    className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                    className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add With Template</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveData}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold cursor-pointer transition-colors shadow-sm"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Save Achievements</span>
                   </button>
                 </div>
               </div>
@@ -4531,10 +4563,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       const updated = [newEdu, ...(formData.education || [])];
                       setFormData({ ...formData, education: updated });
                     }}
-                    className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                    className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add With Template</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveData}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold cursor-pointer transition-colors shadow-sm"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Save Education</span>
                   </button>
                 </div>
               </div>
@@ -5916,7 +5956,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           footer: { ...formData.footer, copyrightText: e.target.value }
                         })
                       }
-                      placeholder={`© {year} ${formData.name || 'Al Amin Islam'}. Built with Next.js & Tailwind CSS.`}
+                      placeholder={`© {year} ${formData.name || 'Al Amin Islam'}. All rights reserved.`}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">
+                      Copyright Link URL (কপিরাইট লেখায় ক্লিক করলে যাওয়ার লিংক)
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.footer?.copyrightUrl ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          footer: { ...formData.footer, copyrightUrl: e.target.value }
+                        })
+                      }
+                      placeholder="https://github.com/alaminislam3504"
                       className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
                     />
                   </div>
@@ -5933,9 +5990,71 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           footer: { ...formData.footer, statusBadge: e.target.value }
                         })
                       }
-                      placeholder="Available for full-time opportunities"
+                      placeholder="Available for Hire"
                       className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">
+                      Status Badge Link URL (ব্যাজে ক্লিক করলে যাওয়ার লিংক)
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.footer?.statusBadgeUrl ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          footer: { ...formData.footer, statusBadgeUrl: e.target.value }
+                        })
+                      }
+                      placeholder="https://linkedin.com or mailto:your@email.com"
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">
+                      Powered By Text (ঐচ্ছিক সাব-ক্রেডিট)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.footer?.poweredByText ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          footer: { ...formData.footer, poweredByText: e.target.value }
+                        })
+                      }
+                      placeholder="Powered by Al Amin"
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">
+                      Powered By Link URL
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.footer?.poweredByUrl ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          footer: { ...formData.footer, poweredByUrl: e.target.value }
+                        })
+                      }
+                      placeholder="https://github.com/alaminislam3504"
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Notice on Removed Admin Panel button */}
+                <div className="p-3 bg-sky-950/40 border border-sky-800/60 rounded-xl flex items-start gap-2.5 text-xs text-sky-200">
+                  <ShieldCheck className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-white block">গোপনীয়তা ও নিরাপত্তা নিশ্চিতকরণ:</span>
+                    <span className="text-slate-300">
+                      ইউজার-ফেসিং ওয়েবসাইটের ফুটার থেকে &quot;Admin Panel&quot; বাটন সম্পূর্ণ অপসারিত হয়েছে। সাধারণ ভিজিটররা অ্যাডমিন প্যানেল দেখতে বা ক্লিক করতে পারবে না। আপনি নিজে অ্যাডমিন ড্যাশবোর্ডে ঢুকতে ব্রাউজারে <code className="bg-slate-900 px-1.5 py-0.5 rounded text-sky-300">/admin</code> টাইপ করুন অথবা কীবোর্ড শর্টকাট <code className="bg-slate-900 px-1.5 py-0.5 rounded text-sky-300">Ctrl + Shift + A</code> চাপুন।
+                    </span>
                   </div>
                 </div>
 

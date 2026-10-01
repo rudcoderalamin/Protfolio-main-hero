@@ -139,18 +139,22 @@ export default function App() {
     }
   };
 
-  const handleUpdatePortfolioData = async (newData: PortfolioDataType) => {
+  const handleUpdatePortfolioData = async (newData: PortfolioDataType, skipCloudSync = false) => {
     setPortfolioData(newData);
     saveStoredPortfolioData(newData);
-    // Broadcast to Firestore Cloud & Server
-    await savePortfolioToServer(newData, photos);
+    if (!skipCloudSync) {
+      // Broadcast to Firestore Cloud & Server in parallel
+      await savePortfolioToServer(newData, photos);
+    }
   };
 
-  const handleUpdatePhotos = async (newPhotos: ProfilePhoto[]) => {
+  const handleUpdatePhotos = async (newPhotos: ProfilePhoto[], skipCloudSync = false) => {
     setPhotos(newPhotos);
     saveStoredPhotos(newPhotos);
-    // Broadcast to Firestore Cloud & Server
-    await savePortfolioToServer(portfolioData, newPhotos);
+    if (!skipCloudSync) {
+      // Broadcast to Firestore Cloud & Server in parallel
+      await savePortfolioToServer(portfolioData, newPhotos);
+    }
   };
 
   const handleSectionSelect = (section: string) => {
@@ -449,22 +453,6 @@ export default function App() {
                 <span>{portfolioData.footer?.statusBadge || 'Available for Hire'}</span>
               </span>
             )}
-
-            <span>•</span>
-
-            {/* Quick 1-Click Admin Dashboard Access */}
-            <button
-              onClick={() => navigateToRoute('admin')}
-              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-colors cursor-pointer ${
-                isDark
-                  ? 'text-slate-400 hover:text-sky-300 hover:bg-slate-800'
-                  : 'text-slate-500 hover:text-sky-700 hover:bg-slate-100'
-              }`}
-              title="Open Admin Dashboard (Admin Login)"
-            >
-              <Lock className="w-3 h-3 text-sky-500" />
-              <span>Admin Panel</span>
-            </button>
           </div>
         </div>
       </footer>

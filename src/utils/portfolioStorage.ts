@@ -480,11 +480,22 @@ export const fetchPortfolioFromServer = async (): Promise<{
 };
 
 /**
+ * Helper to prevent network promises from hanging UI
+ */
+const withTimeout = <T>(promise: PromiseLike<T>, ms = 3500): Promise<T> => {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('Network timeout')), ms))
+  ]);
+};
+
+/**
  * Saves all changes permanently:
- * 1. Immediately updates localStorage & dispatches event for instant local UI update.
- * 2. Saves directly into Firestore Cloud Database.
- * 3. Saves directly into Supabase `portfolio` table.
- * 4. Also pings server API if running.
+ * 1. Instantly writes to LocalStorage & dispatches local browser event (0ms UI latency).
+ * 2. Saves directly and concurrently to Supabase `portfolio` table.
+ * 3. Saves directly and concurrently into Firestore Cloud Database.
+ * 4. Pings local server API concurrently.
+ * All cloud calls run in PARALLEL via Promise.allSettled with timeout protection for max speed!
  */
 export const savePortfolioToServer = async (
   data: PortfolioDataType,
@@ -494,7 +505,7 @@ export const savePortfolioToServer = async (
   const currentPassword = adminPassword || getAdminPassword();
   const validPhotos = cleanPhotos(photos);
 
-  // 1. Immediately update local storage for zero-lag UI
+  // 1. Instantly update local storage for zero-lag UI response
   saveStoredPortfolioData(data);
   saveStoredPhotos(validPhotos);
   if (currentPassword) {
@@ -513,46 +524,46 @@ export const savePortfolioToServer = async (
     window.dispatchEvent(new CustomEvent('portfolio_updated', { detail: payload }));
   } catch (e) {}
 
-  // 3. Save directly into Firestore Cloud Database
-  try {
-    await setDoc(doc(db, 'portfolio', 'global'), payload);
-    console.log('✅ [Firestore] Saved directly to Firebase cloud database at', payload.updatedAt);
-  } catch (fireErr) {
-    console.warn('⚠️ [Firestore] Cloud save notice:', fireErr);
-  }
-
-  // 4. Save directly to Supabase
-  try {
-    const { error } = await supabase.from('portfolio').upsert(
+  // 3. Ultra-fast parallel execution to Supabase, Firestore, and local server
+  const supabaseSaveTask = withTimeout(
+    supabase.from('portfolio').upsert(
       {
         id: 'global',
         data: data,
         photos: validPhotos,
         admin_password: currentPassword,
-        updated_at: new Date().toISOString()
+        updated_at: payload.updatedAt
       },
       { onConflict: 'id' }
-    );
-
+    )
+  ).then(({ error }: any) => {
     if (!error) {
       console.log('✅ [Supabase] Saved directly to database at', payload.updatedAt);
     } else {
-      console.warn('⚠️ [Supabase] Upsert warning:', error.message);
+      console.warn('⚠️ [Supabase] Upsert warning:', error?.message);
     }
-  } catch (err) {
-    console.error('❌ [Supabase] Connection error:', err);
-  }
+  }).catch((err) => {
+    console.warn('⚠️ [Supabase] Notice:', err?.message || err);
+  });
 
-  // 5. Save to server API as secondary local store (if Express server is running)
-  try {
-    await fetch('/api/portfolio', {
+  const firestoreSaveTask = withTimeout(
+    setDoc(doc(db, 'portfolio', 'global'), payload)
+  ).then(() => {
+    console.log('✅ [Firestore] Saved directly at', payload.updatedAt);
+  }).catch((fireErr) => {
+    console.warn('⚠️ [Firestore] Notice:', fireErr?.message || fireErr);
+  });
+
+  const localApiTask = withTimeout(
+    fetch('/api/portfolio', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
-    });
-  } catch (err) {
-    // Ignored on Netlify
-  }
+    })
+  ).catch(() => {});
+
+  // Wait for all saves to settle in parallel
+  await Promise.allSettled([supabaseSaveTask, firestoreSaveTask, localApiTask]);
 
   return true;
 };

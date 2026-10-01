@@ -27,6 +27,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const isDark = portfolioData?.theme?.textColorMode === 'light';
 
   const navItems = [
+    ...(portfolioData?.navbar?.navHome ? [{ id: 'home', label: portfolioData.navbar.navHome }] : []),
     { id: 'about', label: portfolioData?.navbar?.navAbout || 'About Me' },
     { id: 'skills', label: portfolioData?.navbar?.navSkills || 'Skills' },
     { id: 'services', label: portfolioData?.navbar?.navServices || 'Services' },
@@ -161,7 +162,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             id="mobile-book-call-btn"
           >
             <Calendar className="w-3.5 h-3.5" />
-            <span>Book</span>
+            <span>{bookCallText}</span>
           </button>
 
           <button
